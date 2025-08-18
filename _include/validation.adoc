@@ -1,0 +1,96 @@
+= 去哪裡尋求協助？
+:allow-uri-read: 
+
+
+. 以oracle用戶登入Oracle伺服器，執行以下命令：
++
+[source, cli]
+----
+ps -ef | grep ora
+----
++
+
+NOTE: 如果安裝如預期完成且 Oracle DB 已啟動，這將列出 Oracle 進程
+
+. 登入資料庫，檢查資料庫配置設定和使用以下命令集建立的 PDB。
++
+[source, cli]
+----
+[oracle@localhost ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu May 6 12:52:51 2021
+Version 19.8.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.8.0.0.0
+
+SQL>
+
+SQL> select name, log_mode from v$database;
+NAME      LOG_MODE
+--------- ------------
+CDB2      ARCHIVELOG
+
+SQL> show pdbs
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+         3 CDB2_PDB1                      READ WRITE NO
+         4 CDB2_PDB2                      READ WRITE NO
+         5 CDB2_PDB3                      READ WRITE NO
+
+col svrname form a30
+col dirname form a30
+select svrname, dirname, nfsversion from v$dnfs_servers;
+
+SQL> col svrname form a30
+SQL> col dirname form a30
+SQL> select svrname, dirname, nfsversion from v$dnfs_servers;
+
+SVRNAME                        DIRNAME                        NFSVERSION
+------------------------------ ------------------------------ ----------------
+172.21.126.200                 /rhelora03_u02                 NFSv3.0
+172.21.126.200                 /rhelora03_u03                 NFSv3.0
+172.21.126.200                 /rhelora03_u01                 NFSv3.0
+----
++
+這證實 dNFS 運作正常。
+
+. 使用下列命令透過監聽器連接到資料庫來檢查 Oracle 監聽器配置。變更為適當的監聽連接埠和資料庫服務名稱。
++
+[source, cli]
+----
+[oracle@localhost ~]$ sqlplus system@//localhost:1523/cdb2_pdb1.cie.netapp.com
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu May 6 13:19:57 2021
+Version 19.8.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+Enter password:
+Last Successful login time: Wed May 05 2021 17:11:11 -04:00
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.8.0.0.0
+
+SQL> show user
+USER is "SYSTEM"
+SQL> show con_name
+CON_NAME
+CDB2_PDB1
+----
++
+這證實 Oracle 監聽器正常運作。
+
+
+
+
+
+=== 去哪裡尋求協助？
+
+如果您需要工具包的協助，請加入link:https://netapppub.slack.com/archives/C021R4WC0LC["NetApp解決方案自動化社群支援 Slack 頻道"]並尋找解決方案自動化管道來發布您的問題或詢問。

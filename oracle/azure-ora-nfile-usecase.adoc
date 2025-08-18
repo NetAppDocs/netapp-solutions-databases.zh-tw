@@ -1,0 +1,41 @@
+---
+sidebar: sidebar 
+permalink: oracle/azure-ora-nfile-usecase.html 
+summary: 本最佳實務指南提供了在 Azure NetApp檔案儲存體和 Azure VM 上部署和遷移 Oracle 資料庫的解決方案的詳細資訊。 
+keywords: database, Oracle, Azure NetApp files, Azure 
+---
+= TR-4954：針對 ANF 的 Oracle 資料庫部署與遷移最佳實踐
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+本最佳實務指南提供了在 Azure NetApp檔案儲存體和 Azure VM 上部署和遷移 Oracle 資料庫的解決方案的詳細資訊。
+
+
+
+== 概況
+
+許多任務關鍵型 Oracle 企業資料庫仍託管在本地，許多企業正在尋求將這些 Oracle 資料庫遷移到公有雲。通常，這些 Oracle 資料庫以應用程式為中心，因此需要特定於使用者的配置，而許多資料庫即服務公有雲產品都缺少此功能。因此，目前的資料庫環境需要基於公有雲的 Oracle 資料庫解決方案，該解決方案由能夠滿足獨特需求的高效能、可擴展的運算和儲存服務所建構。  Azure 虛擬機器運算執行個體和Azure NetApp Files儲存服務可能是這個難題的缺失部分，您可以利用它們來建置關鍵任務 Oracle 資料庫工作負載並將其遷移到公有雲。
+
+
+
+== Azure 虛擬機
+
+Azure 虛擬機器是 Azure 提供的幾個隨選、可擴充運算資源之一。通常，當您需要比其他選項提供的更多控制運算環境時，您會選擇虛擬機器。  Azure 虛擬機器提供了一種快速簡便的方法來建立具有執行 Oracle 資料庫所需的特定配置的計算機，無論是用於計算密集型工作負載還是記憶體密集型工作負載。  Azure 虛擬網路中的虛擬機器可輕鬆連接到您組織的網絡，例如透過安全的 VPN 隧道。
+
+
+
+== Azure NetApp Files(ANF)
+
+Azure NetApp Files是一項完全託管的 Microsoft 服務，它可以比以往更快、更安全地將您的資料庫工作負載轉移到雲端。它旨在滿足在雲端中運行高效能工作負載（如 Oracle 資料庫）的核心要求，並提供反映實際 IOPS 需求的效能層、低延遲、高可用性、高耐用性、大規模可管理性以及快速高效的備份、復原和複製。這些功能之所以能夠實現，是因為Azure NetApp Files是基於在 Azure 資料中心環境中執行的實體全快閃NetApp ONTAP系統。 Azure NetApp Files完全整合到 Azure DC 和入口網站中，客戶可以使用與任何其他 Azure 物件相同的舒適圖形介面和 API 來建立和管理共用檔案。透過 Azure NetApp文件，您可以解鎖 Azure 的全部功能，而無需額外的風險、成本或時間，並信任 Azure 原生的唯一企業文件服務。
+
+
+
+== 結論
+
+本文檔詳細介紹如何使用 Azure 虛擬機器和Azure NetApp Files儲存服務部署、設定和遷移 Oracle 資料庫，以提供與本機系統類似的效能和耐用性。有關最佳實踐指導，請參閱 TR-4780link:https://www.netapp.com/media/17105-tr4780.pdf["Microsoft Azure 上的 Oracle 資料庫"^] 。更重要的是， NetApp還提供自動化工具包，可自動執行在 Azure 公有雲中部署、配置、資料保護、遷移和管理 Oracle 資料庫工作負載所需的大部分任務。自動化工具包可在NetApp公共 GitHub 網站下載：link:https://github.com/NetApp-Automation/["NetApp自動化"^] 。

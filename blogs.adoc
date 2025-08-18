@@ -1,0 +1,23 @@
+---
+sidebar: sidebar 
+permalink: blogs.html 
+summary: 閱讀博客，了解有關將ONTAP儲存與NetApp資料庫解決方案整合的實用指導和最佳實踐。 
+keywords: netapp, solutions, blogs 
+---
+= 閱讀NetApp專家的資料庫解決方案博客
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+閱讀博客，了解有關將ONTAP儲存與NetApp資料庫解決方案整合的實用指導和最佳實踐。
+
+* link:https://aws.amazon.com/blogs/storage/using-netapp-snapcenter-with-amazon-fsx-for-netapp-ontap-to-protect-your-sql-server-workloads/["使用NetApp SnapCenter和Amazon FSx ONTAP保護您的 SQL Server 工作負載"]
+* link:https://community.netapp.com/t5/Tech-ONTAP-Blogs/Modernize-your-Oracle-database-operation-in-hybrid-cloud-with-Amazon-FSx-storage/ba-p/437554["使用Amazon FSx儲存在混合雲中實現 Oracle 資料庫操作的現代化"]
+* link:https://community.netapp.com/t5/Tech-ONTAP-Blogs/Hybrid-cloud-database-solutions-with-SnapCenter/ba-p/171061#M5["採用SnapCenter的混合雲資料庫解決方案"]
+* link:https://community.netapp.com/t5/Tech-ONTAP-Blogs/Automate-Your-Oracle-Database-Infrastructure-in-the-Hybrid-Cloud/ba-p/167046["在混合雲中自動化您的 Oracle 資料庫基礎架構"]
+

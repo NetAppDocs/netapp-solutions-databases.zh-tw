@@ -1,0 +1,250 @@
+---
+sidebar: sidebar 
+permalink: automation/automation-fsx-ec2-provision.html 
+keywords: AWS, FSx ONTAP, EC2 
+summary: 此解決方案提供了基於 Terraform 的自動化工具包，用於配置 FSx ONTAP叢集和 EC2 運算實例 
+---
+= AWS FSx ONTAP叢集和 EC2 執行個體配置
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+NetApp解決方案工程團隊
+
+[role="lead"]
+此解決方案提供了基於 Terraform 的自動化工具包，用於配置 FSx ONTAP叢集和 EC2 運算執行個體。
+
+
+
+== 目的
+
+此工具包可自動執行 AWS FSx ONTAP儲存叢集和 EC2 運算執行個體的設定任務，隨後可用於資料庫部署。
+
+此解決方案適用於以下用例：
+
+* 在預先定義的 VPC 子網路中的 AWS 雲端中配置 EC2 運算實例，並將用於 EC2 執行個體存取的 ssh 金鑰設定為 ec2-user。
+* 在所需的可用區域中配置 AWS FSx ONTAP儲存集群，並配置儲存 SVM 並設定集群管理員使用者 fsxadmin 密碼。
+
+
+
+
+== 對象
+
+此解決方案適用於以下人群：
+
+* 在 AWS EC2 環境中管理資料庫的 DBA。
+* 對 AWS EC2 生態系統中的資料庫部署有興趣的資料庫解決方案架構師。
+* 管理支援資料庫的 AWS FSx ONTAP儲存的儲存管理員。
+* 喜歡在 AWS EC2 生態系統中建立資料庫的應用程式擁有者。
+
+
+
+
+== 執照
+
+透過存取、下載、安裝或使用此 GitHub 儲存庫中的內容，您同意link:https://github.com/NetApp/na_ora_hadr_failover_resync/blob/master/LICENSE.TXT["許可證文件"^]。
+
+
+NOTE: 製作和/或分享此 GitHub 儲存庫中內容的任何衍生作品都受到某些限制。請確保在使用該內容之前閱讀許可條款。如果您不同意所有條款，請不要存取、下載或使用此儲存庫中的內容。
+
+
+
+== 解決方案部署
+
+
+
+=== 部署先決條件
+
+[%collapsible%open]
+====
+部署需要以下先決條件。
+
+....
+An Organization and AWS account has been setup in AWS public cloud
+  An user to run the deployment has been created
+  IAM roles has been configured
+  IAM roles granted to user to permit provisioning the resources
+....
+....
+VPC and security configuration
+  A VPC has been created to host the resources to be provisioned
+  A security group has been configured for the VPC
+  A ssh key pair has been created for EC2 instance access
+....
+....
+Network configuration
+  Subnets has been created for VPC with network segments assigned
+  Route tables and network ACL configured
+  NAT gateways or internet gateways configured for internet access
+....
+====
+
+
+=== 下載工具包
+
+[%collapsible%open]
+====
+[source, cli]
+----
+git clone https://github.com/NetApp/na_aws_fsx_ec2_deploy.git
+----
+====
+
+
+=== 連線和身份驗證
+
+[%collapsible%open]
+====
+該工具包應該從 AWS 雲殼執行。  AWS 雲殼是基於瀏覽器的殼，可以輕鬆安全地管理、探索和與 AWS 資源互動。 CloudShell 已使用您的控制台憑證進行預先驗證。常用的開發和操作工具已預先安裝，因此無需本地安裝或配置。
+
+====
+
+
+=== Terraform provider.tf 和 main.tf 檔案配置
+
+[%collapsible%open]
+====
+provider.tf 定義 Terraform 透過 API 呼叫提供資源的提供者。 main.tf 定義了要設定的資源和資源的屬性。以下是一些詳細資訊：
+
+....
+provider.tf:
+  terraform {
+    required_providers {
+      aws = {
+        source  = "hashicorp/aws"
+        version = "~> 4.54.0"
+      }
+    }
+  }
+....
+....
+main.tf:
+  resource "aws_instance" "ora_01" {
+    ami                           = var.ami
+    instance_type                 = var.instance_type
+    subnet_id                     = var.subnet_id
+    key_name                      = var.ssh_key_name
+    root_block_device {
+      volume_type                 = "gp3"
+      volume_size                 = var.root_volume_size
+    }
+    tags = {
+      Name                        = var.ec2_tag
+    }
+  }
+  ....
+....
+====
+
+
+=== Terraform Variables.tf 和 terraform.tfvars 配置
+
+[%collapsible%open]
+====
+Variables.tf 宣告了在 main.tf 中要使用的變數。 terraform.tfvars 包含變數的實際值。以下是一些範例：
+
+....
+variables.tf:
+  ### EC2 instance variables ###
+....
+....
+variable "ami" {
+  type        = string
+  description = "EC2 AMI image to be deployed"
+}
+....
+....
+variable "instance_type" {
+  type        = string
+  description = "EC2 instance type"
+}
+....
+....
+....
+terraform.tfvars:
+  # EC2 instance variables
+....
+....
+ami                     = "ami-06640050dc3f556bb" //RedHat 8.6  AMI
+instance_type           = "t2.micro"
+ec2_tag                 = "ora_01"
+subnet_id               = "subnet-04f5fe7073ff514fb"
+ssh_key_name            = "sufi_new"
+root_volume_size        = 30
+....
+....
+====
+
+
+=== 逐步程序 - 按順序執行
+
+[%collapsible%open]
+====
+. 在 AWS 雲殼中安裝 Terraform。
++
+[source, cli]
+----
+git clone https://github.com/tfutils/tfenv.git ~/.tfenv
+----
++
+[source, cli]
+----
+mkdir ~/bin
+----
++
+[source, cli]
+----
+ln -s ~/.tfenv/bin/* ~/bin/
+----
++
+[source, cli]
+----
+tfenv install
+----
++
+[source, cli]
+----
+tfenv use 1.3.9
+----
+. 從NetApp GitHub 公共網站下載工具包
++
+[source, cli]
+----
+git clone https://github.com/NetApp-Automation/na_aws_fsx_ec2_deploy.git
+----
+. 運行 init 來初始化 terraform
++
+[source, cli]
+----
+terraform init
+----
+. 輸出執行計劃
++
+[source, cli]
+----
+terraform plan -out=main.plan
+----
+. 應用執行計劃
++
+[source, cli]
+----
+terraform apply "main.plan"
+----
+. 完成後執行 destroy 以刪除資源
++
+[source, cli]
+----
+terraform destroy
+----
+
+
+====
+
+
+== 在哪裡可以找到更多信息
+
+要了解有關NetApp解決方案自動化的更多信息，請訪問以下網站link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]

@@ -1,0 +1,21 @@
+---
+sidebar: sidebar 
+permalink: mssql/tr-4467.html 
+keywords:  
+summary:  
+---
+= TR-4467：Windows 上搭載 Microsoft SQL Server 的 SAP - 使用NetApp Clustered Data ONTAP和SnapCenter 的最佳實踐
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+NetApp的 Marco Schoen
+
+[role="lead"]
+TR-4467 為客戶和合作夥伴提供了部署叢集NetApp Data ONTAP的最佳實踐，以支援在 Windows 環境中的 Microsoft SQL Server 中執行的 SAP Business Suite 解決方案。
+
+link:https://www.netapp.com/pdf.html?item=/media/16865-tr-4467pdf.pdf["TR-4467：Windows 上搭載 Microsoft SQL Server 的 SAP - 使用NetApp Clustered Data ONTAP和SnapCenter 的最佳實踐"^]

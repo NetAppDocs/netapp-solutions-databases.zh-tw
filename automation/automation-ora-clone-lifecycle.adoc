@@ -1,0 +1,218 @@
+---
+sidebar: sidebar 
+permalink: automation/automation-ora-clone-lifecycle.html 
+keywords: Database, Oracle, DataGuard, AWS, FSx ONTAP, Azure, ANF, 
+summary: 該解決方案提供了基於 Ansible 的自動化工具包，用於從主資料庫設定、複製和刷新 Oracle 克隆資料庫。主資料庫可以是 Oracle Data Guard 配置中的實體備用資料庫。此解決方案可套用於私人資料中心或具有 NFS 或 ASM 配置的 FSx ONTAP儲存的 AWS 雲，或具有 NFS 配置的Azure NetApp Files儲存的 Azure 雲。 
+---
+= SnapCenter Oracle 克隆生命週期自動化
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+Allen Cao、Niyaz Mohamed， NetApp
+
+[role="lead"]
+該解決方案提供了基於 Ansible 的自動化工具包，用於從主資料庫設定、複製和刷新 Oracle 克隆資料庫。主資料庫可以是 Oracle Data Guard 配置中的實體備用資料庫。此解決方案可套用於私人資料中心或具有 NFS 或 ASM 配置的 FSx ONTAP儲存的 AWS 雲，或具有 NFS 配置的Azure NetApp Files儲存的 Azure 雲。
+
+
+
+== 目的
+
+客戶喜歡NetApp ONTAP儲存的FlexClone功能，因為如果在私有資料中心或公有雲中的特定儲存產品上啟用了精簡克隆功能，則可以快速（幾分鐘）複製大型資料庫並節省額外的儲存。此基於 Ansible 的工具包使用NetApp SnapCenter命令列公用程式自動按計劃設定、複製和刷新複製的 Oracle 資料庫，從而簡化生命週期管理。此工具包適用於部署至本機或公有雲（AWS 或 Azure） ONTAP儲存並由NetApp SnapCenter UI 工具管理的 Oracle 資料庫。
+
+此解決方案適用於以下用例：
+
+* 設定 Oracle 資料庫克隆規範設定檔。
+* 依照使用者定義的計畫建立和刷新克隆 Oracle 資料庫。
+
+
+
+
+== 對象
+
+此解決方案適用於以下人群：
+
+* 使用SnapCenter管理 Oracle 資料庫的 DBA。
+* 使用SnapCenter管理ONTAP儲存的儲存管理員。
+* 有權存取SnapCenter UI 的應用程式擁有者。
+
+
+
+
+== 執照
+
+透過存取、下載、安裝或使用此 GitHub 儲存庫中的內容，您同意link:https://github.com/NetApp/na_ora_hadr_failover_resync/blob/master/LICENSE.TXT["許可證文件"^]。
+
+
+NOTE: 製作和/或分享此 GitHub 儲存庫中內容的任何衍生作品都受到某些限制。請確保在使用該內容之前閱讀許可條款。如果您不同意所有條款，請不要存取、下載或使用此儲存庫中的內容。
+
+
+
+== 解決方案部署
+
+
+
+=== 部署先決條件
+
+[%collapsible%open]
+====
+部署需要以下先決條件。
+
+....
+Ansible controller:
+  Ansible v.2.10 and higher
+  ONTAP collection 21.19.1
+  Python 3
+  Python libraries:
+    netapp-lib
+    xmltodict
+    jmespath
+....
+....
+SnapCenter server:
+  version 5.0 and up, 6.1 for Azure NetApp Files
+  backup policy configured
+  Source database protected with a backup policy
+....
+....
+Oracle servers:
+  Source server managed by SnapCenter (In Data Guard, this would be the physical standby serer)
+  Target server managed by SnapCenter (clone DB host)
+....
+
+NOTE: 為了簡化，複製目標 Oracle 伺服器的配置應與備用 Oracle 伺服器相同，例如 Oracle 軟體堆疊以及 Oracle Home 的目錄佈局等。
+
+====
+
+
+=== 下載工具包
+
+[%collapsible%open]
+====
+[source, cli]
+----
+git clone https://bitbucket.ngage.netapp.com/scm/ns-bb/na_oracle_clone_lifecycle.git
+----
+
+NOTE: 目前，只有具有 bitbucket 存取權限的NetApp內部使用者才能存取該工具包。對於有興趣的外部用戶，請向您的客戶團隊要求存取權限或聯絡NetApp解決方案工程團隊。
+
+====
+
+
+=== Ansible 目標主機檔案配置
+
+[%collapsible%open]
+====
+該工具包包含一個 hosts 文件，該文件定義了 Ansible playbook 所執行的目標。通常，它是目標 Oracle 克隆主機。以下是範例文件。主機條目包括目標主機 IP 位址以及管理員使用者存取主機以執行複製或刷新命令的 ssh 金鑰。
+
+#Oracle 克隆主機
+
+....
+[clone_1]
+ora_04.cie.netapp.com ansible_host=10.61.180.29 ansible_ssh_private_key_file=ora_04.pem
+....
+ [clone_2]
+ [clone_3]
+====
+
+
+=== 全域變數配置
+
+[%collapsible%open]
+====
+Ansible 劇本從幾個變數檔案中取得變數輸入。下面是一個範例全域變數檔 vars.yml。
+
+ # ONTAP specific config variables
+ # SnapCtr specific config variables
+....
+snapctr_usr: xxxxxxxx
+snapctr_pwd: 'xxxxxxxx'
+....
+ backup_policy: 'Oracle Full offline Backup'
+ # Linux specific config variables
+ # Oracle specific config variables
+====
+
+
+=== 主機變數配置
+
+[%collapsible%open]
+====
+主機變數在 host_vars 目錄中定義，名稱為 {{ host_name }}.yml。以下是目標 Oracle 主機變數檔案 ora_04.cie.netapp.com.yml 的範例，顯示了典型的配置。
+
+ # User configurable Oracle clone db host specific parameters
+....
+# Source database to clone from
+source_db_sid: NTAP1
+source_db_host: ora_03.cie.netapp.com
+....
+....
+# Clone database
+clone_db_sid: NTAP1DEV
+....
+ snapctr_obj_id: '{{ source_db_host }}\{{ source_db_sid }}'
+====
+
+
+=== 額外的克隆目標 Oracle 伺服器配置
+
+[%collapsible%open]
+====
+克隆目標 Oracle 伺服器應具有與來源 Oracle 伺服器相同的安裝和修補的 Oracle 軟體堆疊。 Oracle 使用者 .bash_profile 已配置 $ORACLE_BASE 和 $ORACLE_HOME。此外，$ORACLE_HOME 變數應與來源 Oracle 伺服器設定相符。以下是一個例子。
+
+ # .bash_profile
+....
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+fi
+....
+....
+# User specific environment and startup programs
+export ORACLE_BASE=/u01/app/oracle
+export ORACLE_HOME=/u01/app/oracle/product/19.0.0/NTAP1
+....
+====
+
+
+=== 劇本執行
+
+[%collapsible%open]
+====
+總共有三個劇本可使用SnapCenter CLI 實用程式執行 Oracle 資料庫複製生命週期。
+
+. 安裝 Ansible 控制器先決條件 - 只需一次。
++
+[source, cli]
+----
+ansible-playbook -i hosts ansible_requirements.yml
+----
+. 設定克隆規範檔案 - 僅一次。
++
+[source, cli]
+----
+ansible-playbook -i hosts clone_1_setup.yml -u admin -e @vars/vars.yml
+----
+. 使用 shell 腳本呼叫刷新劇本，定期從 crontab 建立和刷新克隆資料庫。
++
+[source, cli]
+----
+0 */4 * * * /home/admin/na_oracle_clone_lifecycle/clone_1_refresh.sh
+----
+
+
+
+NOTE: 將使用者名稱變更為SnapCenter配置的 sudo 使用者。
+
+對於額外的克隆資料庫，建立單獨的 clone_n_setup.yml 和 clone_n_refresh.yml，以及 clone_n_refresh.sh。相應地設定 Ansible 目標主機和 host_vars 目錄中的 hostname.yml 檔案。
+
+====
+
+
+== 在哪裡可以找到更多信息
+
+要了解有關NetApp解決方案自動化的更多信息，請訪問以下網站link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]

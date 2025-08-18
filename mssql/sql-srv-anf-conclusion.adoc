@@ -1,0 +1,32 @@
+---
+sidebar: sidebar 
+permalink: mssql/sql-srv-anf-conclusion.html 
+keywords: takeaways, hybrid-cloud 
+summary: 無論您的目標是全雲還是具有延伸資料庫的混合雲， Azure NetApp Files都能提供出色的選項來部署和管理資料庫工作負載，同時透過讓資料需求無縫連接到應用程式層來降低您的 TCO。 
+---
+= 結論
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+無論您的目標是全雲還是具有延伸資料庫的混合雲， Azure NetApp Files都能提供出色的選項來部署和管理資料庫工作負載，同時透過讓資料需求無縫連接到應用程式層來降低您的 TCO。
+
+本文檔涵蓋了使用Azure NetApp Files規劃、設計、最佳化和擴展 Microsoft SQL Server 部署的建議，這些建議在不同的實施過程中可能會有很大差異。正確的解決方案取決於實施的技術細節和推動專案的業務需求。
+
+
+
+== 總結
+
+該文件的要點包括：
+
+* 現在您可以使用Azure NetApp Files來託管 SQL Server 叢集的資料庫和檔案共用見證。
+* 您可以提高應用程式回應時間並提供 99.9999% 的可用性，以便在需要時隨時隨地存取 SQL Server 資料。
+* 您可以透過簡單、即時的調整大小來簡化 SQL Server 部署和持續管理（例如 RAID 條帶化）的整體複雜性。
+* 您可以依靠智慧操作功能來幫助您在幾分鐘內部署 SQL Server 資料庫並加快開發週期。
+* 如果 Azure Cloud 是目標，Azure NetApp Files就是最佳化部署的正確儲存解決方案。
+

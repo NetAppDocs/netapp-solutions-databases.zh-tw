@@ -1,0 +1,62 @@
+= 
+:allow-uri-read: 
+
+
+. 配置憑證。
+. 建立憑證類型。對於涉及ONTAP的解決方案，您必須設定憑證類型以符合使用者名稱和密碼項目。
++
+.. 導覽至管理 → 憑證類型，然後按一下新增。
+.. 提供名稱和描述。
+.. 在輸入配置中貼上以下內容：
++
+[source, cli]
+----
+fields:
+  - id: dst_cluster_username
+    type: string
+    label: Destination Cluster Username
+  - id: dst_cluster_password
+    type: string
+    label: Destination Cluster Password
+    secret: true
+  - id: src_cluster_username
+    type: string
+    label: Source Cluster Username
+  - id: src_cluster_password
+    type: string
+    label: Source Cluster Password
+    secret: true
+----
+.. 將以下內容貼到 Injector Configuration 中，然後按一下 Save：
++
+[source, cli]
+----
+extra_vars:
+  dst_cluster_username: '{{ dst_cluster_username }}'
+  dst_cluster_password: '{{ dst_cluster_password }}'
+  src_cluster_username: '{{ src_cluster_username }}'
+  src_cluster_password: '{{ src_cluster_password }}'
+----
+
+
+. 為ONTAP建立憑證
++
+.. 導覽至資源 → 憑證，然後按一下新增。
+.. 輸入ONTAP憑證的名稱和組織詳細信息
+.. 選擇上一個步驟中建立的憑證類型。
+.. 在類型詳細資料下，輸入來源叢集和目標叢集的使用者名稱和密碼。
+.. 點選“儲存”
+
+
+. 為 Oracle 建立憑證
++
+.. 導覽至資源 → 憑證，然後按一下新增。
+.. 輸入 Oracle 的名稱和組織詳細信息
+.. 選擇機器憑證類型。
+.. 在類型詳細資料下，輸入 Oracle 主機的使用者名稱和密碼。
+.. 選擇正確的權限提升方法，並輸入使用者名稱和密碼。
+.. 點選“儲存”
+.. 如果需要 dr_oracle 主機的不同憑證，請重複此程序。
+
+
+

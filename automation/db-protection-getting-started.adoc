@@ -1,0 +1,281 @@
+---
+sidebar: sidebar 
+permalink: automation/db-protection-getting-started.html 
+keywords: Linux, RHEL Oracle19c, NFS, ONTAP 
+summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle 資料保護的自動化方法。 
+---
+= 入門
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+此解決方案設計用於在 AWX/Tower 環境中運作。
+
+
+
+== AWX/塔
+
+對於 AWX/Tower 環境，將引導您建立ONTAP叢集管理和 Oracle 伺服器（IP 和主機名稱）的清單、建立憑證、設定從NetApp Automation Github 中提取 Ansible 程式碼的專案以及啟動自動化的作業範本。
+
+. 此解決方案設計用於在私有雲場景（本地到本地）和混合雲（本地到公有雲Cloud Volumes ONTAP [CVO]）中運行
+. 填寫特定於您的環境的變量，然後將其複製並貼上到作業範本中的 Extra Vars 欄位中。
+. 將額外的變數新增至您的作業範本後，您可以啟動自動化。
+. 自動化設定為運行三個階段（設定、Oracle 二進位檔案的複製計劃、資料庫、日誌和僅用於日誌的複製計劃），第四階段是在 DR 站點恢復資料庫。
+. 有關取得 CVO 資料保護所需金鑰和令牌的詳細說明，請訪問link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/authentication-tokens.html["收集 CVO 和連接器部署的先決條件"^]
+
+
+
+
+== 要求
+
+[role="tabbed-block"]
+====
+.<strong class="big">本地</strong>
+--
+[cols="3, 9"]
+|===
+| 環境 | 要求 
+
+
+.4+| Ansible 環境 | AWX/塔 
+
+
+| Ansible v.2.10 及更高版本 
+
+
+| Python 3 
+
+
+| Python 函式庫 - netapp-lib - xmltodict - jmespath 
+
+
+.3+| ONTAP | ONTAP版本 9.8 以上 
+
+
+| 兩個數據聚合 
+
+
+| NFS vlan 和 ifgrp 創建 
+
+
+.5+| Oracle 伺服器 | RHEL 7/8 
+
+
+| Oracle Linux 7/8 
+
+
+| NFS、公共和可選管理的網路接口 
+
+
+| 來源上現有的 Oracle 環境，以及目標（DR 站台或公有雲）上等效的 Linux 作業系統 
+|===
+--
+.<strong class="big">CVO</strong>
+--
+[cols="3, 9"]
+|===
+| 環境 | 要求 
+
+
+.4+| Ansible 環境 | AWX/塔 
+
+
+| Ansible v.2.10 及更高版本 
+
+
+| Python 3 
+
+
+| Python 函式庫 - netapp-lib - xmltodict - jmespath 
+
+
+.3+| ONTAP | ONTAP版本 9.8 以上 
+
+
+| 兩個數據聚合 
+
+
+| NFS vlan 和 ifgrp 創建 
+
+
+.5+| Oracle 伺服器 | RHEL 7/8 
+
+
+| Oracle Linux 7/8 
+
+
+| NFS、公共和可選管理的網路接口 
+
+
+| 來源上現有的 Oracle 環境，以及目標（DR 站台或公有雲）上等效的 Linux 作業系統 
+
+
+| 在 Oracle EC2 執行個體上設定適當的交換空間，預設情況下，某些 EC2 執行個體部署時交換空間為 0 
+
+
+.4+| *雲端管理器/AWS* | AWS 存取/金鑰 
+
+
+| NetApp雲端管理器帳戶 
+
+
+| NetApp雲端管理器刷新令牌 
+
+
+| 將來源集群間 LIF 新增至 AWS 安全群組 
+|===
+--
+====
+
+
+== 自動化詳細信息
+
+[role="tabbed-block"]
+====
+.<strong class="big">本地</strong>
+--
+此自動化部署採用由三個獨立角色組成的單一 Ansible 劇本設計。這些角色適用於ONTAP、Linux 和 Oracle 配置。下表描述了正在自動化的任務。
+
+[cols="3, 9"]
+|===
+| 劇本 | 任務 
+
+
+.5+| ontap_setup | ONTAP環境的預檢查 
+
+
+| 在來源集群上建立集群間 LIF（可選） 
+
+
+| 在目標集群上建立集群間 LIF（可選） 
+
+
+| 建立叢集和 SVM 對等連接 
+
+
+| 建立目標SnapMirror並初始化指定的 Oracle 卷 
+
+
+.4+| *ora_replication_cg* | 在 /etc/oratab 中為每個資料庫啟用備份模式 
+
+
+| Oracle 二進位與資料庫磁碟區的快照 
+
+
+| SnapMirror 已更新 
+
+
+| 在 /etc/oratab 中關閉每個資料庫的備份模式 
+
+
+.3+| ora_replication_log | 在 /etc/oratab 中切換每個資料庫的目前日誌 
+
+
+| Oracle 日誌卷的快照 
+
+
+| SnapMirror 已更新 
+
+
+.5+| *ora_recovery* | 中斷SnapMirror 
+
+
+| 啟用 NFS 並為目標上的 Oracle 磁碟區建立連線路徑 
+
+
+| 配置 DR Oracle 主機 
+
+
+| 掛載並驗證 Oracle 卷 
+
+
+| 復原並啟動 Oracle 資料庫 
+|===
+--
+.<strong class="big">CVO</strong>
+--
+此自動化部署採用由三個獨立角色組成的單一 Ansible 劇本設計。這些角色適用於ONTAP、Linux 和 Oracle 配置。下表描述了正在自動化的任務。
+
+[cols="4, 9"]
+|===
+| 劇本 | 任務 
+
+
+.7+| *cvo_設定* | 環境預檢 
+
+
+| AWS 配置/AWS 存取金鑰 ID/金鑰/預設區域 
+
+
+| 創建AWS角色 
+
+
+| 在 AWS 中建立NetApp Cloud Manager Connector 實例 
+
+
+| 在 AWS 中建立Cloud Volumes ONTAP (CVO) 實例 
+
+
+| 將本機來源ONTAP叢集新增至NetApp Cloud Manager 
+
+
+| 建立目標SnapMirror並初始化指定的 Oracle 卷 
+
+
+.4+| *ora_replication_cg* | 在 /etc/oratab 中為每個資料庫啟用備份模式 
+
+
+| Oracle 二進位與資料庫磁碟區的快照 
+
+
+| SnapMirror 已更新 
+
+
+| 在 /etc/oratab 中關閉每個資料庫的備份模式 
+
+
+.3+| ora_replication_log | 在 /etc/oratab 中切換每個資料庫的目前日誌 
+
+
+| Oracle 日誌卷的快照 
+
+
+| SnapMirror 已更新 
+
+
+.5+| *ora_recovery* | 中斷SnapMirror 
+
+
+| 啟用 NFS 並為目標 CVO 上的 Oracle 磁碟區建立連線路徑 
+
+
+| 配置 DR Oracle 主機 
+
+
+| 掛載並驗證 Oracle 卷 
+
+
+| 復原並啟動 Oracle 資料庫 
+|===
+--
+====
+
+
+== 預設參數
+
+為了簡化自動化，我們預設了許多必要的 Oracle 參數的預設值。對於大多數部署來說，通常不需要更改預設參數。更高級的用戶可以謹慎地更改預設參數。預設參數位於 defaults 目錄下的每個角色資料夾中。
+
+
+
+== 執照
+
+您應該閱讀 Github 儲存庫中所述的許可證資訊。透過存取、下載、安裝或使用此儲存庫中的內容，您同意所列出的授權條款link:https://github.com/NetApp-Automation/na_oracle19c_deploy/blob/master/LICENSE.TXT["這裡"^]。
+
+請注意，製作和/或共享此存儲庫中的內容的任何衍生作品都受到某些限制。請務必閱讀link:https://github.com/NetApp-Automation/na_oracle19c_deploy/blob/master/LICENSE.TXT["執照"^]在使用內容之前。如果您不同意所有條款，請不要存取、下載或使用此儲存庫中的內容。
+
+準備好後，點擊link:db-protection-awx-automation.html["點擊此處查看 AWX/Tower 詳細流程"]。

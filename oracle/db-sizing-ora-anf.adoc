@@ -1,0 +1,172 @@
+---
+sidebar: sidebar 
+permalink: oracle/db-sizing-ora-anf.html 
+keywords: ONTAP, Azure, ANF, Sizing 
+summary: 此解決方案提供了一個有用的工具包，用於調整 Azure 雲端中 ANF 上 Oracle 部署的運算和儲存大小 
+---
+= 適用於Azure NetApp Files的Oracle 大小調整指南
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+Allen Cao、Niyaz Mohamed， NetApp
+
+[role="lead"]
+此解決方案提供了一個有用的工具包，用於調整 Azure 雲端中 ANF 上 Oracle 部署的運算和儲存大小。
+
+
+
+== 目的
+
+將現有的 Oracle 工作負載從一個平台移至另一個平台（例如從本地到公有雲），需要調整目標平台中的運算和儲存規模以滿足效能和服務等級要求。本文檔示範了一個實現該目標的簡單工具包。
+
+與可能隨著時間推移而成長的新資料庫應用程式不同，現有的 Oracle 工作負載已在運算和儲存需求方面建立了工作負載模式，這些模式記錄在 Oracle 工作負載儲存庫或 AWR 中。此工具包利用 HTML 解析器從 Oracle AWR 檢索相關資訊。透過針對資料庫的 SQL 腳本所取得的額外大小資訊對結果進行了補充，以便在重新定位 Oracle 資料庫時提供有意義的運算和儲存指導。
+
+此解決方案適用於以下用例：
+
+* 將資料庫從本機遷移到 Microsoft Azure 雲端時，提供 Oracle 資料庫伺服器運算的大小指導。
+* 將資料庫從本機遷移到 Microsoft Azure NetApp Files時，提供 Oracle 資料庫伺服器儲存的大小指導。
+
+
+
+
+== 對象
+
+此解決方案適用於以下人群：
+
+* 在本機私有資料中心或 Microsoft Azure 雲端環境中管理 Oracle 資料庫的 DBA。
+* 管理支援 Oracle 資料庫的本機儲存或 Microsoft Azure NetApp Files儲存的儲存管理員。
+* 喜歡將 Oracle 資料庫從本機遷移到 Microsoft Azure 雲端的應用程式擁有者。
+
+
+
+
+== 執照
+
+透過存取、下載、安裝或使用此工具包儲存庫中的內容，您同意link:https://netapp.sharepoint.com/sites/CIEBuilt-OnsTeam-DatabasesandApps/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FCIEBuilt%2DOnsTeam%2DDatabasesandApps%2FShared%20Documents%2FDatabases%20and%20Apps%2FDatabase%20Solutions%2FDB%20Sizing%20Toolkits%2FOracle%20Sizing%20Guidance%20for%20ANF%2FLICENSE%2ETXT&parent=%2Fsites%2FCIEBuilt%2DOnsTeam%2DDatabasesandApps%2FShared%20Documents%2FDatabases%20and%20Apps%2FDatabase%20Solutions%2FDB%20Sizing%20Toolkits%2FOracle%20Sizing%20Guidance%20for%20ANF["許可證文件"^]。
+
+
+NOTE: 使用此工具包儲存庫中的內容製作和/或分享任何衍生作品都有一定的限制。請確保在使用該內容之前閱讀許可條款。如果您不同意所有條款，請不要存取、下載或使用此儲存庫中的內容。
+
+
+
+== 解決方案部署
+
+
+
+=== 部署先決條件
+
+[%collapsible%open]
+====
+部署需要以下先決條件。
+
+* Oracle AWR 報告擷取應用程式工作負載高峰期間資料庫活動的快照。
+* 以 DBA 權限存取 Oracle 資料庫並執行 SQL 腳本。
+
+
+====
+
+
+=== 下載工具包
+
+[%collapsible%open]
+====
+從儲存庫中檢索工具包link:https://netapp.sharepoint.com/sites/CIEBuilt-OnsTeam-DatabasesandApps/Shared%20Documents/Forms/AllItems.aspx?csf=1&web=1&e=uJYdVB&CID=bec786b6%2Dccaa%2D42e3%2Db47d%2Ddf0dcb0ce0ef&RootFolder=%2Fsites%2FCIEBuilt%2DOnsTeam%2DDatabasesandApps%2FShared%20Documents%2FDatabases%20and%20Apps%2FDatabase%20Solutions%2FDB%20Sizing%20Toolkits%2FOracle%20Sizing%20Guidance%20for%20ANF&FolderCTID=0x01200006E27E44A468B3479EA2D52BCD950351["Oracle ANF 規模指南"^]
+
+====
+
+
+=== 如何使用工具包？
+
+[%collapsible%open]
+====
+該工具包由一個基於 Web 的 HTML 解析器和兩個用於收集 Oracle 資料庫資訊的 SQL 腳本組成。然後將輸出輸入到 Excel 範本中，以產生 Oracle 資料庫伺服器的運算和儲存大小指導。
+
+* 使用link:https://app.atroposs.com/#/awr-module["HTML解析器"^]AWR 模組從 AWR 報表中檢索目前 Oracle 資料庫的大小資訊。
+* 以 DBA 身分執行 ora_db_data_szie.sql 以從資料庫中檢索實體 Oracle 資料檔案大小。
+* 以 DBA 身分執行 ora_db_logs_size.sql 來檢索 Oracle 存檔日誌大小以及所需的存檔日誌保留視窗（天）。
+* 將上面獲得的尺寸資訊輸入到 excel 範本檔案 oracle_db_sizing_template_anf.xlsx 中，以建立有關 Oracle DB 伺服器的運算和儲存的尺寸指南。
+
+
+====
+
+
+=== 工具包使用演示
+
+[%collapsible%open]
+====
+. 開啟HTML解析器AWR模組。
++
+image:db-sizing-ora-parser-001.png["此圖提供了用於 Oracle 大小調整的 HTML 解析器螢幕"]
+
+. 檢查輸出格式為.csv並點選 `Upload files`上傳 awr 報告。解析器傳回結果在 HTML 頁面中，其中包含表格摘要以及 output.csv 文件 `Download`資料夾。
++
+image:db-sizing-ora-parser-002.png["此圖提供了用於 Oracle 大小調整的 HTML 解析器螢幕"]
+
+. 開啟 excel 範本檔案並將 csv 內容複製並貼上到 A 列和儲存格 1 中以產生 DB 伺服器大小資訊。
++
+image:db-sizing-ora-parser-anf-003.png["此圖提供了 Oracle 規模的 Excel 範本螢幕截圖"]
+
+. 反白顯示 A 列和欄位 1 和 2，點擊 `Data`， 然後 `Text to Columns`開啟文字精靈。選擇 `Delimited`， 然後 `Next`到下一個畫面。
++
+image:db-sizing-ora-parser-anf-004.png["此圖提供了 Oracle 規模的 Excel 範本螢幕截圖"]
+
+. 查看 `Other`，然後輸入“=”作為 `Delimiters`。點選 `Next`到下一個畫面。
++
+image:db-sizing-ora-parser-anf-005.png["此圖提供了 Oracle 規模的 Excel 範本螢幕截圖"]
+
+. 點選 `Finish`完成將字串轉換為可讀的列格式。請注意，VM 和 ANF 大小欄位已填入從 Oracle AWR 報表中檢索的資料。
++
+image:db-sizing-ora-parser-anf-006.png["此圖提供了 Oracle 規模的 Excel 範本螢幕截圖"] image:db-sizing-ora-parser-anf-007.png["此圖提供了 Oracle 規模的 Excel 範本螢幕截圖"]
+
+. 在 sqlplus 中以 DBA 身分執行腳本 ora_db_data_size.sql、ora_db_logs_size.sql，以擷取現有 Oracle 資料庫資料大小和存檔日誌大小以及保留視窗的天數。
++
+....
+
+[oracle@ora_01 ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Tue Mar 5 15:25:27 2024
+Version 19.18.0.0.0
+
+Copyright (c) 1982, 2022, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.18.0.0.0
+
+
+SQL> @/home/oracle/ora_db_data_size.sql;
+
+Aggregate DB File Size, GiB Aggregate DB File RW, GiB Aggregate DB File RO, GiB
+--------------------------- ------------------------- -------------------------
+                     159.05                    159.05                         0
+
+SQL> @/home/oracle/ora_db_logs_size.sql;
+Enter value for archivelog_retention_days: 14
+old   6:       where first_time >= sysdate - &archivelog_retention_days
+new   6:       where first_time >= sysdate - 14
+
+Log Size, GiB
+-------------
+        93.83
+
+SQL>
+
+....
++
+
+NOTE: 使用上述腳本檢索的資料庫大小資訊是所有實體資料庫資料檔案或日誌檔案的實際大小的總和。它沒有考慮每個資料檔案內部可能可用的可用空間。
+
+. 將結果輸入excel文件，完成尺寸指導輸出。
++
+image:db-sizing-ora-parser-anf-008.png["此圖提供了 Oracle 規模的 Excel 範本螢幕截圖"]
+
+. ANF 使用三層服務等級（標準、進階、超級）來管理資料庫磁碟區吞吐量限制。參考link:https://learn.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-service-levels["Azure NetApp Files的服務級別"^]了解詳情。根據大小指導輸出，選擇提供滿足資料庫要求的吞吐量的 ANF 服務等級。
+
+
+====

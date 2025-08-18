@@ -1,0 +1,21 @@
+---
+sidebar: sidebar 
+permalink: mssql/tr-4764.html 
+keywords:  
+summary:  
+---
+= TR-4764：Microsoft SQL Server 與NetApp EF 系列的最佳實踐
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+米奇布萊克本、派特辛圖桑、 NetApp
+
+[role="lead"]
+本最佳實務指南旨在協助儲存管理員和資料庫管理員在NetApp EF 系列儲存上成功部署 Microsoft SQL Server。
+
+link:https://www.netapp.com/pdf.html?item=/media/17086-tr4764pdf.pdf["TR-4764：Microsoft SQL Server 與NetApp EF 系列的最佳實踐"^]

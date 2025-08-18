@@ -1,0 +1,20 @@
+---
+sidebar: sidebar 
+permalink: videos/videos-open-source-videos.html 
+summary: 一系列影片和示範討論了 NetApp 眾多解決方案的功能 
+keywords: netapp, solutions, videos, demos 
+---
+= 觀看有關NetApp開源資料庫解決方案的影片和演示
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+與NetApp一起探索開源資料庫的資料庫解決方案。
+
+.PostgreSQL 自動部署、HA/DR 複製設定、故障轉移、重新同步
+video::c381b887-8c8b-4d7d-8b0f-b0c0010c5c04[panopto,width=360]

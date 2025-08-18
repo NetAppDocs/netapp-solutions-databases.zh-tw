@@ -1,0 +1,58 @@
+---
+sidebar: sidebar 
+permalink: automation/db-protection-overview.html 
+keywords: Linux, RHEL Oracle19c, NFS, ONTAP, Ansible 
+summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法。 
+---
+= 解決方案概述
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法。
+
+
+
+== Oracle 資料庫的自動資料保護
+
+組織正在實現其環境自動化，以提高效率、加速部署並減少人工工作量。 Ansible 等組態管理工具正被用來簡化企業資料庫操作。在此解決方案中，我們示範如何使用 Ansible 透過NetApp ONTAP自動化 Oracle 的資料保護。透過讓儲存管理員、系統管理員和 DBA 能夠一致且快速地設定資料複製到異地資料中心或公有雲，您可以獲得以下好處：
+
+* 消除設計複雜性和人為錯誤，並實施可重複的一致部署和最佳實踐
+* 減少叢集間複製、CVO 實例化和 Oracle 資料庫復原的配置時間
+* 提高資料庫管理員、系統和儲存管理員的工作效率
+* 提供資料庫復原工作流程，以便於測試 DR 場景。
+
+
+NetApp為客戶提供經過驗證的 Ansible 模組和角色，以加速 Oracle 資料庫環境的部署、設定和生命週期管理。此解決方案提供了說明和 Ansible 劇本程式碼，以協助您：
+
+
+
+=== 本地到本地複製
+
+* 在來源和目標上建立集群間 LIF
+* 建立叢集和虛擬伺服器對等連接
+* 建立並初始化 Oracle 磁碟區的SnapMirror
+* 透過 AWX/Tower 為 Oracle 二進位檔案、資料庫和日誌建立複製計劃
+* 在目標上還原 Oracle DB，並使資料庫聯機
+
+
+
+
+=== 從本地到 AWS 中的 CVO
+
+* 建立 AWS 連接器
+* 在 AWS 中建立 CVO 實例
+* 將 On-Prem 叢集新增至 Cloud Manager
+* 在來源上建立集群間 LIF
+* 建立叢集和虛擬伺服器對等連接
+* 建立並初始化 Oracle 磁碟區的SnapMirror
+* 透過 AWX/Tower 為 Oracle 二進位檔案、資料庫和日誌建立複製計劃
+* 在目標上還原 Oracle DB，並使資料庫聯機
+
+
+準備好後，點擊link:db-protection-getting-started.html["點擊此處開始解決方案"]。

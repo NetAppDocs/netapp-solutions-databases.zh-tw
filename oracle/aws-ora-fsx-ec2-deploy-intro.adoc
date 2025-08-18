@@ -1,0 +1,29 @@
+---
+sidebar: sidebar 
+permalink: oracle/aws-ora-fsx-ec2-deploy-intro.html 
+summary: 本白皮書概述並驗證了 AWS 客製化 Oracle RDS 資料庫 HA 和 DR 解決方案，在多可用區部署中利用 AWS FSx 儲存服務。 
+keywords: HA, DR, database, Oracle, RDS, AWS 
+---
+= WP-7357：EC2 上的 Oracle 資料庫部署與 FSx 最佳實務介紹
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+Allen Cao、Niyaz Mohamed、Jeffrey Steiner、 NetApp
+
+[role="lead"]
+許多關鍵任務企業 Oracle 資料庫仍託管在本地，許多企業正在尋求將這些 Oracle 資料庫遷移到公有雲。通常，這些 Oracle 資料庫以應用程式為中心，因此需要特定於使用者的配置，而許多資料庫即服務公有雲產品都缺少此功能。因此，目前的資料庫環境需要基於公有雲的 Oracle 資料庫解決方案，該解決方案由能夠滿足獨特需求的高效能、可擴展的運算和儲存服務所建構。  AWS EC2 運算執行個體和 AWS FSx 儲存服務可能是這個難題的缺失部分，您可以利用它們來建置關鍵任務 Oracle 資料庫工作負載並將其遷移到公有雲。
+
+Amazon Elastic Compute Cloud (Amazon EC2) 是一種在雲端中提供安全、可調整大小的運算容量的 Web 服務。它旨在讓企業更輕鬆地進行網路規模的雲端運算。簡單的 Amazon EC2 網路服務介面可讓您以最小的摩擦獲取和配置容量。它為您提供對運算資源的完全控制，並讓您在亞馬遜成熟的運算環境中運行。
+
+Amazon FSx ONTAP是一種 AWS 儲存服務，它使用業界領先的NetApp ONTAP區塊和檔案存儲，可公開 NFS、SMB 和 iSCSI。借助如此強大的儲存引擎，將關鍵任務 Oracle 資料庫應用程式遷移到 AWS 變得前所未有的簡單，並且具有亞毫秒級的回應時間、數 GBps 的吞吐量以及每個資料庫實例 100,000+ IOPS。更好的是，FSx 儲存服務具有本機複製功能，可讓您輕鬆地將本機 Oracle 資料庫遷移到 AWS，或將關鍵任務 Oracle 資料庫複製到輔助 AWS 可用區以實作 HA 或 DR。
+
+本文檔的目標是提供逐步流程、程式和最佳實務指導，指導如何使用 FSx 儲存和 EC2 執行個體部署和配置 Oracle 資料庫，以提供與本機系統類似的效能。  NetApp還提供了一個自動化工具包，可以自動執行在 AWS 公有雲中部署、配置和管理 Oracle 資料庫工作負載所需的大部分任務。
+
+要了解有關解決方案和用例的更多信息，請觀看以下概述影片：
+
+link:https://www.netapp.tv/insight/details/30000?playlist_id=275&mcid=04891225598830484314259903524057913910["使用 AWS 和 FSx ONTAP中的混合雲實現 Oracle 資料庫現代化，第 1 部分 - 使用案例和解決方案架構"^]

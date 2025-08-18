@@ -1,0 +1,365 @@
+---
+sidebar: sidebar 
+permalink: automation/cli-automation.html 
+keywords: Linux, RHEL Oracle19c, NFS, ONTAP 
+summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法。 
+---
+= 逐步部署流程
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+本文檔詳細介紹了使用自動化命令列介面 (cli) 部署 Oracle 19c。
+
+
+
+== CLI 部署 Oracle 19c 資料庫
+
+本節介紹使用 CLI 準備和部署 Oracle19c 資料庫所需的步驟。確保您已查看link:getting-started-requirements.html["入門和要求部分"]並相應地準備您的環境。
+
+
+
+=== 下載 Oracle19c 倉庫
+
+. 從您的 ansible 控制器執行以下命令：
++
+[source, cli]
+----
+git clone https://github.com/NetApp-Automation/na_oracle19c_deploy.git
+----
+. 下載儲存庫後，將目錄變更為 na_oracle19c_deploy <cd na_oracle19c_deploy>。
+
+
+
+
+=== 編輯 hosts 文件
+
+部署前請完成以下操作：
+
+. 編輯您的主機檔案na_oracle19c_deploy目錄。
+. 在 [ontap] 下，將 IP 位址變更為您的叢集管理 IP。
+. 在 [oracle] 群組下，新增 oracle 主機名稱。必須透過 DNS 或 hosts 檔案將主機名稱解析為其 IP 位址，或必須在主機中指定。
+. 完成這些步驟後，請儲存所有變更。
+
+
+以下範例描述了一個主機檔案：
+
+[source, shell]
+----
+#ONTAP Host
+
+[ontap]
+
+"10.61.184.183"
+
+#Oracle hosts
+
+[oracle]
+
+"rtpora01"
+
+"rtpora02"
+----
+此範例執行劇本並在兩個 Oracle DB 伺服器上同時部署 Oracle 19c。您也可以只使用一個資料庫伺服器進行測試。在這種情況下，您只需要設定一個主機變數檔案。
+
+
+NOTE: 無論您部署多少個 Oracle 主機和資料庫，劇本的執行方式都是相同的。
+
+
+
+=== 編輯 host_vars 下的 host_name.yml 文件
+
+每個 Oracle 主機都有一個由其主機名稱識別的主機變數文件，其中包含特定於主機的變數。您可以為您的主機指定任何名稱。編輯並複製 `host_vars`從主機 VARS 設定部分並將其貼上到您想要的 `host_name.yml`文件。
+
+
+NOTE: 必須更改藍色項目以符合您的環境。
+
+
+
+=== 主機 VARS 配置
+
+[source, shell]
+----
+######################################################################
+##############      Host Variables Configuration        ##############
+######################################################################
+
+# Add your Oracle Host
+ansible_host: "10.61.180.15"
+
+# Oracle db log archive mode: true - ARCHIVELOG or false - NOARCHIVELOG
+log_archive_mode: "true"
+
+# Number of pluggable databases per container instance identified by sid. Pdb_name specifies the prefix for container database naming in this case cdb2_pdb1, cdb2_pdb2, cdb2_pdb3
+oracle_sid: "cdb2"
+pdb_num: "3"
+pdb_name: "{{ oracle_sid }}_pdb"
+
+# CDB listener port, use different listener port for additional CDB on same host
+listener_port: "1523"
+
+# CDB is created with SGA at 75% of memory_limit, MB. Consider how many databases to be hosted on the node and how much ram to be allocated to each DB. The grand total SGA should not exceed 75% available RAM on node.
+memory_limit: "5464"
+
+# Set "em_configuration: DBEXPRESS" to install enterprise manager express and choose a unique port from 5500 to 5599 for each sid on the host.
+# Leave them black if em express is not installed.
+em_configuration: "DBEXPRESS"
+em_express_port: "5501"
+
+# {{groups.oracle[0]}} represents first Oracle DB server as defined in Oracle hosts group [oracle]. For concurrent multiple Oracle DB servers deployment, [0] will be incremented for each additional DB server. For example,  {{groups.oracle[1]}}" represents DB server 2, "{{groups.oracle[2]}}" represents DB server 3 ... As a good practice and the default, minimum three volumes is allocated to a DB server with corresponding /u01, /u02, /u03 mount points, which store oracle binary, oracle data, and oracle recovery files respectively. Additional volumes can be added by click on "More NFS volumes" but the number of volumes allocated to a DB server must match with what is defined in global vars file by volumes_nfs parameter, which dictates how many volumes are to be created for each DB server.
+host_datastores_nfs:
+  - {vol_name: "{{groups.oracle[0]}}_u01", aggr_name: "aggr01_node01", lif: "172.21.94.200", size: "25"}
+  - {vol_name: "{{groups.oracle[0]}}_u02", aggr_name: "aggr01_node01", lif: "172.21.94.200", size: "25"}
+  - {vol_name: "{{groups.oracle[0]}}_u03", aggr_name: "aggr01_node01", lif: "172.21.94.200", size: "25"}
+----
+
+
+=== 編輯 vars.yml 文件
+
+這 `vars.yml`檔案整合了 Oracle 部署的所有環境特定變數（ONTAP、Linux 或 Oracle ）。
+
+. 編輯並複製 VARS 部分中的變量，並將這些變量貼到您的 `vars.yml`文件。
+
+
+[source, shell]
+----
+#######################################################################
+###### Oracle 19c deployment global user configuration variables ######
+######  Consolidate all variables from ontap, linux and oracle   ######
+#######################################################################
+
+###########################################
+### Ontap env specific config variables ###
+###########################################
+
+#Inventory group name
+#Default inventory group name - 'ontap'
+#Change only if you are changing the group name either in inventory/hosts file or in inventory groups in case of AWX/Tower
+hosts_group: "ontap"
+
+#CA_signed_certificates (ONLY CHANGE to 'true' IF YOU ARE USING CA SIGNED CERTIFICATES)
+ca_signed_certs: "false"
+
+#Names of the Nodes in the ONTAP Cluster
+nodes:
+ - "AFF-01"
+ - "AFF-02"
+
+#Storage VLANs
+#Add additional rows for vlans as necessary
+storage_vlans:
+   - {vlan_id: "203", name: "infra_NFS", protocol: "NFS"}
+More Storage VLANsEnter Storage VLANs details
+
+#Details of the Data Aggregates that need to be created
+#If Aggregate creation takes longer, subsequent tasks of creating volumes may fail.
+#There should be enough disks already zeroed in the cluster, otherwise aggregate create will zero the disks and will take long time
+data_aggregates:
+  - {aggr_name: "aggr01_node01"}
+  - {aggr_name: "aggr01_node02"}
+
+#SVM name
+svm_name: "ora_svm"
+
+# SVM Management LIF Details
+svm_mgmt_details:
+  - {address: "172.21.91.100", netmask: "255.255.255.0", home_port: "e0M"}
+
+# NFS storage parameters when data_protocol set to NFS. Volume named after Oracle hosts name identified by mount point as follow for oracle DB server 1. Each mount point dedicates to a particular Oracle files: u01 - Oracle binary, u02 - Oracle data, u03 - Oracle redo. Add additional volumes by click on "More NFS volumes" and also add the volumes list to corresponding host_vars as host_datastores_nfs variable. For multiple DB server deployment, additional volumes sets needs to be added for additional DB server. Input variable "{{groups.oracle[1]}}_u01", "{{groups.oracle[1]}}_u02", and "{{groups.oracle[1]}}_u03" as vol_name for second DB server. Place volumes for multiple DB servers alternatingly between controllers for balanced IO performance, e.g. DB server 1 on controller node1, DB server 2 on controller node2 etc. Make sure match lif address with controller node.
+
+volumes_nfs:
+  - {vol_name: "{{groups.oracle[0]}}_u01", aggr_name: "aggr01_node01", lif: "172.21.94.200", size: "25"}
+  - {vol_name: "{{groups.oracle[0]}}_u02", aggr_name: "aggr01_node01", lif: "172.21.94.200", size: "25"}
+  - {vol_name: "{{groups.oracle[0]}}_u03", aggr_name: "aggr01_node01", lif: "172.21.94.200", size: "25"}
+
+#NFS LIFs IP address and netmask
+
+nfs_lifs_details:
+  - address: "172.21.94.200" #for node-1
+    netmask: "255.255.255.0"
+  - address: "172.21.94.201" #for node-2
+    netmask: "255.255.255.0"
+
+#NFS client match
+
+client_match: "172.21.94.0/24"
+
+###########################################
+### Linux env specific config variables ###
+###########################################
+
+#NFS Mount points for Oracle DB volumes
+
+mount_points:
+  - "/u01"
+  - "/u02"
+  - "/u03"
+
+# Up to 75% of node memory size divided by 2mb. Consider how many databases to be hosted on the node and how much ram to be allocated to each DB.
+# Leave it blank if hugepage is not configured on the host.
+
+hugepages_nr: "1234"
+
+# RedHat subscription username and password
+
+redhat_sub_username: "xxx"
+redhat_sub_password: "xxx"
+
+####################################################
+### DB env specific install and config variables ###
+####################################################
+
+db_domain: "your.domain.com"
+
+# Set initial password for all required Oracle passwords. Change them after installation.
+
+initial_pwd_all: "netapp123"
+----
+
+
+=== 運行劇本
+
+完成所需的環境前提條件並將變數複製到 `vars.yml`和 `your_host.yml`，您現在就可以部署劇本了。
+
+
+NOTE: 必須更改 <username> 以符合您的環境。
+
+. 透過傳遞正確的標籤和ONTAP叢集使用者名稱來運行ONTAP劇本。出現提示時，填寫ONTAP集群和 vsadmin 的密碼。
++
+[source, cli]
+----
+ansible-playbook -i hosts all_playbook.yml -u username -k -K -t ontap_config -e @vars/vars.yml
+----
+. 運行 Linux 劇本來執行部署的 Linux 部分。輸入管理員 ssh 密碼以及 sudo 密碼。
++
+[source, cli]
+----
+ansible-playbook -i hosts all_playbook.yml -u username -k -K -t linux_config -e @vars/vars.yml
+----
+. 執行 Oracle 劇本來執行部署的 Oracle 部分。輸入管理員 ssh 密碼以及 sudo 密碼。
++
+[source, cli]
+----
+ansible-playbook -i hosts all_playbook.yml -u username -k -K -t oracle_config -e @vars/vars.yml
+----
+
+
+
+
+=== 在同一 Oracle 主機上部署附加資料庫
+
+劇本的 Oracle 部分每次執行都會在 Oracle 伺服器上建立一個 Oracle 容器資料庫。若要在同一台伺服器上建立額外的容器資料庫，請完成以下步驟：
+
+. 修改 host_vars 變數。
++
+.. 返回步驟 3 - 編輯 `host_name.yml`文件下 `host_vars`。
+.. 將 Oracle SID 變更為不同的命名字串。
+.. 將偵聽器連接埠變更為不同的號碼。
+.. 如果您已經安裝了 EM Express，請將 EM Express 連接埠變更為其他號碼。
+.. 將修改後的主機變數複製並貼上到 Oracle 主機變數檔案下 `host_vars`。
+
+
+. 使用以下方式執行劇本 `oracle_config`標籤如上所示<<運行劇本>>。
+
+
+
+
+=== 驗證 Oracle 安裝
+
+. 以oracle用戶登入Oracle伺服器，執行以下命令：
++
+[source, cli]
+----
+ps -ef | grep ora
+----
++
+
+NOTE: 如果安裝如預期完成且 Oracle DB 已啟動，這將列出 Oracle 進程
+
+. 登入資料庫，檢查資料庫配置設定和使用以下命令集建立的 PDB。
++
+[source, cli]
+----
+[oracle@localhost ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu May 6 12:52:51 2021
+Version 19.8.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.8.0.0.0
+
+SQL>
+
+SQL> select name, log_mode from v$database;
+NAME      LOG_MODE
+--------- ------------
+CDB2      ARCHIVELOG
+
+SQL> show pdbs
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+         3 CDB2_PDB1                      READ WRITE NO
+         4 CDB2_PDB2                      READ WRITE NO
+         5 CDB2_PDB3                      READ WRITE NO
+
+col svrname form a30
+col dirname form a30
+select svrname, dirname, nfsversion from v$dnfs_servers;
+
+SQL> col svrname form a30
+SQL> col dirname form a30
+SQL> select svrname, dirname, nfsversion from v$dnfs_servers;
+
+SVRNAME                        DIRNAME                        NFSVERSION
+------------------------------ ------------------------------ ----------------
+172.21.126.200                 /rhelora03_u02                 NFSv3.0
+172.21.126.200                 /rhelora03_u03                 NFSv3.0
+172.21.126.200                 /rhelora03_u01                 NFSv3.0
+----
++
+這證實 dNFS 運作正常。
+
+. 使用下列命令透過監聽器連接到資料庫來檢查 Oracle 監聽器配置。變更為適當的監聽連接埠和資料庫服務名稱。
++
+[source, cli]
+----
+[oracle@localhost ~]$ sqlplus system@//localhost:1523/cdb2_pdb1.cie.netapp.com
+
+SQL*Plus: Release 19.0.0.0.0 - Production on Thu May 6 13:19:57 2021
+Version 19.8.0.0.0
+
+Copyright (c) 1982, 2019, Oracle.  All rights reserved.
+
+Enter password:
+Last Successful login time: Wed May 05 2021 17:11:11 -04:00
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.8.0.0.0
+
+SQL> show user
+USER is "SYSTEM"
+SQL> show con_name
+CON_NAME
+CDB2_PDB1
+----
++
+這證實 Oracle 監聽器正常運作。
+
+
+
+
+
+=== 去哪裡尋求協助？
+
+如果您需要工具包的協助，請加入link:https://netapppub.slack.com/archives/C021R4WC0LC["NetApp解決方案自動化社群支援 Slack 頻道"]並尋找解決方案自動化管道來發布您的問題或詢問。

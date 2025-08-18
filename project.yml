@@ -1,0 +1,270 @@
+---
+settings:
+  name: NetApp database solutions
+  internal:
+    pdf_enabled: true
+    lipi_enabled: true
+  prod:
+    pdf_enabled: true
+    harmony_enabled: false
+    lipi_enabled: true
+  pdf:
+    gen-type: named-only
+    zip-level: 1
+    zip-filename: netapp-solutions-databases.zip
+  langs: zh-tw,us-en,de-de,es-es,fr-fr,it-it,pt-br,ja-jp,ko-kr,zh-cn
+sidebar:
+  entries:
+  - title: 資料庫解決方案
+    url: "/index.html"
+  - title: 什麼是新的
+    url: "/whats-new.html"
+  - title: Oracle 資料庫
+    entries:
+    - title: AWS 雲端
+      entries:
+      - title: 使用 Pacemaker Clustering 和 FSx ONTAP在 AWS EC2 中實作 Oracle HA
+        pdf-filename: 使用 Pacemaker Clustering 和 FSx ONTAP在 AWS EC2 中實作 Oracle HA
+        url: "/oracle/aws-ora-ha-pacemaker.html"
+      - title: 使用 iSCSI 在Amazon FSx ONTAP上簡化、自動化 Oracle 部署
+        pdf-filename: 使用 iSCSI 在Amazon FSx ONTAP上簡化、自動化 Oracle 部署
+        url: "/automation/automation-ora-aws-fsx-iscsi.html"
+      - title: VMware Cloud on AWS 中的 Oracle 以及用戶端安裝的 FSx ONTAP
+        pdf-filename: VMware Cloud on AWS 中的 Oracle 以及用戶端安裝的 FSx ONTAP
+        url: "/oracle/aws-ora-fsx-vmc-guestmount.html"
+      - title: 使用Amazon FSx ONTAP降低 Oracle Active Data Guard 成本
+        pdf-filename: 使用Amazon FSx ONTAP降低 Oracle Active Data Guard 成本
+        url: "/oracle/aws-ora-fsx-ec2-data-guard.html"
+      - title: 使用Amazon FSx ONTAP快速復原和克隆 Oracle VLDB
+        pdf-filename: 使用Amazon FSx ONTAP快速復原和克隆 Oracle VLDB
+        url: "/oracle/aws-ora-fsx-ec2-inc-merge.html"
+      - title: Oracle 19c 在 AWS FSx/EC2 上使用 NFS/ASM 獨立重啟
+        pdf-filename: 使用 NFS/ASM 在 AWS FSx/EC2 上獨立重新啟動 Oracle 19c
+        url: "/oracle/aws-ora-fsx-ec2-nfs-asm.html"
+      - title: 使用 iSCSI/ASM 在 AWS FSx/EC2 上部署和保護 Oracle 資料庫
+        pdf-filename: 使用 iSCSI/ASM 在 AWS FSx/EC2 上部署和保護 Oracle 資料庫
+        url: "/oracle/aws-ora-fsx-ec2-iscsi-asm.html"
+      - title: AWS EC2 上的 Oracle 資料庫部署和 FSx 最佳實踐
+        pdf-filename: AWS EC2 上的 Oracle 資料庫部署和 FSx 最佳實踐
+        entries:
+        - title: 用例
+          url: "/oracle/aws-ora-fsx-ec2-deploy-intro.html"
+        - title: 解決方案架構
+          url: "/oracle/aws-ora-fsx-ec2-architecture.html"
+        - title: 需要考慮的因素
+          url: "/oracle/aws-ora-fsx-ec2-factors.html"
+        - title: 部署流程
+          url: "/oracle/aws-ora-fsx-ec2-procedures.html"
+        - title: 資料庫管理
+          url: "/oracle/aws-ora-fsx-ec2-mgmt.html"
+        - title: 資料庫遷移
+          url: "/oracle/aws-ora-fsx-ec2-migration.html"
+    - title: Azure 雲端
+      entries:
+      - title: ANF 上的高吞吐量 Oracle VLDB 實現
+        pdf-filename: 高吞吐量 Oracle VLDB 在 ANF 上的實現
+        url: "/oracle/azure-ora-anf-vldb-dg.html"
+      - title: 使用Azure NetApp Files降低 Oracle Active Data Guard 成本
+        pdf-filename: 使用Azure NetApp Files降低 Oracle Active Data Guard 成本
+        url: "/oracle/azure-ora-anf-data-guard.html"
+      - title: 使用 ANF 上的增量合併快速復原 Oracle VLDB
+        pdf-filename: 使用 ANF 上的增量合併快速復原 Oracle VLDB
+        url: "/oracle/azure-ora-anf-inc-merge.html"
+      - title: 使用 NFS 在Azure NetApp Files上簡化、自動化 Oracle 部署
+        pdf-filename: 使用 NFS 在Azure NetApp Files上簡化、自動化 Oracle 部署
+        url: "/automation/automation-ora-anf-nfs.html"
+      - title: 針對 ANF 的 Oracle 資料庫部署與遷移最佳實踐
+        pdf-filename: 針對 ANF 的 Oracle 資料庫部署與遷移最佳實踐
+        entries:
+        - title: 用例
+          url: "/oracle/azure-ora-nfile-usecase.html"
+        - title: 解決方案架構
+          url: "/oracle/azure-ora-nfile-architecture.html"
+        - title: 需要考慮的因素
+          url: "/oracle/azure-ora-nfile-factors.html"
+        - title: 部署流程
+          url: "/oracle/azure-ora-nfile-procedures.html"
+        - title: 資料庫遷移
+          url: "/oracle/azure-ora-nfile-migration.html"
+    - title: Google雲
+      entries:
+      - title: 使用Google Cloud NetApp Volumes上的伺服器內增量合併優化 Oracle VLDB 備份與復原
+        pdf-filename: 使用Google Cloud NetApp Volumes上的伺服器內增量合併優化 Oracle VLDB 備份和還原
+        url: "/oracle/gcp-ora-gcnv-inc-merge.html"
+      - title: 使用 Data Guard 在Google Cloud NetApp Volumes上實現高吞吐量 Oracle VLDB
+        pdf-filename: 使用 Data Guard 在 GCNV 上實現高吞吐量 Oracle VLDB
+        url: "/oracle/gcp-ora-gcnv-vldb-dg.html"
+      - title: 概述：Oracle 資料庫與Google Cloud NetApp Volumes
+        pdf-filename: 概述：Oracle 資料庫與Google Cloud NetApp Volumes
+        url: "/oracle/gcp-oracle-gcnv-overview.html"
+    - title: 本地和混合雲
+      entries:
+      - title: 使用vVols在 VCF 中部署和保護 Oracle RAC
+        pdf-filename: 使用vVols在 VCF 中部署和保護 Oracle RAC
+        url: "/oracle/vcf-ora-rac-vvol.html"
+      - title: 使用vVols在 VCF 中部署和保護 Oracle SI
+        pdf-filename: 使用vVols在 VCF 中部署和保護 Oracle SI
+        url: "/oracle/vcf-ora-si-vvol.html"
+      - title: 使用 NFS 在NetApp C 系列上實現簡化、自動化的 Oracle 部署
+        pdf-filename: 使用 NFS 在NetApp C 系列上實現簡化、自動化的 Oracle 部署
+        url: "/automation/automation-ora-c-series-nfs.html"
+      - title: 使用 iSCSI 在NetApp ASA上實現簡化、自動化的 Oracle 部署
+        pdf-filename: 使用 iSCSI 在NetApp ASA上實現簡化、自動化的 Oracle 部署
+        url: "/automation/automation-ora-asa-iscsi.html"
+      - title: FlexPod DataCenter 上的 Oracle 19c RAC 資料庫，透過 FC 使用Cisco UCS 和NetApp
+          AFF A800
+        pdf-filename: FlexPod DataCenter 上的 Oracle 19c RAC 資料庫，採用Cisco UCS 和NetApp
+          AFF A800透過 FC 運行
+        url: "/oracle/nva-1155.html"
+      - title: 使用NetApp Cluster Data ONTAP在 UNIX 和 NFS 上安裝 Oracle 的 SAP
+        pdf-filename: 使用NetApp Cluster Data ONTAP在 UNIX 和 NFS 上安裝 Oracle 的 SAP
+        url: "/oracle/tr-4250.html"
+      - title: 在 NFS 上自動部署 Oracle 19c for ONTAP
+        pdf-filename: 在 NFS 上自動部署 Oracle 19c for ONTAP
+        entries:
+        - title: 概況
+          url: "/automation/marketing-overview.html"
+        - title: 入門和要求
+          url: "/automation/getting-started-requirements.html"
+        - title: 自動化 Oracle 19c AWX/Tower 部署
+          url: "/automation/awx-automation.html"
+        - title: 自動化 Oracle 19c CLI 部署
+          url: "/automation/cli-automation.html"
+      - title: 自動化 Oracle 資料保護
+        pdf-filename: 自動化 Oracle 資料保護
+        entries:
+        - title: 概況
+          url: "/automation/db-protection-overview.html"
+        - title: 入門和要求
+          url: "/automation/db-protection-getting-started.html"
+        - title: 針對 AWX/Tower 的自動化 Oracle 資料保護
+          url: "/automation/db-protection-awx-automation.html"
+      - title: NetApp EF 系列上的 Oracle 資料庫
+        url: "/oracle/tr-4794.html"
+  - title: 微軟 SQL 伺服器
+    entries:
+    - title: AWS FSx ONTAP上的 Microsoft SQL Server 備份與復原
+      pdf-filename: AWS FSx ONTAP上的 Microsoft SQL Server 備份與復原
+      url: "/mssql/sqlsb-backup-restore-aws-fsxn.html"
+    - title: 使用Amazon FSx ONTAP在 AWS EC2 上執行 SQL Server
+      pdf-filename: 使用Amazon FSx ONTAP在 AWS EC2 上執行 SQL Server
+      url: "/mssql/sql-aws-ec2.html"
+    - title: Azure NetApp Files上的 SQL Server
+      pdf-filename: Azure NetApp Files上的 SQL Server
+      entries:
+      - title: 概況
+        url: "/mssql/sql-srv-anf-overview.html"
+      - title: 需要考慮的因素
+        url: "/mssql/sql-srv-anf-factors-to-consider.html"
+      - title: 參考設計（即時高級設計）
+        url: "/mssql/sql-srv-anf-ref-design-overview.html"
+      - title: 結論
+        url: "/mssql/sql-srv-anf-conclusion.html"
+      - title: 在哪裡可以找到更多信息
+        url: "/mssql/sql-srv-anf-add-info.html"
+    - title: 在 Windows 上使用 Clustered Data ONTAP 的SAP 與 Microsoft SQL Server
+      pdf-filename: 在 Windows 上使用 Cluster Data ONTAP 的SAP 與 Microsoft SQL Server
+      url: "/mssql/tr-4467.html"
+    - title: 現代化 Microsoft SQL Server
+      pdf-filename: 現代化 Microsoft SQL Server
+      url: "/mssql/na-446.html"
+    - title: 搭載ONTAP的 Microsoft SQL Server 最佳實務指南
+      pdf-filename: 搭載ONTAP的 Microsoft SQL Server 最佳實務指南
+      url: "/mssql/tr-4590.html"
+    - title: 適用於NetApp EF 系列的 Microsoft SQL Server 最佳實務指南
+      pdf-filename: 適用於NetApp EF 系列的 Microsoft SQL Server 最佳實務指南
+      url: "/mssql/tr-4764.html"
+  - title: 開源資料庫
+    entries:
+    - title: AWS FSx/EC2 中的自動化 PostgreSQL HA 部署與 DR
+      pdf-filename: AWS FSx/EC2 中的自動化 PostgreSQL HA 部署與 DR
+      url: "/postgres/aws-postgres-fsx-ec2-hadr.html"
+    - title: NetApp ONTAP上的 MySQL 資料庫
+      pdf-filename: NetApp ONTAP上的 MySQL 資料庫
+      url: "/mysql/tr-4722.html"
+  - title: 適用於資料庫的SnapCenter
+    entries:
+    - title: ONTAP上的 PostgreSQL 備份、還原和克隆
+      pdf-filename: ONTAP上的 PostgreSQL 備份、還原和克隆
+      url: "/postgres/snapctr-psql-ontap.html"
+    - title: SnapCenter Oracle 克隆生命週期
+      pdf-filename: SnapCenter Oracle 克隆生命週期
+      url: "/automation/automation-ora-clone-lifecycle.html"
+    - title: ANF 上的 Oracle 資料庫備份、復原和克隆
+      pdf-filename: ANF 上的 Oracle 資料庫備份、復原和克隆
+      url: "/oracle/snapctr-ora-azure-anf.html"
+    - title: 適用於 Oracle 的BlueXP SaaS - Azure
+      pdf-filename: 適用於 Oracle 的BlueXP SaaS - Azure
+      url: "/oracle/snapctr-svcs-ora-azure.html"
+    - title: 適用於 Oracle 的BlueXP SaaS - AWS
+      pdf-filename: 適用於 Oracle 的BlueXP SaaS - AWS
+      url: "/oracle/snapctr-svcs-ora.html"
+    - title: 採用SnapCenter的混合雲資料庫解決方案
+      pdf-filename: 採用SnapCenter的混合雲資料庫解決方案
+      entries:
+      - title: 介紹
+        url: "/dbops/hybrid-dbops-snapcenter-usecases.html"
+      - title: 解決方案架構
+        url: "/dbops/hybrid-dbops-sc-arch.html"
+      - title: 解決方案要求
+        url: "/dbops/hybrid-dbops-sc-requirements.html"
+      - title: 先決條件配置
+        entries:
+        - title: 概況
+          url: "/dbops/hybrid-dbops-sc-prereq.html"
+        - title: 本地先決條件
+          url: "/dbops/hybrid-dbops-sc-prereq-onprem.html"
+        - title: 公有雲的先決條件
+          url: "/dbops/hybrid-dbops-sc-prereq-cloud.html"
+      - title: 入門概述
+        entries:
+        - title: 概況
+          url: "/dbops/hybrid-dbops-sc-gs.html"
+        - title: 本地入門
+          url: "/dbops/hybrid-dbops-sc-gs-onprem.html"
+        - title: AWS 公有雲入門
+          url: "/dbops/hybrid-dbops-sc-gs-aws.html"
+      - title: 開發/測試爆發至雲端的工作流程
+        url: "/dbops/hybrid-dbops-snapcenter-devtest.html"
+      - title: 災難復原工作流程
+        url: "/dbops/hybrid-dbops-snapcenter-dr.html"
+  - title: 真實客戶案例研究
+    entries:
+    - title: 醫療產品公司將本地 SQL 工作負載遷移到Amazon FSx ONTAP以降低成本
+      url: "/mssql/customer-usecase-mssql-fsx1.html"
+  - title: 資料庫自動化工具包
+    entries:
+    - title: 透過伺服器內映像備份實現 Oracle VLDB 克隆生命週期自動化
+      url: "/oracle/automation-ora-bkup-clone.html"
+    - title: 使用 ASM 在 GCNV 上實現 Oracle 克隆生命週期自動化
+      url: "/automation/automation-ora-clone-gcnv-asm.html"
+    - title: 使用 ASM 在 ANF 上實現 Oracle 克隆生命週期自動化
+      url: "/automation/automation-ora-clone-anf-asm.html"
+    - title: SnapCenter Oracle 克隆生命週期
+      url: "/automation/automation-ora-clone-lifecycle.html"
+    - title: Oracle 遷移
+      url: "/automation/automation-ora-migration.html"
+    - title: Oracle HA/DR 與 AWS FSx ONTAP
+      url: "/automation/automation-ora-hadr-fsx.html"
+    - title: AWS FSx ONTAP和 EC2 配置
+      url: "/automation/automation-fsx-ec2-provision.html"
+  - title: 資料庫大小調整工具包
+    entries:
+    - title: Oracle ANF 大小調整指南
+      url: "/oracle/db-sizing-ora-anf.html"
+  - title: 影片
+    url: "/videos/index.html"
+    entries:
+    - title: Oracle 資料庫
+      url: "/videos/videos-oracle-videos.html"
+    - title: 開源資料庫
+      url: "/videos/videos-open-source-videos.html"
+    - title: SQL Server 資料庫
+      url: "/videos/videos-sqlserver-videos.html"
+  - title: 部落格
+    url: "/blogs.html"
+  - title: 法律聲明
+    url: "/legal-notices.html"
+product-family:
+  name: NetApp solutions
+  repo: netapp-solutions-family

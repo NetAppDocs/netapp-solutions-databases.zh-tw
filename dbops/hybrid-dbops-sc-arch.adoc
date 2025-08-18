@@ -1,0 +1,21 @@
+---
+sidebar: sidebar 
+permalink: dbops/hybrid-dbops-sc-arch.html 
+summary: 本節描述了用於開發/測試和 DR 操作的典型混合雲架構。 
+keywords: architecture, synchronized database 
+---
+= 解決方案架構
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+下圖架構圖展示了混合雲中企業資料庫操作的典型實現，用於開發/測試和災難復原操作。
+
+image:hybrid-cloud-db-diagram.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+在正常的業務運作中，可以將雲端中的同步資料庫磁碟區複製並掛載到開發/測試資料庫實例，以進行應用程式開發或測試。一旦發生故障，就可以啟動雲端中同步的資料庫磁碟區進行災難復原。

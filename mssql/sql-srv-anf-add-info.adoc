@@ -1,0 +1,27 @@
+---
+sidebar: sidebar 
+permalink: mssql/sql-srv-anf-add-info.html 
+keywords:  
+summary:  
+---
+= 在哪裡可以找到更多信息
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+要了解有關本文檔中描述的信息的更多信息，請參閱以下網站連結：
+
+* 使用Azure NetApp Files的解決方案體系結構
++
+https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-solution-architectures["https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-solution-architectures"^]
+
+* 使用Azure NetApp Files進行 SQL Server 部署的優勢
++
+https://docs.microsoft.com/en-us/azure/azure-netapp-files/solutions-benefits-azure-netapp-files-sql-server["https://docs.microsoft.com/en-us/azure/azure-netapp-files/solutions-benefits-azure-netapp-files-sql-server"^]
+
+

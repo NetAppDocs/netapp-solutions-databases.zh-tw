@@ -1,0 +1,31 @@
+---
+sidebar: sidebar 
+permalink: oracle/azure-ora-nfile-architecture.html 
+summary: 本節介紹使用 Azure 虛擬機器和Azure NetApp Files儲存的 Oracle 資料庫部署和資料保護解決方案架構。 
+keywords: architecture, database, Oracle, Azure, Azure NetApp Files 
+---
+= 解決方案架構
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+以下體系結構圖說明了 Azure VM 執行個體和Azure NetApp Files儲存上的高可用性 Oracle 資料庫部署。
+
+在該環境中，Oracle 運算執行個體會透過 Azure 服務 VM 控制台部署。控制台中有多種 Azure 執行個體類型可用。  NetApp建議部署一個以資料庫為導向的 Azure VM 實例，以滿足您的預期工作負載。
+
+另一方面，Oracle 資料庫儲存是使用 Azure 控制台提供的Azure NetApp Files服務進行部署的。隨後，Oracle 二進位檔案、資料或日誌磁碟區將顯示並安裝在 Azure VM 執行個體 Linux 主機上。
+
+image:db-ora-azure-anf-architecture.png["此圖描述了主站點、備用站點以及每個站點的 vNet 對等之間的關係。這形成了四個獨立的虛擬網路。"]
+
+在許多方面，Azure 雲端中Azure NetApp Files的實作與具有許多內建冗餘（例如 RAID 和雙控制器）的本地ONTAP資料儲存架構非常相似。對於災難恢復，可以在不同的區域設定備用站點，並且可以使用應用程式層級複製（例如，Oracle Data Guard）將資料庫與主站點同步。
+
+在我們對 Oracle 資料庫部署和資料保護的測試驗證中，Oracle 資料庫部署在單一 Azure VM 上，如下圖所示：
+
+image:db-ora-azure-anf-architecture2.png["此圖描述了單一 Azure VM 與 vNet 對等互連的組織方式，以形成兩個獨立的虛擬網路。"]
+
+可使用 Ansible 控制器節點管理 Azure Oracle 環境，使用NetApp提供的工具包實現資料庫部署、備份、復原和資料庫遷移的自動化。可以並行執行 Oracle Azure VM 執行個體作業系統核心或 Oracle 修補的任何更新，以保持主伺服器和備用伺服器同步。事實上，如果需要的話，初始工具包可以輕鬆擴展以執行日常 Oracle 任務。如果您需要協助設定 CLI Ansible 控制器，請參閱link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]開始吧。

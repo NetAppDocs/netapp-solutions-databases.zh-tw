@@ -1,0 +1,330 @@
+---
+sidebar: sidebar 
+permalink: dbops/hybrid-dbops-sc-gs-aws.html 
+summary: 本節介紹在 AWS 中部署 Cloud Manager 和Cloud Volumes ONTAP的流程。 
+keywords: AWS, cloud volumes ontap, cloud manager, deploy 
+---
+= AWS 公有雲入門
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+本節介紹在 AWS 中部署 Cloud Manager 和Cloud Volumes ONTAP的流程。
+
+
+
+== AWS 公有雲
+
+
+NOTE: 為了讓事情更容易理解，我們根據 AWS 中的部署建立了此文件。但是，Azure 和 GCP 的流程非常相似。
+
+
+
+=== 1.飛行前檢查
+
+在部署之前，請確保基礎架構已到位，以便進行下一階段的部署。其中包括以下內容：
+
+* AWS 帳號
+* 您選擇的區域中的 VPC
+* 可存取公共網際網路的子網
+* 將 IAM 角色新增至您的 AWS 帳戶的權限
+* 您的 AWS 使用者的金鑰和存取金鑰
+
+
+
+
+=== 2.在 AWS 中部署 Cloud Manager 和Cloud Volumes ONTAP 的步驟
+
+
+NOTE: 部署 Cloud Manager 和Cloud Volumes ONTAP 的方法有很多；這個方法最簡單，但需要的權限最多。如果此方法不適合您的 AWS 環境，請諮詢 https://docs.netapp.com/us-en/occm/task_creating_connectors_aws.html["NetApp雲端文檔"^]。
+
+
+
+==== 部署 Cloud Manager 連接器
+
+. 導航至 https://www.netapp.com/bluexp/?utm_campaign=b2d-port-all-na-amer-digi-wepp-brand-amer-1745924643379&utm_source=google&utm_medium=paidsearch&utm_content=nativead&gad_source=1&gad_campaignid=21281798861&gclid=EAIaIQobChMIv_GU0KDJjQMVEXRHAR2A2hJzEAAYASAAEgKAZ_D_BwE["NetApp BlueXP"^]並登入或註冊。
++
+image:cloud-central-login-page.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 登入後，您將進入 Canvas。
++
+image:cloud-central-canvas-page.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 按一下「新增工作環境」並選擇 AWS 中的Cloud Volumes ONTAP 。在這裡，您還可以選擇是否要部署單節點系統或高可用性對。我已選擇部署高可用性對。
++
+image:cloud-central-add-we-026.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 如果尚未建立連接器，則會出現一個彈出窗口，要求您建立連接器。
++
+image:cloud-central-add-conn-001.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 按一下“開始”，然後選擇 AWS。
++
+image:cloud-central-add-conn-003.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 輸入您的密鑰和存取密鑰。確保您的用戶具有 https://mysupport.netapp.com/site/info/cloud-manager-policies["NetApp政策頁面"^]。
++
+image:cloud-central-add-conn-004.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 為連接器命名，並使用預定義角色（如上所述） https://mysupport.netapp.com/site/info/cloud-manager-policies["NetApp政策頁面"^]或要求 Cloud Manager 為您建立角色。
++
+image:cloud-central-add-conn-005.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 提供部署連接器所需的網路資訊。透過以下方式驗證是否已啟用出站網際網路存取：
++
+.. 為連接器提供公用 IP 位址
+.. 為連接器提供代理來工作
+.. 透過互聯網網關為連接器提供到公共互聯網的路由
++
+image:cloud-central-add-conn-006.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+
+
+. 透過提供安全群組或建立新的安全群組，透過 SSH、HTTP 和 HTTPs 提供與連接器的通訊。我已啟用僅從我的 IP 位址存取連接器。
++
+image:cloud-central-add-conn-007.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 查看摘要頁面上的信息，然後按一下「新增」以部署連接器。
++
+image:cloud-central-add-conn-008.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 連接器現在使用雲形成堆疊進行部署。您可以從 Cloud Manager 或透過 AWS 監控其進度。
++
+image:cloud-central-add-conn-009.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 部署完成後，會出現成功頁面。
++
+image:cloud-central-add-conn-010.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+
+
+
+
+==== 部署Cloud Volumes ONTAP
+
+. 根據您的要求選擇 AWS 和部署類型。
++
+image:cloud-central-add-we-001.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 如果尚未分配訂閱並且您希望使用 PAYGO 購買，請選擇編輯憑證。
++
+image:cloud-central-add-we-002.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇新增訂閱。
++
+image:cloud-central-add-we-003.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇您想要訂閱的合約類型。我選擇了現收現付。
++
+image:cloud-central-add-we-004.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 您將被重定向到 AWS；選擇繼續訂閱。
++
+image:cloud-central-add-we-005.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 訂閱後您將被重定向回NetApp Cloud Central。如果您已經訂閱且沒有被重新導向，請選擇「按一下此處」連結。
++
+image:cloud-central-add-we-006.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 您將被重定向到 Cloud Central，您必須在其中命名您的訂閱並將其指派給您的 Cloud Central 帳戶。
++
+image:cloud-central-add-we-007.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 成功後，會出現一個複選標記頁面。導航回您的“雲端管理器”標籤。
++
+image:cloud-central-add-we-008.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 訂閱現在出現在 Cloud Central 中。點擊“應用”繼續。
++
+image:cloud-central-add-we-009.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 輸入工作環境詳細信息，例如：
++
+.. 叢集名稱
+.. 叢集密碼
+.. AWS 標籤（可選）
++
+image:cloud-central-add-we-010.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+
+
+. 選擇您想要部署的附加服務。要了解有關這些服務的更多信息，請訪問 https://bluexp.netapp.com/["BlueXP：現代數據資產運營變得簡單"^]。
++
+image:cloud-central-add-we-011.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇是在多個可用區中部署（需要三個子網，每個子網路位於不同的 AZ 中），還是在單一可用區中部署。我選擇了多個可用區。
++
+image:cloud-central-add-we-012.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇要部署叢集的區域、VPC 和安全群組。在本節中，您還將分配每個節點（和中介）的可用區域以及它們佔用的子網路。
++
+image:cloud-central-add-we-013.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇節點和中介的連接方法。
++
+image:cloud-central-add-we-014.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+
+
+
+TIP: 中介需要與 AWS API 進行通訊。只要在部署中介 EC2 執行個體後 API 可以訪問，就不需要公用 IP 位址。
+
+. 浮動 IP 位址用於允許存取Cloud Volumes ONTAP使用的各種 IP 位址，包括叢集管理和資料服務 IP。這些必須是您的網路內尚未路由的位址，並且已新增至您的 AWS 環境中的路由表中。這些是在故障轉移期間為 HA 對啟用一致的 IP 位址所必需的。有關浮動 IP 位址的更多信息，請參閱 https://docs.netapp.com/us-en/occm/reference_networking_aws.html#requirements-for-ha-pairs-in-multiple-azs["NetApp雲端文檔"^]。
++
+image:cloud-central-add-we-015.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇將浮動 IP 位址新增至哪些路由表。客戶端使用這些路由表與Cloud Volumes ONTAP進行通訊。
++
+image:cloud-central-add-we-016.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇是否啟用 AWS 託管加密或 AWS KMS 來加密ONTAP根磁碟、啟動磁碟和資料磁碟。
++
+image:cloud-central-add-we-017.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇您的授權模式。如果您不知道選擇哪一個，請聯絡您的NetApp代表。
++
+image:cloud-central-add-we-018.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇最適合您的用例的配置。這與先決條件頁面中涵蓋的尺寸考量有關。
++
+image:cloud-central-add-we-019.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. （可選）建立一個磁碟區。這不是必需的，因為下一步使用SnapMirror，它會為我們建立磁碟區。
++
+image:cloud-central-add-we-020.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 檢查所做的選擇並勾選對應方塊以驗證您了解 Cloud Manager 將資源部署到您的 AWS 環境中。準備就緒後，按一下“Go”。
++
+image:cloud-central-add-we-021.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. Cloud Volumes ONTAP現在開始其部署過程。 Cloud Manager 使用 AWS API 和雲端形成堆疊來部署Cloud Volumes ONTAP。然後，它會根據您的要求配置系統，為您提供可立即使用的即用型系統。過程的時間根據所做的選擇而有所不同。
++
+image:cloud-central-add-we-022.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 您可以透過導航到時間軸來監控進度。
++
+image:cloud-central-add-we-023.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 時間軸可作為在雲端管理器中執行的所有操作的審核。您可以查看 Cloud Manager 在設定期間對 AWS 和ONTAP叢集發出的所有 API 呼叫。這也可以有效地用於解決您遇到的任何問題。
++
+image:cloud-central-add-we-024.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 部署完成後，CVO 叢集將出現在 Canvas 上，其目前容量。  ONTAP叢集在其目前狀態下已完全配置，可提供真正的開箱即用體驗。
++
+image:cloud-central-add-we-025.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+
+
+
+
+==== 配置從本地到雲端的SnapMirror
+
+現在您已經部署了來源ONTAP系統和目標ONTAP系統，您可以將包含資料庫資料的磁碟區複製到雲端。
+
+有關SnapMirror相容ONTAP版本的指南，請參閱 https://docs.netapp.com/ontap-9/index.jsp?topic=%2Fcom.netapp.doc.pow-dap%2FGUID-0810D764-4CEA-4683-8280-032433B1886B.html["SnapMirror相容性列表"^]。
+
+. 點擊來源ONTAP系統（本機）並將其拖曳到目標，選擇“複製”>“啟用”，或選擇“複製”>“選單”>“複製”。
++
+image:cloud-central-replication-001.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
++
+選擇啟用。
+
++
+image:cloud-central-replication-002.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
++
+或選項。
+
++
+image:cloud-central-replication-003.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
++
+複製。
+
++
+image:cloud-central-replication-004.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 如果您沒有進行拖放，請選擇要複製到的目標群集。
++
+image:cloud-central-replication-005.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇您想要複製的磁碟區。我們複製了資料和所有日誌卷。
++
+image:cloud-central-replication-006.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇目標磁碟類型和分層策略。對於災難復原，我們建議使用 SSD 作為磁碟類型並維持資料分層。資料分層將鏡像資料分層到低成本的物件儲存中，從而節省本機磁碟的成本。當您中斷關係或複製磁碟區時，資料將使用快速的本機儲存。
++
+image:cloud-central-replication-007.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇目標磁碟區名稱：我們選擇 `[source_volume_name]_dr`。
++
+image:cloud-central-replication-008.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇複製的最大傳輸速率。如果您與雲端的連線頻寬較低（例如 VPN），這可以節省頻寬。
++
+image:cloud-central-replication-009.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 定義複製策略。我們選擇了鏡像，它獲取最新的資料集並將其複製到目標磁碟區中。您也可以根據您的要求選擇不同的保單。
++
+image:cloud-central-replication-010.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇觸發複製的計劃。  NetApp建議為資料卷設定「每日」計劃，為日誌卷設定「每小時」計劃，但這可以根據需求進行更改。
++
+image:cloud-central-replication-011.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 檢查輸入的信息，按一下「Go」以觸發叢集對等和 SVM 對等（如果這是您第一次在兩個叢集之間進行複製），然後實施並初始化SnapMirror關係。
++
+image:cloud-central-replication-012.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 對資料捲和日誌卷繼續此程序。
+. 若要檢查所有關係，請導覽至 Cloud Manager 內的「複製」標籤。您可以在這裡管理您的關係並檢查其狀態。
++
+image:cloud-central-replication-013.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 複製所有磁碟區後，您將處於穩定狀態並準備繼續進行災難復原和開發/測試工作流程。
+
+
+
+
+=== 3.為資料庫工作負載部署 EC2 運算執行個體
+
+AWS 已為各種工作負載預先配置了 EC2 運算執行個體。實例類型的選擇決定了CPU核心數、記憶體容量、儲存類型和容量以及網路效能。對於用例，除了作業系統分區之外，運行資料庫工作負載的主儲存是從 CVO 或 FSx ONTAP儲存引擎分配的。因此，主要考慮的因素是CPU核心、記憶體和網路效能水準的選擇。典型的 AWS EC2 執行個體類型可以在這裡找到： https://us-east-2.console.aws.amazon.com/ec2/v2/home?region=us-east-2#InstanceTypes:["EC2 執行個體類型"] 。
+
+
+
+==== 調整計算實例的大小
+
+. 根據所需的工作負載選擇正確的執行個體類型。需要考慮的因素包括要支援的業務交易數量、並髮用戶數量、資料集大小等等。
+. 可以透過 EC2 儀表板啟動 EC2 執行個體部署。確切的部署過程超出了本解決方案的範圍。看 https://aws.amazon.com/pm/ec2/?trk=ps_a134p000004f2ZGAAY&trkCampaign=acq_paid_search_brand&sc_channel=PS&sc_campaign=acquisition_US&sc_publisher=Google&sc_category=Cloud%20Computing&sc_country=US&sc_geo=NAMER&sc_outcome=acq&sc_detail=%2Bec2%20%2Bcloud&sc_content=EC2%20Cloud%20Compute_bmm&sc_matchtype=b&sc_segment=536455698896&sc_medium=ACQ-P|PS-GO|Brand|Desktop|SU|Cloud%20Computing|EC2|US|EN|Text&s_kwcid=AL!4422!3!536455698896!b!!g!!%2Bec2%20%2Bcloud&ef_id=EAIaIQobChMIua378M-p8wIVToFQBh0wfQhsEAMYASAAEgKTzvD_BwE:G:s&s_kwcid=AL!4422!3!536455698896!b!!g!!%2Bec2%20%2Bcloud["亞馬遜 EC2"]了解詳情。
+
+
+
+
+==== Oracle 工作負載的 Linux 實例配置
+
+本節包含部署 EC2 Linux 執行個體後的附加設定步驟。
+
+. 將 Oracle 備用執行個體新增至 DNS 伺服器，以便在SnapCenter管理網域內進行名稱解析。
+. 新增 Linux 管理使用者 ID 作為SnapCenter OS 憑證，具有 sudo 權限且無需密碼。在EC2實例上啟用帶有SSH密碼驗證的ID。  （預設情況下，EC2 實例上的 SSH 密碼驗證和無密碼 sudo 是關閉的。）
+. 配置 Oracle 安裝以符合內部 Oracle 安裝，例如作業系統修補程式、Oracle 版本和修補程式等。
+. 可以利用NetApp Ansible DB 自動化角色來設定 EC2 執行個體以用於資料庫開發/測試和災難復原用例。可從NetApp公用 GitHub 網站下載自動化程式碼： https://github.com/NetApp-Automation/na_oracle19c_deploy["Oracle 19c 自動部署"^] 。目標是在 EC2 執行個體上安裝和配置資料庫軟體堆疊以匹配本機作業系統和資料庫配置。
+
+
+
+
+==== SQL Server 工作負載的 Windows 執行個體配置
+
+本節列出了初始部署 EC2 Windows 執行個體後的其他設定步驟。
+
+. 檢索 Windows 管理員密碼以透過 RDP 登入實例。
+. 停用 Windows 防火牆，將主機加入 Windows SnapCenter網域，並將執行個體新增至 DNS 伺服器進行名稱解析。
+. 配置SnapCenter日誌磁碟區來儲存 SQL Server 日誌檔案。
+. 在 Windows 主機上設定 iSCSI 以掛載磁碟區並格式化磁碟機。
+. 同樣，許多先前的任務可以透過NetApp針對 SQL Server 的自動化解決方案實現自動化。查看NetApp自動化公共 GitHub 站點，了解新發布的角色和解決方案： https://github.com/NetApp-Automation["NetApp自動化"^] 。
+

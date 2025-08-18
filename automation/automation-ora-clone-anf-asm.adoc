@@ -1,0 +1,278 @@
+---
+sidebar: sidebar 
+permalink: automation/automation-ora-clone-anf-asm.html 
+keywords: Oracle, Azure, ANF, Database, clone 
+summary: 該解決方案提供了一個基於 Ansible 的自動化工具包，用於從託管在Azure NetApp Files儲存上的 Azure 雲端中的 Oracle Data Guard 實體備用資料庫設定、複製和刷新 Oracle 克隆資料庫，並配置 ASM。 
+---
+= 使用 ASM 在 ANF 上實現 Oracle 克隆生命週期自動化
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+Allen Cao、Niyaz Mohamed， NetApp
+
+[role="lead"]
+該解決方案提供了一個基於 Ansible 的自動化工具包，用於從託管在Azure NetApp Files儲存上的 Azure 雲端中的 Oracle Data Guard 實體備用資料庫設定、複製和刷新 Oracle 克隆資料庫，並配置 ASM。
+
+
+
+== 目的
+
+將 Oracle Data Guard 配置中的實體備用 Oracle 資料庫的複製用於其他用例可以實現多種目的。它為開發或 UAT 目的提供了生產資料庫的可寫入副本。因此，如果可以接受短暫的報告延遲（10-15分鐘），則可以消除昂貴的Active Data Guard許可證成本。它可以節省儲存成本，特別是當可以選擇瘦克隆時。這個基於 Ansible 的自動化工具包使用戶能夠根據使用者計劃設定、複製和刷新克隆的 Oracle 資料庫，從而簡化生命週期管理。此工具包適用於使用Azure NetApp Files儲存部署至 Azure 公有雲的 Oracle 資料庫和在 Data Guard 設定中配置的 Oracle 資料庫。
+
+此解決方案適用於以下用例：
+
+* 為 Ansible 自動化設定 Oracle 備用資料庫克隆設定檔。
+* 依照使用者定義的計劃，使用 Ansible 劇本從 Data Guard 備用資料庫建立或刷新克隆 Oracle 資料庫。
+
+
+
+
+== 對象
+
+此解決方案適用於以下人群：
+
+* 管理 Azure 雲端中的 Oracle 資料庫的 DBA。
+* 管理Azure NetApp Files儲存的儲存管理員。
+* 喜歡從 Data Guard 備用資料庫複製 Oracle 資料庫以用於其他用例的應用程式擁有者。
+
+
+
+
+== 執照
+
+透過存取、下載、安裝或使用此 GitHub 儲存庫中的內容，您同意link:https://github.com/NetApp/na_ora_hadr_failover_resync/blob/master/LICENSE.TXT["許可證文件"^]。
+
+
+NOTE: 製作和/或分享此 GitHub 儲存庫中內容的任何衍生作品都受到某些限制。請確保在使用該內容之前閱讀許可條款。如果您不同意所有條款，請不要存取、下載或使用此儲存庫中的內容。
+
+
+
+== 解決方案部署
+
+
+
+=== 部署先決條件
+
+[%collapsible%open]
+====
+部署需要以下先決條件。
+
+....
+Ansible controller:
+  Ansible v.2.10 and higher
+  ONTAP collection 21.19.1
+  Python 3
+  Python libraries:
+    netapp-lib
+    xmltodict
+    jmespath
+....
+....
+Oracle servers:
+  Physical standby Oracle servers in Data Guard configuration
+  Clone target Oracle servers with ASM configuration
+....
+
+NOTE: 為了簡化，複製目標 Oracle 伺服器的配置應與備用 Oracle 伺服器相同，例如 Oracle 軟體堆疊以及 Oracle Home 的目錄佈局等。
+
+====
+
+
+=== 下載工具包
+
+[%collapsible%open]
+====
+[source, cli]
+----
+git clone https://bitbucket.ngage.netapp.com/scm/ns-bb/na_oracle_clone_anf.git
+----
+
+NOTE: 目前，只有具有 bitbucket 存取權限的NetApp內部使用者才能存取該工具包。對於有興趣的外部用戶，請向您的客戶團隊要求存取權限或聯絡NetApp解決方案工程團隊。
+
+====
+
+
+=== Ansible 來源和目標 hosts 檔案配置
+
+[%collapsible%open]
+====
+該工具包包含一個 hosts 文件，定義了 Ansible playbook 運行的來源 Oracle 主機和目標 Oracle 主機。通常，它包括 Data Guard 設定中的備用 DB 主機和目標 Oracle 克隆主機。以下是範例文件。主機條目包括目標主機 IP 位址以及 ssh 金鑰，以便使用者存取主機執行複製或刷新命令。 Azure NetApp Files儲存裝置透過 API 設定。因此，ANF 連線是透過 HTTP 協定透過本機進行的。
+
+....
+[ora_stdby]
+oras ansible_host=172.179.119.75 ansible_ssh_private_key_file=oras.pem
+....
+....
+[ora_clone]
+orac ansible_host=52.148.142.212 ansible_ssh_private_key_file=orac.pem
+....
+....
+[azure]
+localhost ansible_connection=local
+....
+====
+
+
+=== 全域變數配置
+
+[%collapsible%open]
+====
+以下是典型的全域變數檔案 vars.yml 的範例，其中包含適用於全域層級的變數。
+
+....
+######################################################################
+###### Oracle DB clone on ANF user configuration variables      ######
+###### Consolidate all variables from ANF, linux and oracle     ######
+######################################################################
+....
+....
+###########################################
+### ONTAP/ANF specific config variables ###
+###########################################
+....
+....
+# ANF credential
+subscription: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+client: "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+secret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+tenant: "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx"
+....
+....
+# Cloned DB volumes from standby DB
+resource_group: ANFAVSRG
+storage_account: ANFOraWest
+anf_pool: database2
+data_vols:
+  - "{{ groups.ora_stdby[0] }}-u02"
+  - "{{ groups.ora_stdby[0] }}-u04"
+  - "{{ groups.ora_stdby[0] }}-u05"
+  - "{{ groups.ora_stdby[0] }}-u06"
+  - "{{ groups.ora_stdby[0] }}-u03"
+....
+....
+nfs_lifs:
+  - 10.0.3.36
+  - 10.0.3.36
+  - 10.0.3.36
+  - 10.0.3.36
+  - 10.0.3.36
+....
+....
+###########################################
+### Linux env specific config variables ###
+###########################################
+....
+....
+####################################################
+### DB env specific install and config variables ###
+####################################################
+....
+....
+# Standby DB configuration
+oracle_user: oracle
+oracle_base: /u01/app/oracle
+oracle_sid: NTAP
+db_unique_name: NTAP_LA
+oracle_home: '{{ oracle_base }}/product/19.0.0/{{ oracle_sid }}'
+spfile: '+DATA/{{ db_unique_name }}/PARAMETERFILE/spfile.289.1190302433'
+adump: '{{ oracle_base }}/admin/{{ db_unique_name }}/adump'
+grid_home: /u01/app/oracle/product/19.0.0/grid
+asm_disk_groups:
+  - DATA
+  - LOGS
+....
+....
+# Clond DB configuration
+clone_sid: NTAPDEV
+sys_pwd: "xxxxxxxx"
+....
+====
+
+
+=== 主機變數配置
+
+[%collapsible%open]
+====
+主機變數在 host_vars 目錄中定義，名稱為 {{ host_name }}.yml，僅適用於特定主機。對於此解決方案，僅配置目標克隆DB主機參數檔。 Oracle 備用資料庫參數在全域 vars 檔案中配置。以下是目標 Oracle 克隆 DB 主機變數檔案 orac.yml 的範例，顯示了典型配置。
+
+ # User configurable Oracle clone host specific parameters
+....
+# Database SID - clone DB SID
+oracle_base: /u01/app/oracle
+oracle_user: oracle
+clone_sid: NTAPDEV
+oracle_home: '{{ oracle_base }}/product/19.0.0/{{ oracle_sid }}'
+clone_adump: '{{ oracle_base }}/admin/{{ clone_sid }}/adump'
+....
+....
+grid_user: oracle
+grid_home: '{{ oracle_base }}/product/19.0.0/grid'
+asm_sid: +ASM
+....
+====
+
+
+=== 額外的克隆目標 Oracle 伺服器配置
+
+[%collapsible%open]
+====
+克隆目標 Oracle 伺服器應安裝並修補與來源 Oracle 伺服器相同的 Oracle 軟體堆疊。 Oracle 使用者 .bash_profile 已配置 $ORACLE_BASE 和 $ORACLE_HOME。此外，$ORACLE_HOME 變數應與來源 Oracle 伺服器設定相符。如果目標 ORACLE_HOME 設定與備用 Oracle 伺服器配置不同，請建立一個符號連結來解決這些差異。以下是一個例子。
+
+ # .bash_profile
+....
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+       . ~/.bashrc
+fi
+....
+ # User specific environment and startup programs
+....
+export ORACLE_BASE=/u01/app/oracle
+export GRID_HOME=/u01/app/oracle/product/19.0.0/grid
+export ORACLE_HOME=/u01/app/oracle/product/19.0.0/NTAP
+alias asm='export ORACLE_HOME=$GRID_HOME;export PATH=$PATH:$GRID_HOME/bin;export ORACLE_SID=+ASM'
+....
+====
+
+
+=== 劇本執行
+
+[%collapsible%open]
+====
+總共有兩個劇本來執行 Oracle 資料庫複製生命週期。資料庫複製或刷新可以按需執行或作為 crontab 作業排程。
+
+. 安裝 Ansible 控制器先決條件 - 只需一次。
++
+[source, cli]
+----
+ansible-playbook -i hosts ansible_requirements.yml
+----
+. 使用 shell 腳本按需或定期從 crontab 建立和刷新克隆資料庫以呼叫克隆或刷新劇本。
++
+[source, cli]
+----
+ansible-playbook -i oracle_clone_asm_anf.yml -u azureuser -e @vars/vars.yml
+----
++
+[source, cli]
+----
+0 */2 * * * /home/admin/na_oracle_clone_anf/oracle_clone_asm_anf.sh
+----
+
+
+若要複製任何其他資料庫，請建立單獨的 oracle_clone_n_asm_anf.yml 和 oracle_clone_n_asm_anf.sh。相應地設定 Ansible 目標主機、全域 vars.yml 和 host_vars 目錄中的 hostname.yml 檔案。
+
+
+NOTE: 工具包的執行在各個階段都會暫停以允許特定任務完成。例如，它會暫停兩分鐘以允許 DB 卷克隆完成。一般來說，預設值就足夠了，但根據特殊情況或實施情況，可能需要調整時間。
+
+====
+
+
+== 在哪裡可以找到更多信息
+
+要了解有關NetApp解決方案自動化的更多信息，請訪問以下網站link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]

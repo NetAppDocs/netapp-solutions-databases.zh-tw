@@ -1,0 +1,106 @@
+= 
+:allow-uri-read: 
+
+
+. 配置憑證。
+. 建立憑證類型。對於涉及ONTAP的解決方案，您必須配置憑證類型以符合使用者名稱和密碼項目，我們也會為 Cloud Central 和 AWS 新增項目。
++
+.. 導覽至管理 → 憑證類型，然後按一下新增。
+.. 提供名稱和描述。
+.. 在輸入配置中貼上以下內容：
++
+[source, cli]
+----
+fields:
+  - id: dst_cluster_username
+    type: string
+    label: CVO Username
+  - id: dst_cluster_password
+    type: string
+    label: CVO Password
+    secret: true
+  - id: cvo_svm_password
+    type: string
+    label: CVO SVM Password
+    secret: true
+  - id: src_cluster_username
+    type: string
+    label: Source Cluster Username
+  - id: src_cluster_password
+    type: string
+    label: Source Cluster Password
+    secret: true
+  - id: regular_id
+    type: string
+    label: Cloud Central ID
+    secret: true
+  - id: email_id
+    type: string
+    label: Cloud Manager Email
+    secret: true
+  - id: cm_password
+    type: string
+    label: Cloud Manager Password
+    secret: true
+  - id: access_key
+    type: string
+    label: AWS Access Key
+    secret: true
+  - id: secret_key
+    type: string
+    label: AWS Secret Key
+    secret: true
+  - id: token
+    type: string
+    label: Cloud Central Refresh Token
+    secret: true
+----
+.. 將以下內容貼到 Injector Configuration 中，然後按一下「儲存」：
++
+[source, cli]
+----
+extra_vars:
+  dst_cluster_username: '{{ dst_cluster_username }}'
+  dst_cluster_password: '{{ dst_cluster_password }}'
+  cvo_svm_password: '{{ cvo_svm_password }}'
+  src_cluster_username: '{{ src_cluster_username }}'
+  src_cluster_password: '{{ src_cluster_password }}'
+  regular_id: '{{ regular_id }}'
+  email_id: '{{ email_id }}'
+  cm_password: '{{ cm_password }}'
+  access_key: '{{ access_key }}'
+  secret_key: '{{ secret_key }}'
+  token: '{{ token }}'
+----
+
+
+. 為ONTAP/CVO/AWS 建立憑證
++
+.. 導覽至資源 → 憑證，然後按一下新增。
+.. 輸入ONTAP憑證的名稱和組織詳細信息
+.. 選擇上一個步驟中建立的憑證類型。
+.. 在類型詳細資料下，輸入來源和 CVO 叢集、Cloud Central/Manager、AWS 存取/金鑰和 Cloud Central 刷新令牌的使用者名稱和密碼。
+.. 點選“儲存”
+
+
+. 為 Oracle 建立憑證（來源）
++
+.. 導覽至資源 → 憑證，然後按一下新增。
+.. 輸入 Oracle 主機的名稱和組織詳細信息
+.. 選擇機器憑證類型。
+.. 在類型詳細資料下，輸入 Oracle 主機的使用者名稱和密碼。
+.. 選擇正確的權限提升方法，並輸入使用者名稱和密碼。
+.. 點選“儲存”
+
+
+. 為 Oracle 目標建立憑證
++
+.. 導覽至資源 → 憑證，然後按一下新增。
+.. 輸入 DR Oracle 主機的名稱和組織詳細信息
+.. 選擇機器憑證類型。
+.. 在類型詳細資料下，輸入使用者名稱（ec2-user，或如果您已將其從預設設定更改，請輸入該使用者名稱）和 SSH 私鑰
+.. 選擇正確的權限提升方法（sudo），並根據需要輸入使用者名稱和密碼。
+.. 點選“儲存”
+
+
+

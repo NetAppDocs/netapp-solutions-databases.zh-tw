@@ -1,0 +1,272 @@
+---
+sidebar: sidebar 
+permalink: oracle/aws-ora-fsx-ec2-mgmt.html 
+summary: 本節詳細介紹如何透過SnapCenter UI 管理 AWS RDS Custom for Oracle 資料庫，作為 AWS RDS 控制台 UI 的補充。 
+keywords: HA, DR, database, Oracle, RDS, AWS, SnapCenter 
+---
+= EC2 和 FSx Oracle 資料庫管理
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+除了AWS EC2和FSx管理控制台之外，還部署了Ansible控制節點和SnapCenter UI工具，用於此Oracle環境中的資料庫管理。
+
+Ansible 控制節點可用於管理 Oracle 環境配置，並透過並行更新使主執行個體和備用執行個體保持同步以進行核心或修補程式更新。可使用NetApp自動化工具包自動執行故障轉移、重新同步和故障回复，從而透過 Ansible 實現快速應用程式復原和可用性。可以使用劇本執行一些可重複的資料庫管理任務，以減少人為錯誤。
+
+SnapCenter UI 工具可以使用 Oracle 資料庫的SnapCenter插件執行資料庫快照備份、時間點復原、資料庫複製等。有關 Oracle 插件功能的更多信息，請參閱link:https://docs.netapp.com/ocsc-43/index.jsp?topic=%2Fcom.netapp.doc.ocsc-con%2FGUID-CF6B23A3-2B2B-426F-826B-490706880EE8.html["適用於 Oracle 資料庫的SnapCenter插件概述"^]。
+
+以下部分詳細介紹如何使用SnapCenter UI 實作 Oracle 資料庫管理的關鍵功能：
+
+* 資料庫快照備份
+* 資料庫時間點還原
+* 資料庫克隆創建
+
+
+資料庫克隆會在單獨的 EC2 主機上建立主資料庫的副本，以便在發生邏輯資料錯誤或損壞時進行資料恢復，克隆還可用於應用程式測試、偵錯、修補程式驗證等。
+
+
+
+== 拍攝快照
+
+EC2/FSx Oracle 資料庫依照使用者配置的間隔定期備份。用戶還可以隨時進行一次性快照備份。這適用於完整資料庫快照備份以及僅存檔日誌快照備份。
+
+
+
+=== 拍攝完整的資料庫快照
+
+完整的資料庫快照包括所有 Oracle 文件，包括資料檔案、控製文件和存檔日誌檔案。
+
+. 登入SnapCenter UI 並點擊左側選單中的「資源」。從「視圖」下拉式功能表中，切換到「資源組」視圖。
++
+image:aws-rds-custom-deploy-snp-010.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 按一下完整備份資源名稱，然後按一下立即備份圖示以啟動附加備份。
++
+image:aws-rds-custom-deploy-snp-011.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 按一下“備份”，然後確認備份以開始完整的資料庫備份。
++
+image:aws-rds-custom-deploy-snp-012.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
++
+從資料庫的資源視圖中，開啟資料庫託管備份副本頁面以驗證一次性備份是否成功完成。完整資料庫備份會建立兩個快照：一個用於資料卷，一個用於日誌卷。
+
++
+image:aws-rds-custom-deploy-snp-013.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+
+
+
+
+=== 取得存檔日誌快照
+
+僅對 Oracle 存檔日誌磁碟區進行存檔日誌快照。
+
+. 登入SnapCenter UI 並點擊左側選單欄中的「資源」標籤。從「視圖」下拉式功能表中，切換到「資源組」視圖。
++
+image:aws-rds-custom-deploy-snp-010.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 按一下日誌備份資源名稱，然後按一下立即備份圖示以啟動存檔日誌的附加備份。
++
+image:aws-rds-custom-deploy-snp-014.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 按一下“備份”，然後確認備份以開始存檔日誌備份。
++
+image:aws-rds-custom-deploy-snp-015.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
++
+從資料庫的資源視圖中，開啟資料庫託管備份副本頁面以驗證一次性存檔日誌備份是否成功完成。存檔日誌備份為日誌磁碟區建立一個快照。
+
++
+image:aws-rds-custom-deploy-snp-016.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+
+
+
+
+== 恢復到某個時間點
+
+基於SnapCenter的某個時間點的還原在同一 EC2 執行個體主機上執行。完成以下步驟來執行復原：
+
+. 從SnapCenter資源標籤 > 資料庫檢視中，按一下資料庫名稱以開啟資料庫備份。
++
+image:aws-rds-custom-deploy-snp-017.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇資料庫備份副本和要還原的時間點。並記下該時間點對應的SCN號。可以使用時間或 SCN 執行時間點還原。
++
+image:aws-rds-custom-deploy-snp-018.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 反白日誌卷快照並點擊“安裝”按鈕以安裝該磁碟區。
++
+image:aws-rds-custom-deploy-snp-019.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選擇主 EC2 執行個體來掛載日誌磁碟區。
++
+image:aws-rds-custom-deploy-snp-020.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 驗證裝載作業是否成功完成。也要檢查 EC2 執行個體主機，查看已安裝的日誌磁碟區以及安裝點路徑。
++
+image:aws-rds-custom-deploy-snp-021-a.png["此圖顯示輸入/輸出對話框或表示書面內容"] image:aws-rds-custom-deploy-snp-021-b.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 將存檔日誌從已掛載的日誌磁碟區複製到目前存檔日誌目錄。
++
+[listing]
+----
+[ec2-user@ip-10-0-0-151 ~]$ cp /var/opt/snapcenter/sco/backup_mount/ip-10-0-0-151_03-25-2022_11.15.01.1503_1/ORCL/1/db/ORCL_A/arch/*.arc /ora_nfs_log/db/ORCL_A/arch/
+----
+. 返回SnapCenter資源標籤 > 資料庫備份頁面，反白顯示資料快照副本，然後按一下還原按鈕啟動資料庫還原工作流程。
++
+image:aws-rds-custom-deploy-snp-022.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 選取“所有資料檔案”和“如果需要還原和恢復，則變更資料庫狀態”，然後按一下“下一步”。
++
+image:aws-rds-custom-deploy-snp-023.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 使用 SCN 或時間選擇所需的恢復範圍。無需像步驟 6 所示將已掛載的存檔日誌複製到目前日誌目錄，而是可以在「指定外部存檔日誌檔案位置」中列出已掛載的存檔日誌路徑以供復原。
++
+image:aws-rds-custom-deploy-snp-024-a.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 如果需要，請指定要運行的可選處方。
++
+image:aws-rds-custom-deploy-snp-025.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 如果需要的話，請指定一個可選的 afterscript 來運作。恢復後檢查開啟的資料庫。
++
+image:aws-rds-custom-deploy-snp-026.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 如果需要工作通知，請提供 SMTP 伺服器和電子郵件地址。
++
+image:aws-rds-custom-deploy-snp-027.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 恢復工作摘要。按一下「完成」以啟動還原作業。
++
+image:aws-rds-custom-deploy-snp-028.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 驗證從SnapCenter還原。
++
+image:aws-rds-custom-deploy-snp-029-a.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 驗證從 EC2 執行個體主機進行的還原。
++
+image:aws-rds-custom-deploy-snp-029-b.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 若要卸載復原日誌卷，請依照步驟 4 中的相反步驟操作。
+
+
+
+
+== 建立資料庫克隆
+
+以下部分示範如何使用SnapCenter克隆工作流程建立從主資料庫到備用 EC2 執行個體的資料庫複製。
+
+. 使用完整備份資源群組從SnapCenter對主資料庫進行完整快照備份。
++
+image:aws-rds-custom-deploy-replica-002.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 從SnapCenter資源標籤 > 資料庫檢視中，開啟要從中建立副本的主資料庫的資料庫備份管理頁面。
++
+image:aws-rds-custom-deploy-replica-004.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 將步驟 4 中拍攝的日誌磁碟區快照掛載到備用 EC2 執行個體主機。
++
+image:aws-rds-custom-deploy-replica-013.png["此圖顯示輸入/輸出對話框或表示書面內容"] image:aws-rds-custom-deploy-replica-014.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 反白顯示要為副本克隆的快照副本，然後按一下「克隆」按鈕開始複製過程。
++
+image:aws-rds-custom-deploy-replica-005.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 變更副本名稱，使其與主資料庫名稱不同。按一下“下一步”。
++
+image:aws-rds-custom-deploy-replica-006.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 將複製主機變更為備用 EC2 主機，接受預設命名，然後按一下下一步。
++
+image:aws-rds-custom-deploy-replica-007.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 變更 Oracle 主目錄設定以符合目標 Oracle 伺服器主機的配置，然後按一下「下一步」。
++
+image:aws-rds-custom-deploy-replica-008.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 使用時間或 SCN 和已安裝的存檔日誌路徑指定復原點。
++
+image:aws-rds-custom-deploy-replica-015.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 如果需要，請發送 SMTP 電子郵件設定。
++
+image:aws-rds-custom-deploy-replica-011.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 複製作業摘要，然後按一下「完成」以啟動複製作業。
++
+image:aws-rds-custom-deploy-replica-012.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 透過查看克隆作業日誌來驗證副本克隆。
++
+image:aws-rds-custom-deploy-replica-017.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
++
+克隆的資料庫會立即在SnapCenter中註冊。
+
++
+image:aws-rds-custom-deploy-replica-018.png["此圖顯示輸入/輸出對話框或表示書面內容"]
+
+. 關閉 Oracle 存檔日誌模式。以 oracle 使用者登入 EC2 執行個體並執行下列命令：
++
+[source, cli]
+----
+sqlplus / as sysdba
+----
++
+[source, cli]
+----
+shutdown immediate;
+----
++
+[source, cli]
+----
+startup mount;
+----
++
+[source, cli]
+----
+alter database noarchivelog;
+----
++
+[source, cli]
+----
+alter database open;
+----
+
+
+
+NOTE: 除了主 Oracle 備份副本之外，還可以使用相同的程式從目標 FSx 叢集上複製的輔助備份副本建立複製。
+
+
+
+== HA 故障轉移至待機並重新同步
+
+當主站點（運算層或儲存層）發生故障時，備用 Oracle HA 叢集可提供高可用性。此解決方案的一個顯著優勢是，使用者可以隨時以任何頻率測試和驗證基礎架構。故障轉移可以由使用者模擬或由真實故障觸發。故障轉移過程相同，並且可以自動化以實現快速應用程式恢復。
+
+請參閱以下故障轉移程序清單：
+
+. 對於模擬故障轉移，執行日誌快照備份以將最新交易刷新到備用站點，如本節所示<<取得存檔日誌快照>>。對於由實際故障觸發的故障轉移，最後可復原的資料將與上次成功的排程日誌磁碟區備份一起複製到備用站點。
+. 打破主 FSx 叢集和備用 FSx 叢集之間的SnapMirror 。
+. 在備用 EC2 執行個體主機上掛載複製的備用資料庫磁碟區。
+. 如果複製的 Oracle 二進位檔案用於 Oracle 恢復，則重新連結 Oracle 二進位。
+. 將備用 Oracle 資料庫還原到最後一個可用的存檔日誌。
+. 開啟備用 Oracle 資料庫以供應用程式和使用者存取。
+. 對於實際的主站點故障，備用 Oracle 資料庫現在充當新的主站點的角色，並且可以使用資料庫磁碟區透過反向SnapMirror方法將故障的主站點重建為新的備用站點。
+. 對於模擬主站點故障以進行測試或驗證，請在測試練習完成後關閉備用 Oracle 資料庫。然後從備用 EC2 執行個體主機卸載備用資料庫卷，並將複製從主站點重新同步到備用站點。
+
+
+可以使用NetApp Automation Toolkit 執行這些過程，該工具包可從公共NetApp GitHub 網站下載。
+
+[source, cli]
+----
+git clone https://github.com/NetApp-Automation/na_ora_hadr_failover_resync.git
+----
+在嘗試設定和故障轉移測試之前，請仔細閱讀 README 說明。

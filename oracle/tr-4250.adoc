@@ -1,0 +1,21 @@
+---
+sidebar: sidebar 
+permalink: oracle/tr-4250.html 
+keywords:  
+summary:  
+---
+= TR-4250：在 UNIX 和 NFS 上使用 Oracle 的 SAP，以及NetApp Clustered Data ONTAP和SnapManager for SAP 3.4
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+NetApp的 Nils Bauer
+
+[role="lead"]
+TR-4250 解決了設計儲存解決方案以使用 Oracle 資料庫支援 SAP 業務套件產品的挑戰。本文檔主要關注使用最新一代 SAP 解決方案的業務和 IT 領導者所面臨的常見儲存基礎架構設計、部署、操作和管理挑戰。本文檔中的建議是通用的；它們並非特定於 SAP 應用程式或 SAP 實施的規模和範圍。  TR-4250 假設讀者對NetApp和 SAP 產品的技術和操作有基本的了解。  TR-4250 是基於NetApp、SAP、Oracle 和我們客戶的技術人員的互動而製定的。
+
+link:https://www.netapp.com/pdf.html?item=/media/19525-tr-4250.pdf["TR-4250：在 UNIX 和 NFS 上使用 Oracle 的 SAP，以及NetApp Clustered Data ONTAP和SnapManager for SAP 3.4"^]

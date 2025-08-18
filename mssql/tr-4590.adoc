@@ -1,0 +1,21 @@
+---
+sidebar: sidebar 
+permalink: mssql/tr-4590.html 
+keywords:  
+summary:  
+---
+= TR-4590：採用ONTAP的 Microsoft SQL Server 最佳實務指南
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+Manohar Kulkarni 和 Pat Sinthusan， NetApp
+
+[role="lead"]
+本文檔介紹了最佳實踐，並深入探討了在運行NetApp ONTAP軟體的NetApp儲存系統上部署 SQL Server 的設計注意事項，目的是實現有效、高效的儲存部署以及端到端資料保護和保留規劃。
+
+link:https://www.netapp.com/pdf.html?item=/media/8585-tr4590.pdf["TR-4590：Microsoft SQL Server 與ONTAP 的最佳實務指南"^]

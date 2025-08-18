@@ -1,0 +1,45 @@
+---
+sidebar: sidebar 
+permalink: dbops/hybrid-dbops-sc-gs.html 
+summary: 本節概述了為滿足上一節所述的先決條件要求而必須完成的任務。以下部分提供了本地和公有雲操作的高階任務清單。點擊相關連結即可查看詳細流程和步驟。 
+keywords: introduction, workflow 
+---
+= 入門概述
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+本節概述了為滿足上一節所述的先決條件要求而必須完成的任務。以下部分提供了本地和公有雲操作的高階任務清單。點擊相關連結即可查看詳細流程和步驟。
+
+
+
+== 本地
+
+* 在SnapCenter中設定資料庫管理員用戶
+* SnapCenter插件安裝前提條件
+* SnapCenter主機插件安裝
+* 資料庫資源發現
+* 設定儲存叢集對等和資料庫磁碟區複製
+* 將 CVO 資料庫儲存 SVM 新增至SnapCenter
+* 在SnapCenter中設定資料庫備份策略
+* 實施備份策略以保護資料庫
+* 驗證備份
+
+
+
+
+== AWS 公有雲
+
+* 飛行前檢查
+* 在 AWS 中部署 Cloud Manager 和Cloud Volumes ONTAP 的步驟
+* 為資料庫工作負載部署 EC2 運算執行個體
+
+
+請點擊以下連結查看詳細資訊：
+
+link:hybrid-dbops-sc-gs-onprem.html["本地"]，link:hybrid-dbops-sc-gs-aws.html["公有雲-AWS"]

@@ -1,0 +1,185 @@
+---
+sidebar: sidebar 
+permalink: automation/getting-started-requirements.html 
+keywords: Linux, RHEL Oracle19c, NFS, ONTAP 
+summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法。 
+---
+= 入門
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+此解決方案設計為在 AWX/Tower 環境中運作或透過 Ansible 控制主機上的 CLI 運作。
+
+
+
+== AWX/塔
+
+對於 AWX/Tower 環境，將引導您建立ONTAP叢集管理和 Oracle 伺服器（IP 和主機名稱）的清單、建立憑證、設定從NetApp Automation Github 中提取 Ansible 程式碼的專案以及啟動自動化的作業範本。
+
+. 填寫特定於您的環境的變量，然後將其複製並貼上到作業範本中的 Extra Vars 欄位中。
+. 將額外的變數新增至您的作業範本後，您可以啟動自動化。
+. 作業範本透過為 ontap_config、linux_config 和 oracle_config 指定標籤分三個階段運作。
+
+
+
+
+== 透過 Ansible 控制主機的 CLI
+
+. 設定 Linux 主機，以便將其用作 Ansible 控制主機link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/getting-started.html["按此處查看詳細說明"^]
+. 設定 Ansible 控制主機後，您可以 git clone Ansible Automation 儲存庫。
+. 使用ONTAP叢集管理的 IP 和/或主機名稱以及 Oracle 伺服器的管理 IP 編輯 hosts 檔案。
+. 填寫特定於您的環境的變量，然後將其複製並貼上到 `vars.yml`文件。
+. 每個 Oracle 主機都有一個由其主機名稱識別的變數文件，其中包含特定於主機的變數。
+. 所有變數檔案完成後，您可以透過指定標籤分三個階段運行劇本 `ontap_config`， `linux_config` ， 和 `oracle_config`。
+
+
+
+
+== 要求
+
+[cols="3, 9"]
+|===
+| 環境 | 要求 
+
+
+.4+| Ansible 環境 | AWX/Tower 或 Linux 主機作為 Ansible 控制主機 
+
+
+| Ansible v.2.10 及更高版本 
+
+
+| Python 3 
+
+
+| Python 函式庫 - netapp-lib - xmltodict - jmespath 
+
+
+.3+| ONTAP | ONTAP版本 9.3 - 9.7 
+
+
+| 兩個數據聚合 
+
+
+| NFS vlan 和 ifgrp 創建 
+
+
+.5+| Oracle 伺服器 | RHEL 7/8 
+
+
+| Oracle Linux 7/8 
+
+
+| NFS、公共和可選管理的網路接口 
+
+
+| Oracle 伺服器上的 Oracle 安裝文件 
+|===
+
+
+== 自動化詳細信息
+
+此自動化部署採用由三個獨立角色組成的單一 Ansible 劇本設計。這些角色適用於ONTAP、Linux 和 Oracle 配置。下表描述了正在自動化的任務。
+
+[cols="4, 9"]
+|===
+| 角色 | 任務 
+
+
+.5+| ontap_config | ONTAP環境的預檢查 
+
+
+| 為 Oracle 建立基於 NFS 的 SVM 
+
+
+| 制定出口政策 
+
+
+| 為 Oracle 建立卷 
+
+
+| 建立 NFS LIF 
+
+
+.9+| *linux_配置* | 建立掛載點並掛載 NFS 卷 
+
+
+| 驗證 NFS 掛載 
+
+
+| 作業系統特定配置 
+
+
+| 建立 Oracle 目錄 
+
+
+| 配置大頁面 
+
+
+| 停用 SELinux 和防火牆守護進程 
+
+
+| 啟用並啟動 chronyd 服務 
+
+
+| 增加檔案描述符的硬限制 
+
+
+| 建立 pam.d 會話文件 
+
+
+.8+| *oracle_配置* | Oracle軟體安裝 
+
+
+| 建立 Oracle 監聽器 
+
+
+| 建立 Oracle 資料庫 
+
+
+| Oracle環境配置 
+
+
+| 保存 PDB 狀態 
+
+
+| 啟用實例存檔模式 
+
+
+| 啟用 DNFS 用戶端 
+
+
+| 在作業系統重新啟動之間啟用資料庫自動啟動和關閉 
+|===
+
+
+== 預設參數
+
+為了簡化自動化，我們預設了許多必要的 Oracle 部署參數的預設值。對於大多數部署來說，通常不需要更改預設參數。更高級的用戶可以謹慎地更改預設參數。預設參數位於 defaults 目錄下的每個角色資料夾中。
+
+
+
+== 部署說明
+
+在開始之前，請下載以下 Oracle 安裝和修補程式文件，並將它們放在 `/tmp/archive`每個要部署的資料庫伺服器上的所有使用者均具有讀取、寫入和執行存取權限的目錄。自動化任務在該特定目錄中尋找指定的安裝檔案以進行 Oracle 安裝和設定。
+
+[listing]
+----
+LINUX.X64_193000_db_home.zip -- 19.3 base installer
+p31281355_190000_Linux-x86-64.zip -- 19.8 RU patch
+p6880880_190000_Linux-x86-64.zip -- opatch version 12.2.0.1.23
+----
+
+
+== 執照
+
+您應該閱讀 Github 儲存庫中所述的許可證資訊。透過存取、下載、安裝或使用此儲存庫中的內容，您同意所列出的授權條款link:https://github.com/NetApp-Automation/na_oracle19c_deploy/blob/master/LICENSE.TXT["這裡"^]。
+
+請注意，製作和/或共享此存儲庫中的內容的任何衍生作品都受到某些限制。請務必閱讀link:https://github.com/NetApp-Automation/na_oracle19c_deploy/blob/master/LICENSE.TXT["執照"^]在使用內容之前。如果您不同意所有條款，請不要存取、下載或使用此儲存庫中的內容。
+
+準備好後，點擊link:awx-automation.html["點擊此處查看 AWX/Tower 部署的詳細步驟"]或者link:cli-automation.html["此處用於 CLI 部署"]。

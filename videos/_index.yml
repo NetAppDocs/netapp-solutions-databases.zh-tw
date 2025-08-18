@@ -1,0 +1,22 @@
+---
+indexpage:
+  title: NetApp資料庫解決方案視頻
+  summary: 觀看有關使用NetApp的 Oracle、SQL Server、開源和混合資料庫解決方案的影片。
+  lead: 探索 NetApp 的綜合視訊庫，展示涵蓋 Oracle、SQL Server 和開源資料庫的資料庫解決方案。每個集合都專注於特定的用例和整合場景。
+  tiles:
+  - title: Oracle 資料庫視訊
+    links:
+    - title: 部署和自動化
+      url: videos-oracle-videos.html#deployment-and-automation
+    - title: 備份、還原和克隆
+      url: videos-oracle-videos.html#backup-recovery-and-cloning
+    - title: 現代化與遷移
+      url: videos-oracle-videos.html#modernization-and-migration
+    - title: 高可用性、災難復原和複製
+      url: videos-oracle-videos.html#high-availability-disaster-recovery-and-replication
+  - title: SQL Server 和開源資料庫視頻
+    links:
+    - title: SQL Server 影片
+      url: videos-sqlserver-videos.html
+    - title: 開源資料庫視頻
+      url: videos-open-source-videos.html

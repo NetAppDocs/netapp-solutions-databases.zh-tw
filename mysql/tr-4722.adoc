@@ -1,0 +1,21 @@
+---
+sidebar: sidebar 
+permalink: mysql/tr-4722.html 
+keywords:  
+summary:  
+---
+= TR-4722： NetApp ONTAP上的 MySQL 資料庫最佳實踐
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+Anup Bharti、Manohar Kulkarni、Jeffrey Steiner NetApp
+
+[role="lead"]
+MySQL 及其變體（包括 MariaDB 和 Percona）廣泛用於許多企業應用程式。這些應用程式包括全球社交網站、大型電子商務系統以及包含數千個資料庫執行個體的 SMB 託管系統。本文檔介紹了配置要求，並提供了在NetApp ONTAP資料管理軟體上部署 MySQL 的調整和儲存配置指導。若要確定本報告中指定的環境、配置和版本是否支援您的環境，請查閱互通性矩陣工具 (IMT)。
+
+link:https://www.netapp.com/pdf.html?item=/media/16423-tr-4722pdf.pdf["TR-4722： NetApp ONTAP上的 MySQL 資料庫最佳實踐"^]

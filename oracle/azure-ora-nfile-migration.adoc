@@ -1,0 +1,165 @@
+---
+sidebar: sidebar 
+permalink: oracle/azure-ora-nfile-migration.html 
+summary: 本節詳細介紹如何將 Oracle 資料庫從本機遷移到Azure NetApp Files以及反之亦然。 
+keywords: database, Oracle, Azure, ANF, Azure NetApp Files, migration 
+---
+= 資料庫從本地遷移到 Azure 雲端
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+由於 Oracle 決定逐步淘汰單一實例資料庫，許多組織已將單一實例 Oracle 資料庫轉換為多租用戶容器資料庫。這使得能夠輕鬆地將稱為 PDB 的容器資料庫子集遷移到雲端，並具有最大可用性選項，從而最大限度地減少遷移期間的停機時間。
+
+但是，如果您仍然有一個 Oracle 資料庫的單一實例，則可以先將其轉換為多租用戶容器資料庫，然後再嘗試 PDB 遷移。
+
+以下部分提供了在任一場景中將本機 Oracle 資料庫遷移到 Azure 雲端的詳細資訊。
+
+
+
+== 將單一實例非 CDB 轉換為多租戶 CDB 中的 PDB
+
+如果您仍然擁有單一執行個體 Oracle 資料庫，則無論您是否希望將其遷移到雲端中，都必須將其轉換為多租用戶容器資料庫，因為 Oracle 將很快停止支援單一執行個體資料庫。
+
+以下步驟將單一實例資料庫作為可插拔資料庫或 PDB 插入容器資料庫。
+
+. 在與單一實例資料庫相同的主機上建立一個 shell 容器資料庫，並在另一個單獨的 `ORACLE_HOME`。
+. 關閉單一實例資料庫並以唯讀模式重新啟動它。
+. 運行 `DBMS_PDB.DESCRIBE`產生資料庫元資料的過程。
++
+[source, cli]
+----
+BEGIN
+  DBMS_PDB.DESCRIBE(
+    pdb_descr_file => '/home/oracle/ncdb.xml');
+END;
+/
+----
+. 關閉單一實例資料庫。
+. 啟動容器資料庫。
+. 運行 `DBMS_PDB.CHECK_PLUG_COMPATIBILITY`函數來判斷非CDB是否與CDB相容。
++
+[source, cli]
+----
+SET SERVEROUTPUT ON
+DECLARE
+  compatible CONSTANT VARCHAR2(3) :=
+    CASE DBMS_PDB.CHECK_PLUG_COMPATIBILITY(
+           pdb_descr_file => '/disk1/oracle/ncdb.xml',
+           pdb_name       => 'NCDB')
+    WHEN TRUE THEN 'YES'
+    ELSE 'NO'
+END;
+BEGIN
+  DBMS_OUTPUT.PUT_LINE(compatible);
+END;
+/
+----
++
+如果輸出為YES，則表示非CDB相容，可以繼續下一步。
+
++
+如果輸出為 NO，則非 CDB 不相容，您可以檢查 `PDB_PLUG_IN_VIOLATIONS`查看不相容的原因。繼續操作之前，必須先糾正所有違規行為。例如，任何版本或補丁不匹配的問題都應透過執行升級或 opatch 實用程式來解決。糾正違規行為後，運行 `DBMS_PDB.CHECK_PLUG_COMPATIBILITY`再次確保非 CDB 與 CDB 相容。
+
+. 插入單一實例非 CDB。
++
+[source, cli]
+----
+CREATE PLUGGABLE DATABASE ncdb USING '/home/oracle/ncdb.xml'
+  COPY
+  FILE_NAME_CONVERT = ('/disk1/oracle/dbs/', '/disk2/oracle/ncdb/')
+;
+----
++
+
+NOTE: 如果主機上沒有足夠的空間， `NOCOPY`選項可用於建立 PDB。在這種情況下，單一實例非 CDB 在插入為 PDB 後將無法使用，因為原始資料檔案已用於 PDB。確保在轉換之前建立備份，以便在出現任何問題時可以依靠它。
+
+. 如果來源單一實例非 CDB 和目標 CDB 之間的版本不同，則轉換後從 PDB 升級開始。對於同版本轉換，可跳過此步驟。
++
+[source, cli]
+----
+sqlplus / as sysdba;
+alter session set container=ncdb
+alter pluggable database open upgrade;
+exit;
+dbupgrade -c ncdb -l /home/oracle
+----
++
+查看升級日誌文件 `/home/oracle`目錄。
+
+. 開啟可插拔資料庫，檢查 pdb 插件違規，並重新編譯無效物件。
++
+[source, cli]
+----
+alter pluggable database ncdb open;
+alter session set container=ncdb;
+select message from pdb_plug_in_violations where type like '%ERR%' and status <> 'RESOLVED';
+$ORACLE_HOME/perl/bin/perl $ORACLE_HOME/rdbms/admin/catcon.pl -n 1 -c 'ncdb' -e -b utlrp -d $ORACLE_HOME/rdbms/admin utlrp.sql
+----
+. 執行 `noncdb_to_pdb.sql`更新資料字典。
++
+[source, cli]
+----
+sqlplus / as sysdba
+alter session set container=ncdb;
+@$ORACLE_HOME/rdbms/admin/noncdb_to_pdb.sql;
+----
++
+關閉並重新啟動容器資料庫。  ncdb 已退出限制模式。
+
+
+
+
+
+== 透過 PDB 遷移將本機 Oracle 資料庫遷移到 Azure
+
+具有最大可用性選項的 Oracle PDB 重定位採用了 PDB 熱克隆技術，該技術允許在 PDB 複製到目標時來源 PDB 可用。在切換時，使用者連線會自動重新導向到目標 PDB。因此，無論 PDB 的大小如何，停機時間都可以最小化。  NetApp提供了基於 Ansible 的工具包，可自動執行遷移過程。
+
+. 在 Azure 公有雲中的 Azure VM 上建立具有相同版本和修補程式等級的 CDB。
+. 從 Ansible 控制器複製自動化工具包的副本。
++
+[source, cli]
+----
+git clone https://github.com/NetApp-Automation/na_ora_aws_migration.git
+----
+. 閱讀 README 文件中的說明。
+. 為來源和目標 Oracle 伺服器設定 Ansible 主機變數檔案以及用於名稱解析的 DB 伺服器主機的設定檔。
+. 在 Ansible 控制器上安裝 Ansible 控制器先決條件。
++
+[source, cli]
+----
+ansible-playbook -i hosts requirements.yml
+ansible-galaxy collection install -r collections/requirements.yml --force
+----
+. 針對本機伺服器執行任何遷移前任務。
++
+[source, cli]
+----
+ansible-playbook -i hosts ora_pdb_relocate.yml -u admin -k -K -t ora_pdb_relo_onprem
+----
++
+
+NOTE: admin用戶是本機Oracle伺服器主機上具有sudo權限的管理用戶。管理員使用者透過密碼進行身份驗證。
+
+. 執行從本機到目標 Azure Oracle 主機的 Oracle PDB 重定位。
++
+[source, cli]
+----
+ansible-playbook -i hosts ora_pdb_relocate.yml -u azureuser --private-key db1.pem -t ora_pdb_relo_primary
+----
++
+
+NOTE: Ansible 控制器可以位於本機或 Azure 雲端。控制器需要連接到本機 Oracle 伺服器主機和 Azure Oracle VM 主機。本機 Oracle 伺服器主機和 Azure Oracle VM 主機之間的 Oracle 資料庫連接埠（例如 1521）已開啟。
+
+
+
+
+
+== 其他 Oracle 資料庫遷移選項
+
+請參閱 Microsoft 文件以了解更多移轉選項：link:https://learn.microsoft.com/en-us/azure/architecture/example-scenario/oracle-migrate/oracle-migration-overview["Oracle 資料庫遷移決策流程"^] 。

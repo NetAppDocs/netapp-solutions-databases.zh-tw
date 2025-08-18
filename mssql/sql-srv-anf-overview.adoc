@@ -1,0 +1,33 @@
+---
+sidebar: sidebar 
+permalink: mssql/sql-srv-anf-overview.html 
+keywords: use case, rehosting, enterprise resource planning, RDBMS, cloud migration 
+summary: '本文檔介紹利用 Azure 虛擬機器在Azure NetApp Files上即時部署 SQL Server Always On 可用性群組 (AOAG)。' 
+---
+= TR-4897： Azure NetApp Files上的 SQL Server - 真實部署視圖
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+本文檔介紹利用 Azure 虛擬機器在Azure NetApp Files上即時部署 SQL Server Always On 可用性群組 (AOAG)。
+
+NetApp的 Niyaz Mohamed
+
+IT 組織面臨著不斷的改變。 Gartner 報告稱，到 2022 年，近 75% 的資料庫將需要基於雲端的儲存。作為領先的關聯式資料庫管理系統 (RDBMS)，Microsoft SQL Server 是 Windows 平台設計的應用程式和組織的首選，這些應用程式和組織依賴 SQL Server 進行從企業資源規劃 (ERP) 到分析到內容管理的所有工作。  SQL Server 協助徹底改變了企業管理大量資料集和為其應用程式提供動力以滿足模式和查詢效能需求的方式。
+
+大多數 IT 組織都遵循雲端優先方法。處於轉型階段的客戶會評估目前的 IT 環境，然後根據評估和發現練習將其資料庫工作負載遷移到雲端。推動客戶進行雲端遷移的一些因素包括彈性/爆發、資料中心退出、資料中心整合、生命週期終止場景、合併、收購等。遷移的原因可能因每個組織及其各自的業務優先順序而異。當遷移到雲端時，選擇正確的雲端儲存對於釋放 SQL Server 資料庫雲端部署的強大功能非常重要。
+
+
+
+== 用例
+
+將 SQL Server 資產遷移到 Azure，並將 SQL Server 與 Azure 的大量平台即服務 (PaaS) 功能（例如 Azure 資料工廠、Azure IoT 中心和 Azure 機器學習）相集成，可以創造巨大的商業價值來支援數位轉型。採用雲端也使相應的業務部門能夠專注於生產力並比依賴 CAPEX 模型或傳統私有雲模型更快地提供新功能和增強功能（DevTest 用例）。本文檔介紹利用 Azure 虛擬機器在Azure NetApp Files上即時部署 SQL Server Always On 可用性群組 (AOAG)。
+
+Azure NetApp Files提供具有持續可用檔案共用的企業級儲存。 SMB 檔案共用上的 SQL Server 生產資料庫需要持續可用的共享，以確保節點始終可以存取資料庫存儲，包括在控制器升級或故障等中斷情況下。持續可用的檔案共用消除了在儲存節點之間複製資料的需求。  Azure NetApp Files使用 SMB 3.0 橫向擴展、持久句柄和透明故障轉移來支援計劃內和計劃外停機事件（包括許多管理任務）的無中斷操作 (NDO)。
+
+在規劃雲端遷移時，您應該始終評估最佳使用方法。應用程式遷移最常見、最簡單的方法是重新託管（也稱為提升和轉移）。本文檔提供的範例場景採用的是重新託管方法。使用Azure NetApp Files在 Azure 虛擬機器上使用 SQL Server，您可以在雲端中使用完整版本的 SQL Server，而無需管理本機硬體。  SQL Server 虛擬機器 (VM) 還可以簡化您按使用量付費時的授權成本，並為開發、測試和資產刷新場景提供彈性和爆發能力。
