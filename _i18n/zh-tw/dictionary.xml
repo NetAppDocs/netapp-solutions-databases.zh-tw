@@ -5275,4 +5275,5 @@
   <block id="554cfab3938e21d9270bd6b75931f96f" category="sidebar">影片</block>
   <block id="5ffbe0deb5b41148dc58e63a20df8411" category="sidebar">Oracle 資料庫</block>
   <block id="39a2008d48dcc4f61288e4668979970c" category="sidebar">SQL Server 資料庫</block>
+  <block id="22d04ecae9fae88d0b8d4548a46a545b" category="sidebar">請求自動化</block>
 </blocks>
