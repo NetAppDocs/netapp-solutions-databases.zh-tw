@@ -1,0 +1,915 @@
+---
+sidebar: sidebar 
+permalink: mssql/gcnv-sql-aoag-setup.html 
+keywords: sql server, always on, availability group, google cloud netapp volumes, iscsi, block storage, compute engine, gcnv 
+summary: 使用 Google Cloud NetApp Volumes 搭配 iSCSI 協定進行區塊儲存，在 Google Compute Engine 執行個體上設定 SQL Server Always On 可用性群組。 
+---
+= 使用 Google Cloud NetApp Volumes 設定 SQL Server Always On 可用性群組
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+使用 Google Cloud NetApp Volumes iSCSI 區塊儲存，在單一子網路內的 Google Compute Engine 執行個體上設定 SQL Server Always On 可用性群組。了解如何設定運算執行個體、設定 NetApp 磁碟區、建立容錯移轉叢集以及部署可用性群組，以實現高可用性和災難恢復。
+
+
+
+== 先決條件
+
+在繼續操作之前，請先完成 Google Cloud 文件中的設定先決條件步驟：
+
+* link:https://docs.cloud.google.com/compute/docs/instances/sql-server/configure-availability#before-you-begin["開始之前"^]
+* link:https://docs.cloud.google.com/compute/docs/instances/sql-server/configure-availability#prepare_your_project_and_network["準備您的專案和網路"^]
+* link:https://docs.cloud.google.com/compute/docs/instances/sql-server/configure-availability#create_firewall_rules["防火牆規則"^]
+* link:https://docs.cloud.google.com/netapp/volumes/docs/plan-and-prepare/workflow["設定 NetApp 磁碟區"^]
+
+
+
+
+== 開始之前
+
+請確保您已完成以下要求：
+
+* 擁有運算、網路、IAM 和儲存管理權限的 Google Cloud 專案
+* 具有子網路的 VPC 網路（用於區域設定）
+* 區域中可用的 Active Directory 和 DNS 設定
+* 已設定防火牆規則以允許所需的連接埠
+* 熟悉 SQL Server Always On 可用性群組和容錯移轉叢集
+
+
+
+NOTE: 新 Google Cloud 用戶可能有資格享受link:https://cloud.google.com/free["免費試用額度"^]。
+
+
+
+== 目標
+
+配置 SQL Server Always On 可用性群組包括以下高階任務：
+
+* 設定 Compute Engine 執行個體和 NetApp 儲存磁碟區
+* 在兩個節點上都設定 SQL Server
+* 設定 Windows Server Failover Cluster
+* 使用檔案共用見證設定叢集仲裁
+* 設定 SQL Server 可用性群組
+* 為接聽程式存取設定分散式網路名稱 (DNN)
+
+
+
+
+== 成本考量
+
+本教學使用了 Google Cloud 的計費元件，包括 link:https://console.cloud.google.com/compute/overview?["Compute Engine 執行個體"^] 和 link:https://console.cloud.google.com/netapp/volumes?["Google Cloud NetApp Volumes"^] 儲存。
+
+使用 link:https://cloud.google.com/products/calculator?dl=CjhDaVF4T1dJeU5XRTBZUzFtTmpjMkxUUTRZVGd0WVdOalpDMHhNMkpsTVRVMU9UaG1OVFlRQVE9PRAqGiRBNzVCRUZBMC0zMjBGLTQ1OTctQjNFQy1BQzk5OEYxMTg1NDA["定價計算器"^] 根據您的運算和儲存需求產生成本估算。範例組態使用 N4-SKU 運算執行個體和 NetApp Flex 服務層級儲存設備，用於 SQL Server Always On 可用性群組設定。
+
+
+
+== 設定網域帳戶
+
+在 Active Directory 中設定兩個帳戶：一個安裝帳戶（您的管理員帳戶）和一個用於兩個 SQL Server VM 的服務帳戶。
+
+例如，請使用下表中的帳戶值：
+
+
+NOTE: 本範例使用  `cvsdemo` 作為網域名稱。在整個程序中，請將  `cvsdemo` 替換為您的實際網域名稱。
+
+[cols="25,25,25,25"]
+|===
+| 帳戶 | VM | 完整網域名稱 | 說明 
+
+
+| <your account> | 兩者（sqlnode1 和 sqlnode2） | cvsdemo\DomainAdmin | 用於登入任一虛擬機器並配置叢集和可用性群組的管理員帳戶 
+
+
+| sqlsvc | 兩者（sqlnode1 和 sqlnode2） | cvsdemo\sqlsvc | 兩個 SQL Server VM 上的 SQL Server 和 SQL Server Agent 的服務帳戶 
+|===
+
+
+== 為 SQL Server 建立 Compute Engine VM
+
+建立兩個預先安裝了 SQL Server 2022 Enterprise 的 Google Compute Engine VM 執行個體（執行於 Windows Server 2025 上），用於託管可用性群組副本。
+
+.步驟
+. 在 Google Cloud 控制台中，前往 link:https://console.cloud.google.com/compute/instancesAdd["*建立執行個體*"] 頁面。
++
+如需更多資訊，請參閱 link:https://cloud.google.com/compute/docs/instances/create-start-instance["Google Cloud 文件"^]。
+
+. 在 *Name* 中，輸入 `sqlnode1`。
+. 在 *Machine configuration* 部分：
++
+.. 選擇 *General Purpose*
+.. 在 *Series* 清單中，選取 *N4*
+.. 在 *Machine type* 清單中，選擇 *n4-highmem-8 (8 vCPU, 64 GB memory)*
+
+
+. 選擇您建立 VPC 的區域（例如，region=us-west1、zone=us-west1-a）。
+. 在 *Boot disk* 部分中，按一下 *Change* ：
++
+.. 在 *Public images* 標籤上的 *Operating system* 清單中，選取 *SQL Server on Windows Server*。
+.. 在「版本」清單中，選擇「SQL Server 2022 Enterprise on Windows Server 2025 Datacenter」。
+.. 在 *Boot disk type* 清單中，選擇 *Hyperdisk Balanced*。
+.. 在 *Size (GB)* 欄位中，輸入 *50* GB。
+.. 按一下 *Select* 儲存啟動磁碟配置。
+
+
+. 在 *Networking* 部分，編輯網路介面以選擇正確的 VPC 和子網路。如果您只有一個 VPC 網路，則預設會選取它。
++
+.. 在網路介面卡上、選取 *gVNIC* 。
+.. 對於 link:https://cloud.google.com/network-tiers/docs/overview["*網路服務層級*"^]，請針對關鍵任務型工作負載選擇 *Premium*，或針對成本最佳化選擇 *Standard*。
+
+
+. 點選 *Create* 建立 VM。
+. 重複這些步驟以建立  `sqlnode2`。
+
+
+
+
+=== 將伺服器加入網域
+
+建立 VM 後、將其加入 Active Directory 網域、並安裝容錯移轉叢集和 iSCSI 連線所需的 Windows 功能。
+
+.步驟
+. 使用本機管理員帳戶遠端連線至虛擬機器。
+. 在伺服器管理員中，選擇 *Local Server*。
+. 選擇 *WORKGROUP* 連結。
+. 在 *Computer Name* 部分，選擇 *Change* 。
+. 選取 *Domain* 核取方塊，然後在文字方塊中輸入您的網域（例如， `cvsdemo.internal`）。
+. 按一下 *OK* 。
+. 在「Windows 安全性」對話方塊中，指定預設網域管理員帳戶的憑證（例如， `cvsdemo\DomainAdmin`）。
+. 當您看到「歡迎來到 cvsdemo.internal 網域」訊息時，按一下 *OK*。
+. 按一下 *Close* ，然後在對話方塊中選取 *Restart Now* 。
+. 伺服器重新啟動後，將該  `sqlsvc` 帳戶新增至管理員群組。
+
+
+
+NOTE: 您的 SQL 實例將使用 sqlsvc 帳戶運行，這是叢集和故障轉移設定所必需的。
+
+
+
+=== 安裝所需的 Windows 功能
+
+使用伺服器管理員或 PowerShell 在兩個 SQL Server VM 上安裝容錯移轉叢集和 MPIO。
+
+.選項 1：使用 Server Manager
+. 在伺服器管理員中，選擇 *Manage* > *Add Roles and Features* 。
+. 選擇 *Role-based or feature-based installation*，然後按一下 *Next*。
+. 選擇您的伺服器，然後按一下 *Next* 。
+. 在 *Features* 頁面上、選取 *Failover Clustering* 和 *Multipath I/O* 。
+. 當系統提示新增管理工具時、請按一下 *Add Features* 。
+. 完成精靈，如果出現提示則重新啟動。
+
+
+.選項 2 ：使用 PowerShell
+以管理員身份執行 PowerShell 並執行以下命令：
+
+[source, powershell]
+----
+# Install Failover Clustering and tools
+Install-WindowsFeature Failover-Clustering, RSAT-Clustering-PowerShell, RSAT-Clustering-CmdInterface -IncludeAllSubFeature -IncludeManagementTools
+
+# Install/enable MPIO
+Install-WindowsFeature -Name Multipath-IO
+Enable-MSDSMAutomaticClaim -BusType "iSCSI"
+
+# Install .NET and other SQL prerequisites (if not already installed)
+Install-WindowsFeature NET-Framework-45-Core, NET-Framework-45-Features
+Install-WindowsFeature RSAT-AD-PowerShell
+----
+
+
+=== 取得 iSCSI 啟動器名稱
+
+使用 iSCSI 發起程式 GUI 或 PowerShell 取得每個 SQL Server VM 的 iSCSI 限定名稱（IQN），以納入主機群組。
+
+.選項 1：使用 iSCSI 啟動器
+. 按 *Win+R* 或使用 Windows 搜尋列開啟  `iscsicpl`。
+. 在 iSCSI 發起程式內容對話方塊中，前往 *Configuration* 標籤。
+. 複製 *Initiator Name* 值並將其新增至主機群組。
++
+範例： `iqn.1991-05.com.microsoft:sqlnode1.cvsdemo.internal`
+
+
+
+.選項 2 ：使用 PowerShell
+在 PowerShell 中執行以下命令：
+
+[source, powershell]
+----
+Get-InitiatorPort | Select-Object NodeAddress
+----
+
+
+== 建立 NetApp 區塊儲存磁碟區
+
+使用 Google Cloud NetApp Volumes 建立 iSCSI 區塊儲存磁碟區，為 SQL Server 資料庫提供高效能共用儲存。此程序包括建立主機群組、儲存資源池以及用於資料、記錄、暫存和備份的個別磁碟區。
+
+
+
+=== 建立主機群組
+
+.步驟
+. 建立一個包含來自兩個 SQL 節點的 iSCSI 啟動器的主機群組。
++
+[source, bash]
+----
+gcloud beta netapp host-groups create HOST_GROUP_NAME \
+  --location=LOCATION \
+  --type=ISCSI_INITIATOR \
+  --hosts=HOSTS \
+  --os-type=OS_TYPE \
+  --description=DESCRIPTION
+----
++
+如需更多詳細資訊，請參閱 link:https://cloud.google.com/netapp/volumes/docs/configure-and-use/host-groups/create-host-group["建立主機群組"^] 說明文件。
+
+. 請替換以下值：
++
+** `HOST_GROUP_NAME`：主機群組的名稱（例如、 `demosql`）
+** `LOCATION`：區域（例如 `us-west1`）
+** `HOSTS`：以逗號分隔的來自 sqlnode1 和 sqlnode2 的 IQN 列表
++
+範例： `iqn.1991-05.com.microsoft:sqlnode1.cvsdemo.internal,iqn.1991-05.com.microsoft:sqlnode2.cvsdemo.internal`
+
+** `OS_TYPE`：作業系統類型（例如， `WINDOWS`）
+** `DESCRIPTION`：主機群組的可選描述
++
+image::gcnv-sql-storage-pool.png[儲存池組態]
+
+
+
+
+
+
+
+=== 建立儲存資源池
+
+.步驟
+. 建立一個具有適當容量和效能的儲存池。
++
+[source, bash]
+----
+gcloud netapp storage-pools create POOL_NAME \
+  --project=PROJECT_ID \
+  --location=LOCATION \
+  --service-level=Flex \
+  --type=Unified \
+  --capacity=1024 \
+  --total-throughput=64 \
+  --total-iops=1024 \
+  --network=name=VPC_NAME,psa-range=PSA_RANGE
+----
++
+如需更多詳細資訊,請參閱 link:https://cloud.google.com/netapp/volumes/docs/configure-and-use/storage-pools/create-storage-pool["建立儲存池"^] 說明文件。
+
+. 請替換以下值：
++
+** `POOL_NAME`：集區名稱（例如， `sqltest`）
+** `PROJECT_ID`：您的 Google Cloud 專案名稱
+** `LOCATION`：與您的運算執行個體位於相同位置（例如， `us-west1-b`）
+** `CAPACITY`：池容量（單位：GiB）（例如， `1024`）
+** `SERVICE_LEVEL`: 服務等級（例如 `Flex`）
+** `VPC_NAME`：您的 VPC 網路名稱
+** `PSA_RANGE`：私有服務存取範圍（例如， `xx.xxx.xxx.0/20`）
+** `THROUGHPUT`：可選吞吐量，以 MiBps 為單位（例如， `64`）
+** `IOPS`：選用的 IOPS（例如， `1024`）
+
+
+
+
+
+
+=== 建立磁碟區
+
+. 建立資料、記錄、暫存和備份的磁碟區。針對每種磁碟區類型執行下列命令：
++
+[source, bash]
+----
+gcloud beta netapp volumes create VOLUME_NAME \
+  --project=PROJECT_ID \
+  --location=LOCATION \
+  --storage-pool=POOL_NAME \
+  --capacity=CAPACITY \
+  --protocols=ISCSI \
+  --block-devices="name=VOLUME_NAME,host-groups=HOST_GROUP_PATH,os-type=WINDOWS" \
+  --snapshot-directory=false
+----
++
+如需更多詳細資訊，請參閱 link:https://cloud.google.com/netapp/volumes/docs/configure-and-use/volumes/create-volume["創建卷"^] 說明文件。
+
+. 請替換以下值：
++
+** `VOLUME_NAME`：每個磁碟區的唯一名稱（例如、 `node1data`、 `node1log`、 `node1temp`、 `node1backup`）
+** `PROJECT_ID`：您的 Google Cloud 專案名稱
+** `LOCATION`：與儲存池位於相同位置（例如， `us-west1-b`）
+** `POOL_NAME`：儲存池名稱（例如， `sqltest`）
+** `CAPACITY`：卷容量，單位為 GiB（例如， `200`）
+** `HOST_GROUP_PATH`：主機群組的完整資源路徑（例如， `projects/PROJECT_ID/locations/us-west1/hostGroups/demosql`）
+
+
+
+
+
+TIP: 可以使用 # 符號分隔每個主機群組，以指定多個主機群組。
+
+
+NOTE: 對每種磁碟區類型重複此步驟：資料、日誌、暫存和備份。
+
+
+
+=== 掛載 iSCSI 磁碟區
+
+在每個 SQL 實例上掛載非共用 iSCSI 磁碟區：
+
+.步驟
+. 在 Google Cloud 控制台中，導覽至 *NetApp 磁碟區* > *磁碟區*。
+. 選擇為 SQL 實例建立的磁碟區（例如， `node1data`）。
+. 複製 iSCSI 目標的兩個 IP 位址（例如， `10.165.128.216` 和  `10.165.128.217`）。
+. 在 sqlnode1 上，運行 `iscsicpl` 或使用 PowerShell：
+. 按一下 *Discover* 標籤，然後按一下 *Discover Portal*。
+. 新增獲得的每個 IP 位址；保留預設連接埠 3260。
++
+[source, powershell]
+----
+"10.165.128.216","10.165.128.217" | % { New-IscsiTargetPortal -TargetPortalAddress $_ }
+----
++
+image::gcnv-sql-iscsi-vol.png[探索 iSCSI 目標入口網站]
+
+. 在 *Connect to Target* 對話方塊中，如果使用多路徑，請選取 *Enable multi-path* 。
+. 點擊 *Advanced*，然後從下拉式選單中選擇目標入口網站 IP。
+. 按一下 *OK* 進行連線。
+. 為 iSCSI 裝置設定 MPIO
++
+.. 從控制面板或伺服器管理員開啟 MPIO 。
+.. 點選 *Discover Multi-Paths* 標籤。
+.. 勾選 *Add support for iSCSI devices* 並按一下 *Add* 。
+.. 如果出現提示，請重新開機。
+.. 在裝置管理員的 *磁碟機* 下驗證多路徑組態。
+
+
+. 初始化並格式化磁碟區
++
+.. 啟動電腦管理 (`compmgmt.msc`）並選擇 *Disk Management*。
+.. 初始化、分割並格式化每個磁碟，分配單元為 64K：
++
+[source, powershell]
+----
+Format-Volume -DriveLetter <DriveLetter> -FileSystem NTFS -NewFileSystemLabel <Label> -AllocationUnitSize 65536 -Confirm:$false
+----
+.. 分配磁碟機代號（例如、D: 用於 Data、E: 用於 Log、F: 用於 Backup、G: 用於 Temp）。
+.. 建立 SQL Server 的目錄結構：
++
+[source, powershell]
+----
+$paths = "D:\MSSQL\DATA","E:\MSSQL\Log","F:\MSSQL\Backup","G:\MSSQL\Temp"
+$paths | % { New-Item -ItemType Directory -Path $_ -Force }
+----
+
+
+
+
+
+
+== 配置 SQL Server
+
+在兩個節點上配置 SQL Server 以使用網域服務帳戶，更新預設路徑以使用 NetApp 卷，並將系統資料庫移至新的儲存位置。
+
+.步驟
+. 更新 SQL Server 和 SQL Server Agent 服務，使其在網域服務帳戶下執行，以實現叢集身分驗證和容錯移轉支援。
++
+.. 在每個 SQL 執行個體上，開啟  `services.msc`。
+.. 將 SQL Server 和 SQL Server Agent 服務的*登入身分*更新為 `domain\sqlsvc`。
+.. 開啟 SQL Server Management Studio （ SSMS ） 並使用您的網域帳戶進行連線。
++
+如果連線失敗，請以 `<local computer>\Administrator`身分啟動 SSMS。確保已在「使用者和群組」中啟用 Administrator 帳戶並設定了正確的密碼。
+
+
+
+. 建立具有所需權限的網域帳戶登入。
++
+
+NOTE: 將以下 SQL 命令中的  `CVSDEMO` 替換為您的實際網域名稱。
+
++
+[source, sql]
+----
+USE [master]
+GO
+
+-- Create login for SQL service account
+CREATE LOGIN [CVSDEMO\sqlsvc] FROM WINDOWS
+  WITH DEFAULT_DATABASE=[master], DEFAULT_LANGUAGE=[us_english]
+GO
+
+-- Add to sysadmin role
+ALTER SERVER ROLE [sysadmin] ADD MEMBER [CVSDEMO\sqlsvc]
+GO
+
+-- Create user in master and assign role
+USE [master]
+GO
+CREATE USER [CVSDEMO\sqlsvc] FOR LOGIN [CVSDEMO\sqlsvc]
+GO
+ALTER ROLE [db_owner] ADD MEMBER [CVSDEMO\sqlsvc]
+GO
+
+-- Repeat for model, msdb, and tempdb databases
+USE [model]
+GO
+CREATE USER [CVSDEMO\sqlsvc] FOR LOGIN [CVSDEMO\sqlsvc]
+GO
+ALTER ROLE [db_owner] ADD MEMBER [CVSDEMO\sqlsvc]
+GO
+
+USE [msdb]
+GO
+CREATE USER [CVSDEMO\sqlsvc] FOR LOGIN [CVSDEMO\sqlsvc]
+GO
+ALTER ROLE [db_owner] ADD MEMBER [CVSDEMO\sqlsvc]
+GO
+
+USE [tempdb]
+GO
+CREATE USER [CVSDEMO\sqlsvc] FOR LOGIN [CVSDEMO\sqlsvc]
+GO
+ALTER ROLE [db_owner] ADD MEMBER [CVSDEMO\sqlsvc]
+GO
+----
+. 更新預設路徑，使其使用 NetApp 磁碟區而不是系統磁碟機：
++
+[source, sql]
+----
+USE [master]
+GO
+
+EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE',
+  N'Software\Microsoft\MSSQLServer\MSSQLServer',
+  N'BackupDirectory', REG_SZ, N'F:\MSSQL\Backup'
+GO
+
+EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE',
+  N'Software\Microsoft\MSSQLServer\MSSQLServer',
+  N'DefaultData', REG_SZ, N'D:\MSSQL\DATA'
+GO
+
+EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE',
+  N'Software\Microsoft\MSSQLServer\MSSQLServer',
+  N'DefaultLog', REG_SZ, N'E:\MSSQL\Log'
+GO
+----
+. 將系統資料庫（model、msdb、tempdb 和 master）從作業系統磁碟機移至 NetApp 磁碟區中，以獲得更好的效能和管理。
++
+.. 驗證目前路徑：
++
+[source, sql]
+----
+-- Check current paths
+SELECT name, physical_name
+FROM sys.master_files
+WHERE database_id IN (DB_ID('model'), DB_ID('msdb'));
+----
+.. 更新至新位置：
++
+[source, sql]
+----
+-- Move model database
+ALTER DATABASE model MODIFY FILE
+  (NAME = modeldev, FILENAME = 'D:\MSSQL\Data\model.mdf');
+ALTER DATABASE model MODIFY FILE
+  (NAME = modellog, FILENAME = 'E:\MSSQL\Log\modellog.ldf');
+
+-- Move msdb database
+ALTER DATABASE msdb MODIFY FILE
+  (NAME = MSDBData, FILENAME = 'D:\MSSQL\Data\MSDBData.mdf');
+ALTER DATABASE msdb MODIFY FILE
+  (NAME = MSDBLog, FILENAME = 'E:\MSSQL\Log\MSDBLog.ldf');
+GO
+----
+.. 停止 SQL Server、手動將檔案從舊位置移至新路徑，然後重新啟動 SQL Server。
+.. 移動 tempdb 資料庫
++
+[source, sql]
+----
+USE master;
+GO
+
+-- Check current tempdb files
+SELECT name, physical_name
+FROM sys.master_files
+WHERE database_id = DB_ID('tempdb');
+
+-- Change paths for tempdb
+ALTER DATABASE tempdb MODIFY FILE
+  (NAME = tempdev, FILENAME = 'G:\MSSQL\Temp\tempdb.mdf');
+ALTER DATABASE tempdb MODIFY FILE
+  (NAME = templog, FILENAME = 'G:\MSSQL\Temp\templog.ldf');
+GO
+----
+.. 重新啟動 SQL Server 以使變更生效：
++
+[source, powershell]
+----
+Restart-Service -Name "MSSQLSERVER" -Force
+----
+
+
+. 移動主資料庫
++
+.. 開啟 *SQL Server Configuration Manager*。
+.. 導覽至 *SQL Server Services*，以滑鼠右鍵按一下 *SQL Server (MSSQLSERVER)*，然後選擇 *Properties*。
+.. 點選 *Startup Parameters* 標籤。
+.. 在 *現有參數* 中，找出以  `-d`、 `-e` 和  `-l` 開頭的參數。
+.. 移除舊參數並新增參數：
++
+[listing]
+----
+-dD:\MSSQL\Data\master.mdf
+-lE:\MSSQL\Log\mastlog.ldf
+-eE:\MSSQL\Log\ERRORLOG
+----
++
+image::gcnv-sql-server-prop.png[探索 iSCSI 目標入口網站]
+
+.. 按一下 *OK* 。
+
+
+. 停止 SQL Server 服務。
+. 手動將 `master.mdf` 和 `mastlog.ldf` 從舊位置移動到新路徑。
+. 如果更新了錯誤日誌路徑，也請移動  `ERRORLOG` 檔案。
+. 啟動 SQL Server 服務。
++
+image::gcnv-sql-aoag-003.png[SQL Server Configuration Manager - 啟動參數]
+
+
+
+
+
+== 設定容錯移轉叢集
+
+設定 Windows Server 故障轉移群集，為 SQL Server 提供高可用性。有關更多詳細信息，請參閱 link:https://learn.microsoft.com/en-us/windows-server/failover-clustering/failover-clustering-overview["Windows Server Failover Clustering 文件"^]。
+
+
+
+=== 配置防火牆規則
+
+在兩個 SQL 節點上開啟所需的網路連接埠，以啟用叢集通訊、SQL Server 連線和可用性群組複寫。
+
+.步驟
+. 在兩個 SQL 節點上開啟叢集通訊所需的連接埠。
++
+所需連接埠包括：UDP 3343、TCP 3343、TCP 1433、TCP 5022、TCP 135、TCP 445、TCP 49152-65535（動態 RPC）。
+
+. 在兩台伺服器上執行下列檢查點，以允許 SQL Server 和叢集透過防火牆進行通訊。
++
+如果您有自訂配置，請調整連接埠號碼。
+
++
+[source, powershell]
+----
+# Open firewall for SQL Server
+netsh advfirewall firewall add rule name="Allow SQL Server" dir=in action=allow protocol=TCP localport=1433
+
+# Open firewall for SQL Server replication
+netsh advfirewall firewall add rule name="Allow SQL Server replication" dir=in action=allow protocol=TCP localport=5022
+----
++
+有關詳細的防火牆要求、請參閱 link:https://learn.microsoft.com/en-us/troubleshoot/windows-server/high-availability/service-overview-and-network-port-requirements["Windows Server 服務和網路連接埠需求"^]。
+
+. 在建立叢集之前，請對兩個節點執行驗證檢查：
++
+[source, powershell]
+----
+Test-Connection servername
+Resolve-DnsName servername
+Get-NetAdapterBinding -ComponentID ms_tcpip6
+----
+
+
+
+
+=== 建立容錯移轉叢集
+
+建立一個包含兩個 SQL Server 節點的 Windows Server Failover Cluster，以實現高可用性和自動故障轉移功能。
+
+.步驟
+. 執行 `cluadmin.msc`或從 Server Manager 開啟 Failover Cluster Manager。
++
+image::gcnv-sql-failover-cluster.png[容錯移轉叢集管理員]
+
+. 選擇 *Create Cluster*。
+. 新增兩個 SQL 節點（sqlnode1、sqlnode2）。
+. 執行驗證測試並確保所有檢查均通過。在繼續操作之前，請檢查並修復所有警告。
+. 提供叢集名稱（例如， `sqlcluwest1`）。
+. 完成叢集建立。
++
+image::gcnv-sql-failover-confirm.png[建立容錯移轉叢集]
+
+
+
+
+
+== 使用檔案共用見證設定叢集仲裁
+
+設定檔案共用見證以在雙節點叢集組態中維持仲裁。見證提供額外的投票，以防止腦裂情況並確保叢集可用性。
+
+
+
+=== 建立檔案共用
+
+在具有網路連線且位於相同 Active Directory 網域內的不同區域或地區的 VM 上建立檔案共用。
+
+.步驟
+. 連接到檔案共享見證伺服器 VM 。
+. 在伺服器管理員中，選擇 *Tools* > *Computer Management* 。
+. 選擇 *共用資料夾*，右鍵單擊 *共用*，然後選擇 *新共用*。
++
+image::gcnv-sql-cluster-new-share.png[為叢集仲裁見證建立新共用]
+
+. 使用 *Create a Shared Folder Wizard* 建立共用資料夾 `\\servername\share`。
+. 在 *Folder Path* 頁面上，選擇 *Browse* 。
+. 找到或建立共用資料夾的路徑，然後選取 *Next* 。
+. 在 *Name, Description, and Settings* 頁面上，驗證共用名稱和路徑，然後選擇 *Next*。
+. 在 *共用資料夾權限* 頁面上，選擇 *自訂權限* 並按一下 *自訂*
+. 在 *Customize Permissions* 對話方塊中、選取 *Add* 以新增叢集帳戶。
++
+確保用於建立叢集的帳戶 (sqlcluwest1$) 具有完全控制權限。
+
+. 按一下 *OK* 以儲存權限。
+. 在 *Shared Folder Permissions* 頁面上，選擇 *Finish*，然後再次選擇 *Finish*。
+
+
+
+
+=== 配置仲裁設定
+
+設定叢集以使用檔案共用見證進行仲裁投票。
+
+.步驟
+. 在故障轉移叢集管理員中、以滑鼠右鍵按一下叢集、然後選取 *More Actions* > *Configure Cluster Quorum Settings* 。
++
+image::gcnv-sql-cluster-quorum-settings.png[配置叢集仲裁設定選單]
+
+. 在「設定叢集仲裁精靈」中，按一下 *Next* 。
+. 在 *Select Quorum Configuration* 頁面上，選擇 *Select the quorum witness*，然後按一下 *Next*。
+. 在「選擇仲裁見證人」頁面上，選擇「設定檔案共用見證人」。
+. 在 *Configure File Share Witness* 頁面中、選取 *Configure a file share witness* 。
+. 輸入您建立的共用路徑（例如， `\\servername\share`），然後按一下 *Next*。
+. 在確認頁面上驗證設定，然後按一下 *Next* 。
+. 點選 *Finish* 。
+
+
+叢集核心資源現已設定檔案共用見證。
+
+image::gcnv-sql-file-share-confirm.png[叢集仲裁已設定檔案共用見證]
+
+
+
+== 啟用 Always On 可用性群組
+
+在兩台 SQL Server VM 上啟用 Always On 可用性群組：
+
+.步驟
+. 從「開始」功能表中，開啟 *SQL Server Configuration Manager*。
+. 在瀏覽器樹中，選擇 *SQL Server Services*。
+. 右鍵點選 *SQL Server (MSSQLSERVER)* 並選擇 *Properties* 。
+. 選擇 *Always On High Availability* 選項卡。
+. 勾選 *Enable Always On availability groups*。
+. 按一下 *Apply* ，然後根據提示重新啟動 SQL Server 服務。
++
+image::gcnv-sql-always-on-group.png[啟用 Always On 高可用性]
+
+. 對第二個 SQL Server 執行個體重複上述步驟。
+
+
+
+
+== 在第一個 SQL Server 執行個體上建立資料庫
+
+在第一個 SQL Server 執行個體上建立資料庫。
+
+.步驟
+. 使用身為 sysadmin 固定伺服器角色成員的網域帳戶連線到第一個 SQL Server VM。
+. 開啟 SQL Server Management Studio 並連線至第一個 SQL Server 執行個體。
+. 在 *Object Explorer* 中，以滑鼠右鍵按一下 *Databases* ，然後選擇 *New Database* 。
+. 輸入資料庫名稱（例如， `MyDB1`），然後按一下 *OK*。
+. 將資料庫復原模式設定為 Full：
++
+[source, sql]
+----
+ALTER DATABASE MyDB1 SET RECOVERY FULL;
+GO
+----
+
+
+
+
+== 建立和設定可用性群組
+
+建立具有同步提交和自動容錯移轉功能的 Always On 可用性群組，為您的 SQL Server 資料庫提供高可用性。
+
+. 對資料庫進行完整備份和交易記錄備份。
++
+[source, sql]
+----
+-- Full backup
+BACKUP DATABASE MyDB1
+TO DISK = 'F:\MSSQL\Backup\MyDB1_Full.bak'
+WITH INIT, COMPRESSION;
+
+-- Transaction log backup
+BACKUP LOG MyDB1
+TO DISK = 'F:\MSSQL\Backup\MyDB1_Log.trn'
+WITH INIT, COMPRESSION;
+----
+. 將備份檔案複製到第二個 SQL Server 執行個體，並使用 NORECOVERY 還原它們。
++
+[source, sql]
+----
+-- Restore full backup
+RESTORE DATABASE MyDB1
+FROM DISK = 'F:\MSSQL\Backup\MyDB1_Full.bak'
+WITH NORECOVERY;
+
+-- Restore log backup
+RESTORE LOG MyDB1
+FROM DISK = 'F:\MSSQL\Backup\MyDB1_Log.trn'
+WITH NORECOVERY;
+----
+. 建立具有同步提交、自動容錯移轉和可讀次要複本的可用性群組：
++
+[source, sql]
+----
+-- Run on primary replica
+CREATE AVAILABILITY GROUP sqlagwest1
+WITH (AUTOMATED_BACKUP_PREFERENCE = SECONDARY)
+FOR DATABASE MyDB1
+REPLICA ON
+  N'SQLNODE1' WITH (
+    ENDPOINT_URL = N'TCP://sqlnode1.cvsdemo.internal:5022',
+    AVAILABILITY_MODE = SYNCHRONOUS_COMMIT,
+    FAILOVER_MODE = AUTOMATIC,
+    SECONDARY_ROLE(ALLOW_CONNECTIONS = YES)
+  ),
+  N'SQLNODE2' WITH (
+    ENDPOINT_URL = N'TCP://sqlnode2.cvsdemo.internal:5022',
+    AVAILABILITY_MODE = SYNCHRONOUS_COMMIT,
+    FAILOVER_MODE = AUTOMATIC,
+    SECONDARY_ROLE(ALLOW_CONNECTIONS = YES)
+  );
+GO
+----
+. 使用可用性群組精靈建立可用性群組。
++
+image::gcnv-sql-avail-group-options.png[建立可用性群組精靈]
+
++
+image::gcnv-sql-select-database.png[將資料庫和複本新增至可用性群組]
+
++
+
+IMPORTANT: 確保兩個 SQL 節點上的防火牆連接埠 5022 都已開放。
+
++
+image::gcnv-sql-avail-group-sync.png[可用性群組同步]
+
+
+
+image::gcnv-sql-avail-group-replica.png[可用性群組已成功建立]
+
+
+
+== 建立 DNN 監聽器資源
+
+建立分散式網路名稱（DNN）接聽程式，將流量路由至適當的叢集資源，而不需要負載平衡器。
+
+使用 PowerShell 建立 DNN 資源：
+
+[source, powershell]
+----
+$Ag = "sqlagwest1"
+$Dns = "AOAGDNN"
+$Port = "1433"
+
+# Add DNN resource
+Add-ClusterResource -Name $Dns -ResourceType "Distributed Network Name" -Group $Ag
+
+# Set DNN properties
+Get-ClusterResource -Name $Dns | Set-ClusterParameter -Name DnsName -Value $Dns
+Get-ClusterResource -Name $Dns | Set-ClusterParameter -Name Port -Value $Port
+
+# Start DNN resource
+Start-ClusterResource -Name $Dns
+
+# Add dependency
+$AagResource = Get-ClusterResource | Where-Object {$_.ResourceType -eq "SQL Server Availability Group" -and $_.OwnerGroup -eq $Ag}
+Set-ClusterResourceDependency -Resource $AagResource -Dependency "[$Dns]"
+----
+
+
+=== 設定可能的擁有者
+
+預設情況下，叢集會將 DNN DNS 名稱繫結到所有節點。排除未參與可用性群組的節點：
+
+.步驟
+. 在故障轉移群集管理器中，找到 DNN 資源。
+. 右鍵單擊 DNN 資源，然後選擇 *Properties* 。
++
+image::gcnv-sql-dns-props.png[DNN 資源屬性]
+
+. 取消選取未加入可用性群組的任何節點的核取方塊。
++
+image::gcnv-sql-configure-dns.png[設定 DNN 可能的擁有者]
+
+. 按一下 *OK* 以儲存設定。
+
+
+
+
+== 更新應用程式連接字串
+
+更新連接字串，使用 DNN 監聽器名稱並包含 `MultiSubnetFailover=True`參數：
+
+.範例連接字串
+[listing]
+----
+Server=AOAGDNN,1433;Database=MyDB1;MultiSubnetFailover=True;
+----
+
+NOTE: 如果您的用戶端不支援 MultiSubnetFailover 參數，則與 DNN 不相容。
+
+
+
+== 測試容錯移轉
+
+驗證可用性群組組態並測試容錯移轉，以確保節點之間的自動容錯移轉正常運作。
+
+. 在任意副本上執行以下命令，以驗證可用性群組配置。
++
+兩個副本都應該在可用性模式下顯示 `SYNCHRONOUS_COMMIT`，在故障轉移模式下顯示 `AUTOMATIC`，這可以確保在自動故障轉移期間零資料遺失。
+
++
+[source, sql]
+----
+SELECT ag.name AS AG_Name, ars.primary_replica
+FROM sys.dm_hadr_availability_group_states AS ars
+JOIN sys.availability_groups AS ag ON ag.group_id = ars.group_id;
+
+-- Check replica configuration
+SELECT replica_server_name, availability_mode_desc, failover_mode_desc
+FROM sys.availability_replicas
+WHERE group_id = (SELECT group_id FROM sys.availability_groups WHERE name = N'sqlagwest1');
+----
++
+image::gcnv-sql-test-failover.png[測試容錯移轉]
+
+. 在輔助節點上執行以下命令以啟動故障轉移：
++
+[source, sql]
+----
+ALTER AVAILABILITY GROUP sqlagwest1 FAILOVER;
+GO
+----
+. 檢查連線目標是否已切換至新的主要目標：
++
+[source, sql]
+----
+--
+SELECT @@SERVERNAME AS NowPrimary;
+----
++
+在 SSMS 中，展開可用性群組節點，右鍵點選 *Always On High Availability*，然後選擇 *Show Dashboard*。
+
++
+儀錶板應顯示兩個節點均處於健康狀態，並確認故障轉移。
+
++
+image::gcnv-sql-success-failover.png[Always On 高可用性儀表板顯示成功故障轉移]
+
+
+
+
+
+== 清理資源
+
+完成教學課程後，請刪除您建立的資源，以免產生額外費用：
+
+* 刪除 Compute Engine 執行個體 （sqlnode1、sqlnode2）
+* 刪除 Google Cloud NetApp Volumes （磁碟區、儲存池、主機群組）
+* 如果 VPC 和網路資源是專門為本教學課程建立的，請將其刪除
+* 如果適用，請刪除檔案共享見證伺服器
+
+
+有關刪除資源的詳細步驟，請參閱 link:https://cloud.google.com/netapp/volumes/docs/configure-and-use/volumes/delete-volume["Google Cloud NetApp Volumes 說明文件"^] 和 link:https://cloud.google.com/compute/docs/instances/deleting-instance["Google Compute Engine 文件"^]。
+
+
+
+== 在哪裡可以找到更多信息
+
+有關在 Google Cloud 上使用 NetApp 儲存的 SQL Server 的更多資訊，請參閱以下文件：
+
+* link:https://cloud.google.com/netapp/volumes/docs["Google Cloud NetApp Volumes 說明文件"^]
+* link:https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/always-on-availability-groups-sql-server["SQL Server Always On 可用性群組"^]
+* link:https://learn.microsoft.com/en-us/windows-server/failover-clustering/failover-clustering-overview["Windows Server Failover Clustering"^]
+* link:https://cloud.google.com/compute/docs["Google Compute Engine 文件"^]
+

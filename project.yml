@@ -162,6 +162,9 @@ sidebar:
         url: "/mssql/sql-srv-anf-conclusion.html"
       - title: 在哪裡可以找到更多信息
         url: "/mssql/sql-srv-anf-add-info.html"
+    - title: SQL Server Always On 與 Google Cloud NetApp Volumes
+      pdf-filename: SQL Server Always On 與 Google Cloud NetApp Volumes
+      url: "/mssql/gcnv-sql-aoag-setup.html"
     - title: 在 Windows 上使用 Clustered Data ONTAP 的SAP 與 Microsoft SQL Server
       pdf-filename: 在 Windows 上使用 Cluster Data ONTAP 的SAP 與 Microsoft SQL Server
       url: "/mssql/tr-4467.html"

@@ -5276,4 +5276,315 @@
   <block id="5ffbe0deb5b41148dc58e63a20df8411" category="sidebar">Oracle 資料庫</block>
   <block id="39a2008d48dcc4f61288e4668979970c" category="sidebar">SQL Server 資料庫</block>
   <block id="22d04ecae9fae88d0b8d4548a46a545b" category="sidebar">請求自動化</block>
+  <block id="8f3bd24c41b19b143e326bf56b5f0a8d" category="summary">使用 Google Cloud NetApp Volumes 搭配 iSCSI 協定進行區塊儲存，在 Google Compute Engine 執行個體上設定 SQL Server Always On 可用性群組。</block>
+  <block id="7b9f71eb2b074e2fe0245862fab29398" category="doc">使用 Google Cloud NetApp Volumes 設定 SQL Server Always On 可用性群組</block>
+  <block id="e9b77ddb32e1b86e0792cf4779d9520d" category="paragraph">使用 Google Cloud NetApp Volumes iSCSI 區塊儲存，在單一子網路內的 Google Compute Engine 執行個體上設定 SQL Server Always On 可用性群組。了解如何設定運算執行個體、設定 NetApp 磁碟區、建立容錯移轉叢集以及部署可用性群組，以實現高可用性和災難恢復。</block>
+  <block id="a7f327f308c31f423bdddfc07ac8a537" category="paragraph">在繼續操作之前，請先完成 Google Cloud 文件中的設定先決條件步驟：</block>
+  <block id="e2d9091402d12c6616c41d0b2f18fe19" category="list-text"><block ref="e2d9091402d12c6616c41d0b2f18fe19" category="inline-link-macro-rx"></block></block>
+  <block id="91c253c99264458ee96029b72e15b547" category="inline-link-macro">準備您的專案和網路</block>
+  <block id="319a49999ca237b80468601960c1ae93" category="list-text"><block ref="319a49999ca237b80468601960c1ae93" category="inline-link-macro-rx"></block></block>
+  <block id="4dfddd1829f7fb340bd9b36bff6e3130" category="inline-link-macro">防火牆規則</block>
+  <block id="cf1d8d962cec65d4e38efdb0c80e175d" category="list-text"><block ref="cf1d8d962cec65d4e38efdb0c80e175d" category="inline-link-macro-rx"></block></block>
+  <block id="69b38281f95a5dbf6fdb2ed4b6c2ea21" category="inline-link-macro">設定 NetApp 磁碟區</block>
+  <block id="9d7293ba9c220e3e8a185aecc1a280b8" category="list-text"><block ref="9d7293ba9c220e3e8a185aecc1a280b8" category="inline-link-macro-rx"></block></block>
+  <block id="de909bb4061d8bac62f8a3dbfc6a88a0" category="paragraph">請確保您已完成以下要求：</block>
+  <block id="5b92d31d3ce582944c226202d1cf24d5" category="list-text">擁有運算、網路、IAM 和儲存管理權限的 Google Cloud 專案</block>
+  <block id="53730ebe2ba9e46735b0f245ac76405b" category="list-text">具有子網路的 VPC 網路（用於區域設定）</block>
+  <block id="6472e202cb160d0a5eae85da07e1fd16" category="list-text">區域中可用的 Active Directory 和 DNS 設定</block>
+  <block id="25b3b1d7cecf00ec9cb18bcfab35d4df" category="list-text">已設定防火牆規則以允許所需的連接埠</block>
+  <block id="5037f321fd9407c8d2eb4eb07edb48d7" category="list-text">熟悉 SQL Server Always On 可用性群組和容錯移轉叢集</block>
+  <block id="25f340deb73b9a7042efb7759028a797" category="inline-link-macro">免費試用額度</block>
+  <block id="22c5a29b2bd6fb21cb161d3c6a3883fe" category="admonition">新 Google Cloud 用戶可能有資格享受<block ref="14c4a58e00da7181913005b9b179e942" category="inline-link-macro-rx"></block>。</block>
+  <block id="d03cbf063b0125881276987e9e53b79c" category="section-title">目標</block>
+  <block id="f6387159c1f35f863df150a455927e5c" category="paragraph">配置 SQL Server Always On 可用性群組包括以下高階任務：</block>
+  <block id="6a036b0f009e5f384f4c043c33af08ce" category="list-text">設定 Compute Engine 執行個體和 NetApp 儲存磁碟區</block>
+  <block id="3569899a0391388181d7eef2af1b71b7" category="list-text">在兩個節點上都設定 SQL Server</block>
+  <block id="1d75e8f5284825f06033c351fca468a1" category="list-text">設定 Windows Server Failover Cluster</block>
+  <block id="77354e6cde4bc8374df497e6b1020448" category="list-text">使用檔案共用見證設定叢集仲裁</block>
+  <block id="e7338db4e57a91de043eef6ef6c5ec12" category="list-text">設定 SQL Server 可用性群組</block>
+  <block id="30c6e2bb6c0c093a9bd8d2ad723da60c" category="list-text">為接聽程式存取設定分散式網路名稱 (DNN)</block>
+  <block id="67d9bef477b4472baf899e87265b663f" category="section-title">成本考量</block>
+  <block id="5bf681d1b31ed43ea88605b8001dc263" category="inline-link-macro">Compute Engine 執行個體</block>
+  <block id="a18b27087b25fa352c54673643e8590c" category="paragraph">本教學使用了 Google Cloud 的計費元件，包括 <block ref="3a1ebe9b19683720297dac57a364f02a" category="inline-link-macro-rx"></block> 和 <block ref="80e2b8e1929af94d0d431c3af598baa1" category="inline-link-macro-rx"></block> 儲存。</block>
+  <block id="d55aae0750946219ffe6ded7a93572c5" category="inline-link-macro">定價計算器</block>
+  <block id="d2c2245107909b7a43f23c0a25c85ee0" category="paragraph">使用 <block ref="6db332576e202722c7746833344678fa" category="inline-link-macro-rx"></block> 根據您的運算和儲存需求產生成本估算。範例組態使用 N4-SKU 運算執行個體和 NetApp Flex 服務層級儲存設備，用於 SQL Server Always On 可用性群組設定。</block>
+  <block id="197975c347610a0c817c1da0ec52f425" category="section-title">設定網域帳戶</block>
+  <block id="a1f03d5aba0438e49f5ece7dd8d7c5e9" category="paragraph">在 Active Directory 中設定兩個帳戶：一個安裝帳戶（您的管理員帳戶）和一個用於兩個 SQL Server VM 的服務帳戶。</block>
+  <block id="fe73a438890160cd4c22461250d1318e" category="paragraph">例如，請使用下表中的帳戶值：</block>
+  <block id="8179379e85dbc15566710aade67a12ed" category="admonition">本範例使用 <block ref="3630d6c0e151e118f8efcf085e64d5de" prefix=" " category="inline-code"></block> 作為網域名稱。在整個程序中，請將 <block ref="3630d6c0e151e118f8efcf085e64d5de" prefix=" " category="inline-code"></block> 替換為您的實際網域名稱。</block>
+  <block id="08bd40c7543007ad06e4fce31618f6ec" category="cell">帳戶</block>
+  <block id="583a65df9db4119165f5ea0abaa50281" category="cell">VM</block>
+  <block id="cb52d77c3d46973445526342b9695371" category="cell">完整網域名稱</block>
+  <block id="b5a7adde1af5c87d7fd797b6245c2a39" category="cell">說明</block>
+  <block id="9a8762286c7ec92a4156b28859cfa3bb" category="cell">&lt;your account&gt;</block>
+  <block id="742bfbbfd6f67cd7b2b81a1970c9c76e" category="cell">兩者（sqlnode1 和 sqlnode2）</block>
+  <block id="b8542256694ec8618c091abc9585ca77" category="cell">cvsdemo\DomainAdmin</block>
+  <block id="73db3477165bd17e48ad4cd3edb5937d" category="cell">用於登入任一虛擬機器並配置叢集和可用性群組的管理員帳戶</block>
+  <block id="fedba7534a3b74936c581a5c4150cd9a" category="cell">sqlsvc</block>
+  <block id="2142485140e575f5ae75daccf28b1640" category="cell">cvsdemo\sqlsvc</block>
+  <block id="ce576e8c0942fec8928dd9b538c7f84c" category="cell">兩個 SQL Server VM 上的 SQL Server 和 SQL Server Agent 的服務帳戶</block>
+  <block id="3c84b77c89dbb7530544443c7e493ebe" category="section-title">為 SQL Server 建立 Compute Engine VM</block>
+  <block id="d23abfe0834f018fa6d064f3369c485b" category="paragraph">建立兩個預先安裝了 SQL Server 2022 Enterprise 的 Google Compute Engine VM 執行個體（執行於 Windows Server 2025 上），用於託管可用性群組副本。</block>
+  <block id="f3a29486bed19a90f2da6d007818b427" category="list-title">步驟</block>
+  <block id="4e56fb4e419e4a5280cd8befd99dcf6c" category="inline-link-macro">*建立執行個體*</block>
+  <block id="135f2f17832c859cf6dcf77dc33f79bb" category="list-text">在 Google Cloud 控制台中，前往 <block ref="bdef467b6b14dd3ba6ca3f46b88cf158" category="inline-link-macro-rx"></block> 頁面。</block>
+  <block id="b0cd7667098b2a3439c52ba1f9334faa" category="inline-link-macro">Google Cloud 文件</block>
+  <block id="516529ae4af3b34eb008e628b15ece21" category="paragraph">如需更多資訊，請參閱 <block ref="ff97077a8dfbaedc5c48d8aec6962b04" category="inline-link-macro-rx"></block>。</block>
+  <block id="9e611395afebc72da92dab6cd48d161d" category="list-text">在 *Name* 中，輸入<block ref="2f160ca341fc9751fc67d60aa5ee1363" prefix=" " category="inline-code"></block>。</block>
+  <block id="9031326eaae199365a458cd734aa9662" category="list-text">在 *Machine configuration* 部分：</block>
+  <block id="b255f6f9ade354380244b8cee520f7e5" category="list-text">選擇 *General Purpose*</block>
+  <block id="4983be98cbbf27992bca6eeded0f12a5" category="list-text">在 *Series* 清單中，選取 *N4*</block>
+  <block id="9286ea0abb0e0036f258276ebb6950aa" category="list-text">在 *Machine type* 清單中，選擇 *n4-highmem-8 (8 vCPU, 64 GB memory)*</block>
+  <block id="a79485f0fc88238eef0d2e939d230cf2" category="list-text">選擇您建立 VPC 的區域（例如，region=us-west1、zone=us-west1-a）。</block>
+  <block id="2a1389d2939d6392fefbb6bee0ce6c04" category="list-text">在 *Boot disk* 部分中，按一下 *Change* ：</block>
+  <block id="4c7796716441e66779f4388459857af2" category="list-text">在 *Public images* 標籤上的 *Operating system* 清單中，選取 *SQL Server on Windows Server*。</block>
+  <block id="ade15be8ef1b5889dc1b47236686d188" category="list-text">在「版本」清單中，選擇「SQL Server 2022 Enterprise on Windows Server 2025 Datacenter」。</block>
+  <block id="c11d549e71a69e4e5b056b0ed25bf838" category="list-text">在 *Boot disk type* 清單中，選擇 *Hyperdisk Balanced*。</block>
+  <block id="0a68c3fa9f040d9b57a7cac8d1bb8cd4" category="list-text">在 *Size (GB)* 欄位中，輸入 *50* GB。</block>
+  <block id="271e96b0b3156454cb380e2036000262" category="list-text">按一下 *Select* 儲存啟動磁碟配置。</block>
+  <block id="8c65c6750228946b84e79933170ec4a2" category="list-text">在 *Networking* 部分，編輯網路介面以選擇正確的 VPC 和子網路。如果您只有一個 VPC 網路，則預設會選取它。</block>
+  <block id="9a8467535954406a0dd0eb5795740f40" category="list-text">在網路介面卡上、選取 *gVNIC* 。</block>
+  <block id="d0356f2b1f2d7beaa989d18fc73ea4c1" category="inline-link-macro">*網路服務層級*</block>
+  <block id="7072286176efc247213ef03ece543695" category="list-text">對於 <block ref="8f2d8560788eb594c4aa031f1f7a0140" category="inline-link-macro-rx"></block>，請針對關鍵任務型工作負載選擇 *Premium*，或針對成本最佳化選擇 *Standard*。</block>
+  <block id="afb13a1a3a46c764af0667b74c01ad80" category="list-text">點選 *Create* 建立 VM。</block>
+  <block id="40162ff06ee883b1e442abc4b4009a63" category="list-text">重複這些步驟以建立 <block ref="c8bc214eb47a96ef32064c39c1002208" prefix=" " category="inline-code"></block>。</block>
+  <block id="c595a1d797511844a7d7c5c16d4a9dcf" category="section-title">將伺服器加入網域</block>
+  <block id="d6d1756e386507a18c343f051d310674" category="paragraph">建立 VM 後、將其加入 Active Directory 網域、並安裝容錯移轉叢集和 iSCSI 連線所需的 Windows 功能。</block>
+  <block id="272ce3dc8c70659196f0973f8f87901c" category="list-text">使用本機管理員帳戶遠端連線至虛擬機器。</block>
+  <block id="9cc6fb3686b48f46270ef3d30943d545" category="list-text">在伺服器管理員中，選擇 *Local Server*。</block>
+  <block id="50856b82ac88bbf0ea2b421df2c42415" category="list-text">選擇 *WORKGROUP* 連結。</block>
+  <block id="709647db6d0440aa7315dcbf66168a11" category="list-text">在 *Computer Name* 部分，選擇 *Change* 。</block>
+  <block id="b2bd74d8d5af5f1a348f63115897e42b" category="list-text">選取 *Domain* 核取方塊，然後在文字方塊中輸入您的網域（例如，<block ref="ef307a1d35684b2e5c8761a190647854" prefix=" " category="inline-code"></block>）。</block>
+  <block id="a72cc47fad7d1846d19b085d2e77e5ba" category="list-text">按一下 *OK* 。</block>
+  <block id="4107966c7ebe4dd13214de2fc65f0032" category="list-text">在「Windows 安全性」對話方塊中，指定預設網域管理員帳戶的憑證（例如，<block ref="b8542256694ec8618c091abc9585ca77" prefix=" " category="inline-code"></block>）。</block>
+  <block id="8e40869bf943c08e628610699cd05418" category="list-text">當您看到「歡迎來到 cvsdemo.internal 網域」訊息時，按一下 *OK*。</block>
+  <block id="e84965886efccc8be3c355f8dbdfcee0" category="list-text">按一下 *Close* ，然後在對話方塊中選取 *Restart Now* 。</block>
+  <block id="b988d248ba3148948fb122910884ae5c" category="list-text">伺服器重新啟動後，將該 <block ref="fedba7534a3b74936c581a5c4150cd9a" prefix=" " category="inline-code"></block> 帳戶新增至管理員群組。</block>
+  <block id="eaed6f6464a03e806f488b2e76693dba" category="admonition">您的 SQL 實例將使用 sqlsvc 帳戶運行，這是叢集和故障轉移設定所必需的。</block>
+  <block id="e66cb863334b90928ae9f775bbf3db37" category="section-title">安裝所需的 Windows 功能</block>
+  <block id="6c8860b8701c41f4753c0ce417e3e708" category="paragraph">使用伺服器管理員或 PowerShell 在兩個 SQL Server VM 上安裝容錯移轉叢集和 MPIO。</block>
+  <block id="fec7eb7cf6c01fd6f5db984b6fbd7c5d" category="list-title">選項 1：使用 Server Manager</block>
+  <block id="f467589dc4325b3ce8c976b7a9994c7c" category="list-text">在伺服器管理員中，選擇 *Manage* &gt; *Add Roles and Features* 。</block>
+  <block id="3ef2088711ca78170926c4c9861b1a77" category="list-text">選擇 *Role-based or feature-based installation*，然後按一下 *Next*。</block>
+  <block id="fb2b7ec52582cb573c2b149ff468bdfc" category="list-text">選擇您的伺服器，然後按一下 *Next* 。</block>
+  <block id="c91b93994d0909e349ae4e2bafdaafca" category="list-text">在 *Features* 頁面上、選取 *Failover Clustering* 和 *Multipath I/O* 。</block>
+  <block id="bd598bf58dbff60f1436d518f2ede57c" category="list-text">當系統提示新增管理工具時、請按一下 *Add Features* 。</block>
+  <block id="b58aba183a05e01a8f7ca378e955f164" category="list-text">完成精靈，如果出現提示則重新啟動。</block>
+  <block id="b0978f514856a8fae5ac43cdae23003c" category="paragraph-title">選項 2 ：使用 PowerShell</block>
+  <block id="6a5c2188f7ea1848a964ae12b72c366f" category="paragraph">以管理員身份執行 PowerShell 並執行以下命令：</block>
+  <block id="d20ba46dfebdd9d3f94251ce33be77e2" category="section-title">取得 iSCSI 啟動器名稱</block>
+  <block id="e4f0d0a68e41a3a62ce7202cd9ccbd2c" category="paragraph">使用 iSCSI 發起程式 GUI 或 PowerShell 取得每個 SQL Server VM 的 iSCSI 限定名稱（IQN），以納入主機群組。</block>
+  <block id="3a3de96458fa1d6a66077a0d8e0876f5" category="list-title">選項 1：使用 iSCSI 啟動器</block>
+  <block id="afab98831212ab66b00fd2dde726dc89" category="list-text">按 *Win+R* 或使用 Windows 搜尋列開啟 <block ref="725b4899d93d1390ffc453e86443f2f3" prefix=" " category="inline-code"></block>。</block>
+  <block id="299ba66eadc169f51e1ededd24918872" category="list-text">在 iSCSI 發起程式內容對話方塊中，前往 *Configuration* 標籤。</block>
+  <block id="21d365be3b9e73549563b8cda0082e3d" category="list-text">複製 *Initiator Name* 值並將其新增至主機群組。</block>
+  <block id="f9286e041e5781752d9c6c6a2cd14766" category="paragraph">範例：<block ref="10967121e1978990152045c2597bebe3" prefix=" " category="inline-code"></block></block>
+  <block id="d27225164998c484204d9fe3cabdaff9" category="paragraph">在 PowerShell 中執行以下命令：</block>
+  <block id="02918acbcd579563a19afabce89ac8a7" category="section-title">建立 NetApp 區塊儲存磁碟區</block>
+  <block id="4728261747b297046ab680d4c882285c" category="paragraph">使用 Google Cloud NetApp Volumes 建立 iSCSI 區塊儲存磁碟區，為 SQL Server 資料庫提供高效能共用儲存。此程序包括建立主機群組、儲存資源池以及用於資料、記錄、暫存和備份的個別磁碟區。</block>
+  <block id="e45c9a116c72d77b660aba205d33114f" category="section-title">建立主機群組</block>
+  <block id="08c341052775db63ec7116ae6a13d5f9" category="list-text">建立一個包含來自兩個 SQL 節點的 iSCSI 啟動器的主機群組。</block>
+  <block id="c0e4d3ec3c67921d9c97ebbb2a5bb072" category="inline-link-macro">建立主機群組</block>
+  <block id="703949b2ff4fb7897f7a5a6bf0498baf" category="paragraph">如需更多詳細資訊，請參閱 <block ref="bc66b2c07682b4a0046c5284d0c12ba9" category="inline-link-macro-rx"></block> 說明文件。</block>
+  <block id="d2274f8da9465e89ce9fe1d5e0faa28b" category="list-text">請替換以下值：</block>
+  <block id="3fdece1d79577fa2dce50e563fea4ea2" category="list-text"><block ref="6fcf75d4e8c598e4ad173e89a6ffd806" prefix="" category="inline-code"></block>：主機群組的名稱（例如、<block ref="d77cdd0efafecccf66c4767d8e869375" prefix=" " category="inline-code"></block>）</block>
+  <block id="d27f0bbeff86b1b7abe225b63455a288" category="list-text"><block ref="71233d73cc90bba8f4d5bbea0792e551" prefix="" category="inline-code"></block>：區域（例如<block ref="7460527a94dd1cdca7f80472ca36103e" prefix=" " category="inline-code"></block>）</block>
+  <block id="3bfb8bbfc46f1be67b2e31175ff59103" category="list-text"><block ref="ed7be72a59610a8faafe1aa482170890" prefix="" category="inline-code"></block>：以逗號分隔的來自 sqlnode1 和 sqlnode2 的 IQN 列表</block>
+  <block id="4791651d5ddc87f443660dea3962e500" category="paragraph">範例：<block ref="a2204211085ecb370415d276d4364e5a" prefix=" " category="inline-code"></block></block>
+  <block id="467c33e3023f9b59997806eef1c2ccb5" category="list-text"><block ref="fbee18e2ba1ebbec8b0f1166155d6cc0" prefix="" category="inline-code"></block>：作業系統類型（例如，<block ref="d273a0465c8fbfd111aae706cdf9ec20" prefix=" " category="inline-code"></block>）</block>
+  <block id="49febfdcde0451b31c0f732e5ac94554" category="list-text"><block ref="35ba4a2677442e210c23a00a5601aba3" prefix="" category="inline-code"></block>：主機群組的可選描述</block>
+  <block id="57a8edfcf7feaa6742b2abfa46d855e6" category="image-alt">儲存池組態</block>
+  <block id="b2525385d8e45990d362ed7340fb602a" category="section-title">建立儲存資源池</block>
+  <block id="74921684854caa419c4999d21b6af1ae" category="list-text">建立一個具有適當容量和效能的儲存池。</block>
+  <block id="07ee19ad7f0745ddcaa05e21f537e6d0" category="paragraph">如需更多詳細資訊,請參閱 <block ref="ccf54767debcb21f2c036879522a1373" category="inline-link-macro-rx"></block> 說明文件。</block>
+  <block id="1b7b5149ab4d6f5cc8f2d4910be9e611" category="list-text"><block ref="840e7229f4bf28f57c64ebf3ff5a2f59" prefix="" category="inline-code"></block>：集區名稱（例如，<block ref="e164a51a79d995a220aaaf628dc29fc9" prefix=" " category="inline-code"></block>）</block>
+  <block id="04f652e0ab836b14093daad62e355042" category="list-text"><block ref="63c379b3113b0d973ed13e2f511df07e" prefix="" category="inline-code"></block>：您的 Google Cloud 專案名稱</block>
+  <block id="61b98692cfb966becac778d292bb5e76" category="list-text"><block ref="71233d73cc90bba8f4d5bbea0792e551" prefix="" category="inline-code"></block>：與您的運算執行個體位於相同位置（例如，<block ref="bffe9cca2446cbd9a50cb8fb48107c25" prefix=" " category="inline-code"></block>）</block>
+  <block id="89668e25c6b12a63437bf6277ff8d3c2" category="list-text"><block ref="5b3bc952620c21981c4b3b304fbd74f8" prefix="" category="inline-code"></block>：池容量（單位：GiB）（例如，<block ref="021bbc7ee20b71134d53e20206bd6feb" prefix=" " category="inline-code"></block>）</block>
+  <block id="a94f42ee868cc063bfaff29e238f2801" category="list-text"><block ref="4a6ea8e16f59a76e32c9926cac0b9a2a" prefix="" category="inline-code"></block>: 服務等級（例如<block ref="09d2bd168181f1e64c2b1651a80a8aa8" prefix=" " category="inline-code"></block>）</block>
+  <block id="5118dffc70c792f50ae2793092882ffd" category="list-text"><block ref="a991d6264763b053242908ab3d1b73a5" prefix="" category="inline-code"></block>：您的 VPC 網路名稱</block>
+  <block id="dd3136b9ea719b8766f476d98dc76564" category="list-text"><block ref="c32b07179e20b6975b9c1def85182007" prefix="" category="inline-code"></block>：私有服務存取範圍（例如，<block ref="aa51b5e07b9a2f5349f0ed5e32564df1" prefix=" " category="inline-code"></block>）</block>
+  <block id="d934a1b5154d2225ddde07dd77b3bba5" category="list-text"><block ref="50f9b1f40c078d242af7ec323ace44b3" prefix="" category="inline-code"></block>：可選吞吐量，以 MiBps 為單位（例如，<block ref="ea5d2f1c4608232e07d3aa3d998e5135" prefix=" " category="inline-code"></block>）</block>
+  <block id="56491ed7bc87f51717ca1d07f149d306" category="list-text"><block ref="79073619fba8242703524f16870ff858" prefix="" category="inline-code"></block>：選用的 IOPS（例如，<block ref="021bbc7ee20b71134d53e20206bd6feb" prefix=" " category="inline-code"></block>）</block>
+  <block id="1c27e11c5e65b93611e6f5ce640f8184" category="section-title">建立磁碟區</block>
+  <block id="3b3b7c56ab19a1de35e8338ee0ec6602" category="list-text">建立資料、記錄、暫存和備份的磁碟區。針對每種磁碟區類型執行下列命令：</block>
+  <block id="723cf06e89d7ddac51fea9941d95c188" category="paragraph">如需更多詳細資訊，請參閱 <block ref="4db6c28dc7628e964ce59182faf325bf" category="inline-link-macro-rx"></block> 說明文件。</block>
+  <block id="2353f1a4e88d32c9b6d6a039f8bbe546" category="list-text"><block ref="8d84412d06754d187f36566a49d3304c" prefix="" category="inline-code"></block>：每個磁碟區的唯一名稱（例如、<block ref="54cfc2df8f35edb6f16bfa5731b6dcf2" prefix=" " category="inline-code"></block>、<block ref="9f6be95d093fe5aa165b90ef8363ea86" prefix=" " category="inline-code"></block>、<block ref="8a843ec8c9346ab08353c8a54daa7479" prefix=" " category="inline-code"></block>、<block ref="deff2c806b85dafd015ab0e09a75943b" prefix=" " category="inline-code"></block>）</block>
+  <block id="af009e08d2f8994728bdba5a367628a3" category="list-text"><block ref="71233d73cc90bba8f4d5bbea0792e551" prefix="" category="inline-code"></block>：與儲存池位於相同位置（例如，<block ref="bffe9cca2446cbd9a50cb8fb48107c25" prefix=" " category="inline-code"></block>）</block>
+  <block id="fe57af3e5ae879c6a97459daa937e2e5" category="list-text"><block ref="840e7229f4bf28f57c64ebf3ff5a2f59" prefix="" category="inline-code"></block>：儲存池名稱（例如，<block ref="e164a51a79d995a220aaaf628dc29fc9" prefix=" " category="inline-code"></block>）</block>
+  <block id="bbcc043b20b7aab78147b3c670eaae26" category="list-text"><block ref="5b3bc952620c21981c4b3b304fbd74f8" prefix="" category="inline-code"></block>：卷容量，單位為 GiB（例如，<block ref="3644a684f98ea8fe223c713b77189a77" prefix=" " category="inline-code"></block>）</block>
+  <block id="3043f19222b4568cf60a38e51a5b058a" category="list-text"><block ref="ffa7b09a67ef32c80a7483b2a904900f" prefix="" category="inline-code"></block>：主機群組的完整資源路徑（例如，<block ref="9b531343c2353ca90b3cf41f19c55cab" prefix=" " category="inline-code"></block>）</block>
+  <block id="ee4ea10ce2e1bde0e824e04e93930df7" category="admonition">可以使用 # 符號分隔每個主機群組，以指定多個主機群組。</block>
+  <block id="1d6bb88dca0a56c66a5eca3f7df6de4c" category="admonition">對每種磁碟區類型重複此步驟：資料、日誌、暫存和備份。</block>
+  <block id="6299ec0ff9a5d74b37f24b4614f5d14b" category="section-title">掛載 iSCSI 磁碟區</block>
+  <block id="fb7f720a03abac5fddb036dd061a031d" category="paragraph">在每個 SQL 實例上掛載非共用 iSCSI 磁碟區：</block>
+  <block id="e884a797d192c101b4a9f743a28fe22c" category="list-text">在 Google Cloud 控制台中，導覽至 *NetApp 磁碟區* &gt; *磁碟區*。</block>
+  <block id="e027515e349e1876128596eb13ad7203" category="list-text">選擇為 SQL 實例建立的磁碟區（例如，<block ref="54cfc2df8f35edb6f16bfa5731b6dcf2" prefix=" " category="inline-code"></block>）。</block>
+  <block id="89c258c6e1cb8e3aa7141a2735978bfa" category="list-text">複製 iSCSI 目標的兩個 IP 位址（例如，<block ref="377a0992c2585a852aea8b0f465c0990" prefix=" " category="inline-code"></block> 和 <block ref="c67bafc16f974a734a21b4e6d64ce41a" prefix=" " category="inline-code"></block>）。</block>
+  <block id="8db72f21d6209071f153d4b9a230e9eb" category="list-text">在 sqlnode1 上，運行<block ref="725b4899d93d1390ffc453e86443f2f3" prefix=" " category="inline-code"></block> 或使用 PowerShell：</block>
+  <block id="9f699a4f6dbf364e185651f84d3f41f1" category="list-text">按一下 *Discover* 標籤，然後按一下 *Discover Portal*。</block>
+  <block id="31ab71bfd8940b81e42e9dabb25b4363" category="list-text">新增獲得的每個 IP 位址；保留預設連接埠 3260。</block>
+  <block id="574d92cadde045712e7ba3c2897fe015" category="image-alt">探索 iSCSI 目標入口網站</block>
+  <block id="ff044190dc38f6df8210eb31091c6fb6" category="list-text">在 *Connect to Target* 對話方塊中，如果使用多路徑，請選取 *Enable multi-path* 。</block>
+  <block id="87ed4e0b87b32b3f58f29c98a70ebcb1" category="list-text">點擊 *Advanced*，然後從下拉式選單中選擇目標入口網站 IP。</block>
+  <block id="91249882086a5c5657d04aa7fdc073bc" category="list-text">按一下 *OK* 進行連線。</block>
+  <block id="55bed6e71bbf03d8bb8c27716048e9b1" category="list-text">為 iSCSI 裝置設定 MPIO</block>
+  <block id="3147f22be8823beb2ed3eb221e2c545e" category="list-text">從控制面板或伺服器管理員開啟 MPIO 。</block>
+  <block id="75b85439e315e6205d31d62739175732" category="list-text">點選 *Discover Multi-Paths* 標籤。</block>
+  <block id="110265e8a98e078cb738e8babe93a5c4" category="list-text">勾選 *Add support for iSCSI devices* 並按一下 *Add* 。</block>
+  <block id="17769eee0e0663d9690deadd23b9db9d" category="list-text">如果出現提示，請重新開機。</block>
+  <block id="d46851c8829e5527f6c831dfad48d60e" category="list-text">在裝置管理員的 *磁碟機* 下驗證多路徑組態。</block>
+  <block id="160c9625717f64e149aa16b7959ff99d" category="list-text">初始化並格式化磁碟區</block>
+  <block id="93b0ef83a487b940ba24c2cd1ab8a5cb" category="list-text">啟動電腦管理 <block ref="c9b86e44bd1e9f2b09f990fdf37dc58a" prefix="(" category="inline-code"></block>）並選擇 *Disk Management*。</block>
+  <block id="c7236de9d42fb068337c53eda15942b7" category="list-text">初始化、分割並格式化每個磁碟，分配單元為 64K：</block>
+  <block id="a41fd69802c285c286782c87bc78ebc0" category="list-text">分配磁碟機代號（例如、D: 用於 Data、E: 用於 Log、F: 用於 Backup、G: 用於 Temp）。</block>
+  <block id="421b9f86a88908c8def5cf189ad6fc44" category="list-text">建立 SQL Server 的目錄結構：</block>
+  <block id="23810c1fc82464432bd9a01813b9d377" category="section-title">配置 SQL Server</block>
+  <block id="35724a5ea5ba1184532def8cb0fdefaf" category="paragraph">在兩個節點上配置 SQL Server 以使用網域服務帳戶，更新預設路徑以使用 NetApp 卷，並將系統資料庫移至新的儲存位置。</block>
+  <block id="3c08dcdc979d5fd180f39bd0b723a69d" category="list-text">更新 SQL Server 和 SQL Server Agent 服務，使其在網域服務帳戶下執行，以實現叢集身分驗證和容錯移轉支援。</block>
+  <block id="8ef1e0764759d9939959fb13672e5956" category="list-text">在每個 SQL 執行個體上，開啟 <block ref="a9cc59a923a7097133d81844b71e601d" prefix=" " category="inline-code"></block>。</block>
+  <block id="9d77b0231971798aae245185e7589ba2" category="list-text">將 SQL Server 和 SQL Server Agent 服務的*登入身分*更新為<block ref="4984992230a54aa9c6b2fffe4e63355a" prefix=" " category="inline-code"></block>。</block>
+  <block id="314567c5be927b4f8d186759b63ccd11" category="list-text">開啟 SQL Server Management Studio （ SSMS ） 並使用您的網域帳戶進行連線。</block>
+  <block id="098d7d07a6b92ddd1eeb2c4a66d371a5" category="paragraph">如果連線失敗，請以<block ref="721cb38b17d0ae0056772a1fd6653c9d" prefix=" " category="inline-code"></block>身分啟動 SSMS。確保已在「使用者和群組」中啟用 Administrator 帳戶並設定了正確的密碼。</block>
+  <block id="caeef2b597c6eaf20de86dcb6c015fb7" category="list-text">建立具有所需權限的網域帳戶登入。</block>
+  <block id="4d7b3afdc7bd44e6610c37a7d10fd96a" category="admonition">將以下 SQL 命令中的 <block ref="5a9481e597df953f3e3eec19fbb8c4d2" prefix=" " category="inline-code"></block> 替換為您的實際網域名稱。</block>
+  <block id="768b5aa41d6904ae8318c3cf9bdee9ee" category="list-text">更新預設路徑，使其使用 NetApp 磁碟區而不是系統磁碟機：</block>
+  <block id="7fc1facb0845b5396ee65414231f2789" category="list-text">將系統資料庫（model、msdb、tempdb 和 master）從作業系統磁碟機移至 NetApp 磁碟區中，以獲得更好的效能和管理。</block>
+  <block id="2f8936bae08c5fd02a7c236bf9600aad" category="list-text">驗證目前路徑：</block>
+  <block id="14b1e91cb43038f96d232b5520f149ea" category="list-text">更新至新位置：</block>
+  <block id="70803e2138cdf9821757ad37ad8f43a7" category="list-text">停止 SQL Server、手動將檔案從舊位置移至新路徑，然後重新啟動 SQL Server。</block>
+  <block id="8589fbeefc674574e611f59e446a1362" category="list-text">移動 tempdb 資料庫</block>
+  <block id="4b0a9dda449baceb1a16a3129012a175" category="list-text">重新啟動 SQL Server 以使變更生效：</block>
+  <block id="448f45588d2da5ce189028816215fc59" category="list-text">移動主資料庫</block>
+  <block id="aea7765ebfb12830a83f6c6e4300c304" category="list-text">開啟 *SQL Server Configuration Manager*。</block>
+  <block id="09e07f6fcc6c4ec1584c7b64d218628d" category="list-text">導覽至 *SQL Server Services*，以滑鼠右鍵按一下 *SQL Server (MSSQLSERVER)*，然後選擇 *Properties*。</block>
+  <block id="8046af30f13e2340eb180d776f342587" category="list-text">點選 *Startup Parameters* 標籤。</block>
+  <block id="e633125ca787b479758266df639d5bdb" category="list-text">在 *現有參數* 中，找出以 <block ref="9b017020b9d48d433ec90c548e6b5c70" prefix=" " category="inline-code"></block>、<block ref="5067ee0ff4999c7b5b04f593dd3521b9" prefix=" " category="inline-code"></block> 和 <block ref="269889131ee4793a82191b78a2eb60e3" prefix=" " category="inline-code"></block> 開頭的參數。</block>
+  <block id="45a29498f2e1a926e17cd547afcec48f" category="list-text">移除舊參數並新增參數：</block>
+  <block id="86a020984d2d15dc3f7c977493702e6e" category="list-text">停止 SQL Server 服務。</block>
+  <block id="371b77252760ffce5be9369f845c233a" category="list-text">手動將<block ref="25c6fe467eb1ead4e59557e733472977" prefix=" " category="inline-code"></block> 和<block ref="9a617981efbae46aa95f17d3f36246a2" prefix=" " category="inline-code"></block> 從舊位置移動到新路徑。</block>
+  <block id="140995cfc8c82f4ac0ce4b777ec5165a" category="list-text">如果更新了錯誤日誌路徑，也請移動 <block ref="8792137a205854c074d4481d7504a1b8" prefix=" " category="inline-code"></block> 檔案。</block>
+  <block id="de167e4d81dc5b53bea20440cd0c62a5" category="list-text">啟動 SQL Server 服務。</block>
+  <block id="f7fb84bb70dacfe27f3c68cea3a521e8" category="image-alt">SQL Server Configuration Manager - 啟動參數</block>
+  <block id="40d98bd9d976a113891edc628fe4f3d8" category="section-title">設定容錯移轉叢集</block>
+  <block id="d4a426f8d637fc83d787a32c9b618e75" category="inline-link-macro">Windows Server Failover Clustering 文件</block>
+  <block id="e33a3648c5dbb5045b94ca7d07aef7b6" category="paragraph">設定 Windows Server 故障轉移群集，為 SQL Server 提供高可用性。有關更多詳細信息，請參閱 <block ref="1faa8a781b0124475cd22c5809716b4d" category="inline-link-macro-rx"></block>。</block>
+  <block id="e64a3b8686a1299f53ca33931ee3c503" category="section-title">配置防火牆規則</block>
+  <block id="a02ec6a59ba28a9cdd00352e68078595" category="paragraph">在兩個 SQL 節點上開啟所需的網路連接埠，以啟用叢集通訊、SQL Server 連線和可用性群組複寫。</block>
+  <block id="c2151a18ab0b0d220a07d37ef0afb269" category="list-text">在兩個 SQL 節點上開啟叢集通訊所需的連接埠。</block>
+  <block id="83d32fcdbe512c1833f2a419209cf714" category="paragraph">所需連接埠包括：UDP 3343、TCP 3343、TCP 1433、TCP 5022、TCP 135、TCP 445、TCP 49152-65535（動態 RPC）。</block>
+  <block id="8e9e0674f514401c315626d105eebbcd" category="list-text">在兩台伺服器上執行下列檢查點，以允許 SQL Server 和叢集透過防火牆進行通訊。</block>
+  <block id="e3e7cd0f4a7ef7b2159e33cd0495d21b" category="paragraph">如果您有自訂配置，請調整連接埠號碼。</block>
+  <block id="06880fa41019c1cec71a1f1d0dee33b1" category="inline-link-macro">Windows Server 服務和網路連接埠需求</block>
+  <block id="ea1bfb4e0199bc61655220a3e7ae9a8f" category="paragraph">有關詳細的防火牆要求、請參閱 <block ref="7d6297f1cd817785a1254289ad7b65fa" category="inline-link-macro-rx"></block>。</block>
+  <block id="1eeb53e050d9b4e4e35834f4b471cba7" category="list-text">在建立叢集之前，請對兩個節點執行驗證檢查：</block>
+  <block id="4572920938cf8d7680040c800198b6b8" category="section-title">建立容錯移轉叢集</block>
+  <block id="0ffad8e207b70ed5bd0af63d94e2b285" category="paragraph">建立一個包含兩個 SQL Server 節點的 Windows Server Failover Cluster，以實現高可用性和自動故障轉移功能。</block>
+  <block id="4d06f67b14a82b9c555e0a7baee5bd99" category="list-text">執行<block ref="40ec4e3c7d084c31d17d6a1dbcff57c7" prefix=" " category="inline-code"></block>或從 Server Manager 開啟 Failover Cluster Manager。</block>
+  <block id="e5da6e567e666cec89caf08fbaaa9f5d" category="image-alt">容錯移轉叢集管理員</block>
+  <block id="9f81c4b0580fea32a530ea1db9771375" category="list-text">選擇 *Create Cluster*。</block>
+  <block id="9c6a73adf35fe44a26568510d2b35586" category="list-text">新增兩個 SQL 節點（sqlnode1、sqlnode2）。</block>
+  <block id="7ebc50d49da21100bbe432840fc9b56b" category="list-text">執行驗證測試並確保所有檢查均通過。在繼續操作之前，請檢查並修復所有警告。</block>
+  <block id="b4581f9a3e84ae8b225907ab61b658c0" category="list-text">提供叢集名稱（例如，<block ref="c60c1a92e55ca496c663c428624a5137" prefix=" " category="inline-code"></block>）。</block>
+  <block id="3344a1941882294ba3d04b7e4caa3a83" category="list-text">完成叢集建立。</block>
+  <block id="45e272d74455d8484503cb9c5900cd84" category="image-alt">建立容錯移轉叢集</block>
+  <block id="5416dd275abbe8850ae41526a0ce4e96" category="section-title">使用檔案共用見證設定叢集仲裁</block>
+  <block id="ae76790021e635e101b5e51a0cfc9fd1" category="paragraph">設定檔案共用見證以在雙節點叢集組態中維持仲裁。見證提供額外的投票，以防止腦裂情況並確保叢集可用性。</block>
+  <block id="0e7dd7e907a8dd283e10409da4b5f38d" category="section-title">建立檔案共用</block>
+  <block id="6b6dfa6183907abb4d5a57319b7b507e" category="paragraph">在具有網路連線且位於相同 Active Directory 網域內的不同區域或地區的 VM 上建立檔案共用。</block>
+  <block id="cbbb3d2ffa83a802625675ca739bf495" category="list-text">連接到檔案共享見證伺服器 VM 。</block>
+  <block id="11665fbffe3c8058754521f99092186f" category="list-text">在伺服器管理員中，選擇 *Tools* &gt; *Computer Management* 。</block>
+  <block id="a7621a9215cd00e33672384319664791" category="list-text">選擇 *共用資料夾*，右鍵單擊 *共用*，然後選擇 *新共用*。</block>
+  <block id="4960bca531e05836e131834eeb8b8533" category="image-alt">為叢集仲裁見證建立新共用</block>
+  <block id="c787c9a8d1f3d1e201759422696409bf" category="list-text">使用 *Create a Shared Folder Wizard* 建立共用資料夾<block ref="3577dd616e6b88c428c95ca5b9795e9f" prefix=" " category="inline-code"></block>。</block>
+  <block id="e07917dd9a1385cb544a4de94b068934" category="list-text">在 *Folder Path* 頁面上，選擇 *Browse* 。</block>
+  <block id="ef92c152d295ab22daab0c7615cab30c" category="list-text">找到或建立共用資料夾的路徑，然後選取 *Next* 。</block>
+  <block id="6bb4df3f4c286d6664eafbba462e8c1c" category="list-text">在 *Name, Description, and Settings* 頁面上，驗證共用名稱和路徑，然後選擇 *Next*。</block>
+  <block id="b776a30e9a18e1ee3d4a4f7d520b9cc9" category="list-text">在 *共用資料夾權限* 頁面上，選擇 *自訂權限* 並按一下 *自訂*</block>
+  <block id="eb74e5d192cbbb04722cbdb5cf81b7cc" category="list-text">在 *Customize Permissions* 對話方塊中、選取 *Add* 以新增叢集帳戶。</block>
+  <block id="ac3f77150bff8b35e107c1d62a14f49f" category="paragraph">確保用於建立叢集的帳戶 (sqlcluwest1$) 具有完全控制權限。</block>
+  <block id="ceb8cfea60f38b30e1e13eebbd1ae139" category="list-text">按一下 *OK* 以儲存權限。</block>
+  <block id="80cfb6d99165b17f50d439330d34e2d4" category="list-text">在 *Shared Folder Permissions* 頁面上，選擇 *Finish*，然後再次選擇 *Finish*。</block>
+  <block id="1c16b4c70456b818e9194c0890f67c01" category="section-title">配置仲裁設定</block>
+  <block id="534da31c3fbaf88cddab5cb08e2b23e7" category="paragraph">設定叢集以使用檔案共用見證進行仲裁投票。</block>
+  <block id="53de8ad677279cf2f42643bb54e0f576" category="list-text">在故障轉移叢集管理員中、以滑鼠右鍵按一下叢集、然後選取 *More Actions* &gt; *Configure Cluster Quorum Settings* 。</block>
+  <block id="a66183e338eb6406f9ad1aed190d42da" category="image-alt">配置叢集仲裁設定選單</block>
+  <block id="47d38a1c649c923d99aacdd53d9a0278" category="list-text">在「設定叢集仲裁精靈」中，按一下 *Next* 。</block>
+  <block id="c90068c23c1ee646544f473e149e4cfb" category="list-text">在 *Select Quorum Configuration* 頁面上，選擇 *Select the quorum witness*，然後按一下 *Next*。</block>
+  <block id="674f63e045a6cdf33bf7d6c8026a03c8" category="list-text">在「選擇仲裁見證人」頁面上，選擇「設定檔案共用見證人」。</block>
+  <block id="0548b6b6f93f5095d6e64f20ab6935b4" category="list-text">在 *Configure File Share Witness* 頁面中、選取 *Configure a file share witness* 。</block>
+  <block id="9b7fd988a8a732e2460dda236cc5e451" category="list-text">輸入您建立的共用路徑（例如，<block ref="3577dd616e6b88c428c95ca5b9795e9f" prefix=" " category="inline-code"></block>），然後按一下 *Next*。</block>
+  <block id="680baa7834e8c4e77f5777fc65d1496b" category="list-text">在確認頁面上驗證設定，然後按一下 *Next* 。</block>
+  <block id="1859e92122e266181cafb9c13d7400a0" category="list-text">點選 *Finish* 。</block>
+  <block id="3616477092a25f625723cd1411e8d701" category="paragraph">叢集核心資源現已設定檔案共用見證。</block>
+  <block id="e920b4aed326c8fd2327cd837dd0b6dd" category="image-alt">叢集仲裁已設定檔案共用見證</block>
+  <block id="e52f01575ad3445b66cf17221744ed01" category="section-title">啟用 Always On 可用性群組</block>
+  <block id="76a9bd1577ae30b80037a6a56510d0d6" category="paragraph">在兩台 SQL Server VM 上啟用 Always On 可用性群組：</block>
+  <block id="9783f3433ed9424b22124207a9310fcb" category="list-text">從「開始」功能表中，開啟 *SQL Server Configuration Manager*。</block>
+  <block id="e226969eea4a95585fa4bc0342d84cd6" category="list-text">在瀏覽器樹中，選擇 *SQL Server Services*。</block>
+  <block id="7454019143619b72c5986b718a4c1a6b" category="list-text">右鍵點選 *SQL Server (MSSQLSERVER)* 並選擇 *Properties* 。</block>
+  <block id="a85c989ebd9e3aeae017455d0f08de78" category="list-text">選擇 *Always On High Availability* 選項卡。</block>
+  <block id="5299f6f30c65ed84e4c3f9c33fc3778a" category="list-text">勾選 *Enable Always On availability groups*。</block>
+  <block id="8faf18e8b122bf6d4adbb0bcf5691896" category="list-text">按一下 *Apply* ，然後根據提示重新啟動 SQL Server 服務。</block>
+  <block id="9f089c4fb6ffc92c7f50391695df48e8" category="image-alt">啟用 Always On 高可用性</block>
+  <block id="425929ceda90bcb7eb89e21c146f0695" category="list-text">對第二個 SQL Server 執行個體重複上述步驟。</block>
+  <block id="0d8c140a23e1685087655fe99767cab9" category="section-title">在第一個 SQL Server 執行個體上建立資料庫</block>
+  <block id="fb23aeee09f6549ea542c5ba7afbee92" category="paragraph">在第一個 SQL Server 執行個體上建立資料庫。</block>
+  <block id="76956ed66620a38846a69dc38ed13783" category="list-text">使用身為 sysadmin 固定伺服器角色成員的網域帳戶連線到第一個 SQL Server VM。</block>
+  <block id="750daf7476a3979a1c888d89a0918f47" category="list-text">開啟 SQL Server Management Studio 並連線至第一個 SQL Server 執行個體。</block>
+  <block id="61ad0e6d3d230791ca8793ba5d866868" category="list-text">在 *Object Explorer* 中，以滑鼠右鍵按一下 *Databases* ，然後選擇 *New Database* 。</block>
+  <block id="f247456b2d886ca88aac172b20757b38" category="list-text">輸入資料庫名稱（例如，<block ref="6f5f1b53bc0222fddc9aaf690510e7ea" prefix=" " category="inline-code"></block>），然後按一下 *OK*。</block>
+  <block id="1a4739113c1f8435727f09aa1ab1b9ff" category="list-text">將資料庫復原模式設定為 Full：</block>
+  <block id="eb3b976b711b0b8c07645c9ac07bfa3b" category="section-title">建立和設定可用性群組</block>
+  <block id="981bb57a6711a53cffe32660b3cf22f3" category="paragraph">建立具有同步提交和自動容錯移轉功能的 Always On 可用性群組，為您的 SQL Server 資料庫提供高可用性。</block>
+  <block id="7f9d11cdc0ad4f5279bf144c309f76b1" category="list-text">對資料庫進行完整備份和交易記錄備份。</block>
+  <block id="56c50c3d447fcd4151db7c64331daf5c" category="list-text">將備份檔案複製到第二個 SQL Server 執行個體，並使用 NORECOVERY 還原它們。</block>
+  <block id="089ab4d40fabe93d4b26bf442e81af0b" category="list-text">建立具有同步提交、自動容錯移轉和可讀次要複本的可用性群組：</block>
+  <block id="c9654b2598a48b6cf48a61dfbf38d087" category="list-text">使用可用性群組精靈建立可用性群組。</block>
+  <block id="70fed15b7995af5ebffbba688b303e5f" category="image-alt">建立可用性群組精靈</block>
+  <block id="1a7926c2eeda6a079382922e0df1cb5c" category="image-alt">將資料庫和複本新增至可用性群組</block>
+  <block id="79013a965a7bffeb8d1ed5fd1afc7302" category="admonition">確保兩個 SQL 節點上的防火牆連接埠 5022 都已開放。</block>
+  <block id="6648cb0a136f72dbfcdf56fa3be84ef3" category="image-alt">可用性群組同步</block>
+  <block id="cd448b3cb1d0f7093c0c46f5a18de479" category="image-alt">可用性群組已成功建立</block>
+  <block id="d551794e5e1f433a3a01dcff5c8948ad" category="section-title">建立 DNN 監聽器資源</block>
+  <block id="c75cbb6b3a10f0bcd8640078d4558fef" category="paragraph">建立分散式網路名稱（DNN）接聽程式，將流量路由至適當的叢集資源，而不需要負載平衡器。</block>
+  <block id="77b08cfabbc6543c8db5bc16c47b993b" category="paragraph">使用 PowerShell 建立 DNN 資源：</block>
+  <block id="92d66b864c4df29c6686b9aad90e427d" category="section-title">設定可能的擁有者</block>
+  <block id="0906492c5ba412578206f0eb705fa045" category="paragraph">預設情況下，叢集會將 DNN DNS 名稱繫結到所有節點。排除未參與可用性群組的節點：</block>
+  <block id="c5993defca1f340b6c393f514b129ebd" category="list-text">在故障轉移群集管理器中，找到 DNN 資源。</block>
+  <block id="de5d68f5271b2e3b9c4a7d32ce8c356e" category="list-text">右鍵單擊 DNN 資源，然後選擇 *Properties* 。</block>
+  <block id="76ea87e086cbfbc4f207bd78927cbd86" category="image-alt">DNN 資源屬性</block>
+  <block id="45505fd2d7da750e18b208b6ae77ea1d" category="list-text">取消選取未加入可用性群組的任何節點的核取方塊。</block>
+  <block id="27785f0b1e6ba9c12272902202ac5da5" category="image-alt">設定 DNN 可能的擁有者</block>
+  <block id="b4c815502a9d7d3f5e39e88958c0e0a1" category="list-text">按一下 *OK* 以儲存設定。</block>
+  <block id="1b1e5d185113de738c63e2d8dadd22ef" category="section-title">更新應用程式連接字串</block>
+  <block id="38603988db8b368e61a0eb1203223f2d" category="paragraph">更新連接字串，使用 DNN 監聽器名稱並包含<block ref="810ef623cfbef0967e4ac38518a200dd" prefix=" " category="inline-code"></block>參數：</block>
+  <block id="1bc3d18e3b4947dbff414813ad7fb0d5" category="listing-title">範例連接字串</block>
+  <block id="7be3919d33b3cd55db89a8db306820fd" category="admonition">如果您的用戶端不支援 MultiSubnetFailover 參數，則與 DNN 不相容。</block>
+  <block id="cebb1167d3e78885137c837f0abf8026" category="section-title">測試容錯移轉</block>
+  <block id="83559cd4851542c00e7606b743fb3a6c" category="paragraph">驗證可用性群組組態並測試容錯移轉，以確保節點之間的自動容錯移轉正常運作。</block>
+  <block id="e16b1be10016da283351ca2797fda0e2" category="list-text">在任意副本上執行以下命令，以驗證可用性群組配置。</block>
+  <block id="fcedbea0569ad38ff6d26338a4e0d052" category="paragraph">兩個副本都應該在可用性模式下顯示<block ref="d8091fb51f31a4ef069b7f5bf785f35a" prefix=" " category="inline-code"></block>，在故障轉移模式下顯示<block ref="008f6cdd0c190839e9885cf9f9e2a652" prefix=" " category="inline-code"></block>，這可以確保在自動故障轉移期間零資料遺失。</block>
+  <block id="b4c0ecd0e6def6e6e82ff1adc6b09abe" category="list-text">在輔助節點上執行以下命令以啟動故障轉移：</block>
+  <block id="42a51e77f8dd37f3c73300ea1f2b062f" category="list-text">檢查連線目標是否已切換至新的主要目標：</block>
+  <block id="4d7ef023f25cc47278a70f70ca109c00" category="paragraph">在 SSMS 中，展開可用性群組節點，右鍵點選 *Always On High Availability*，然後選擇 *Show Dashboard*。</block>
+  <block id="ef6ccf78dd6d8aa4c4fb42fe23138e32" category="paragraph">儀錶板應顯示兩個節點均處於健康狀態，並確認故障轉移。</block>
+  <block id="e87a6d2aeb93e6d109247f31770d95aa" category="image-alt">Always On 高可用性儀表板顯示成功故障轉移</block>
+  <block id="ad41a433069c2236a391eb921e4692dd" category="section-title">清理資源</block>
+  <block id="baec841933b7c1c753d4f2b3cebd3dff" category="paragraph">完成教學課程後，請刪除您建立的資源，以免產生額外費用：</block>
+  <block id="18b0ddc1d58cf58f0c29feaf8318678e" category="list-text">刪除 Compute Engine 執行個體 （sqlnode1、sqlnode2）</block>
+  <block id="1e449cfb477d2bad527f429ab05b3e12" category="list-text">刪除 Google Cloud NetApp Volumes （磁碟區、儲存池、主機群組）</block>
+  <block id="a3e5e9c78aa544a8cd78cbadd38c465a" category="list-text">如果 VPC 和網路資源是專門為本教學課程建立的，請將其刪除</block>
+  <block id="54a796062944c695817f4eb1c9921ef1" category="list-text">如果適用，請刪除檔案共享見證伺服器</block>
+  <block id="471bdb0aa2d84f6d114789368ffc1cc1" category="inline-link-macro">Google Cloud NetApp Volumes 說明文件</block>
+  <block id="eccc5dc285a077576fffa4a8f36c3cf8" category="inline-link-macro">Google Compute Engine 文件</block>
+  <block id="274d6ae1c8edd119fb605bf14d977c17" category="paragraph">有關刪除資源的詳細步驟，請參閱 <block ref="05976eea54c43c5f3d26d0dd5e48dcfe" category="inline-link-macro-rx"></block> 和 <block ref="853a7c74ba4c1f5c31317922ec69d7b0" category="inline-link-macro-rx"></block>。</block>
+  <block id="b151ed2f061e28c11e00ad100972205e" category="paragraph">有關在 Google Cloud 上使用 NetApp 儲存的 SQL Server 的更多資訊，請參閱以下文件：</block>
+  <block id="d141630f195a78c1d62c0a995385a3e1" category="list-text"><block ref="d141630f195a78c1d62c0a995385a3e1" category="inline-link-macro-rx"></block></block>
+  <block id="11694a64abeff77c3c8ca3202e48a600" category="inline-link-macro">SQL Server Always On 可用性群組</block>
+  <block id="a8b42226e0afe2c99fcad206668c8e3a" category="list-text"><block ref="a8b42226e0afe2c99fcad206668c8e3a" category="inline-link-macro-rx"></block></block>
+  <block id="6458349f90f9f03e0ac5b2055316563d" category="inline-link-macro">Windows Server Failover Clustering</block>
+  <block id="9912061c9c8234ff34f20279442a2a5c" category="list-text"><block ref="9912061c9c8234ff34f20279442a2a5c" category="inline-link-macro-rx"></block></block>
+  <block id="fe2659a563c4cc8c7bd4c361d7aa7af6" category="list-text"><block ref="fe2659a563c4cc8c7bd4c361d7aa7af6" category="inline-link-macro-rx"></block></block>
+  <block id="1a5eb59a4ec4e77747e800700cdc4b8d" category="sidebar">SQL Server Always On 與 Google Cloud NetApp Volumes</block>
 </blocks>
