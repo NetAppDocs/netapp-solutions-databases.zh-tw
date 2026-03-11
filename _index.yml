@@ -54,6 +54,8 @@ indexpage:
       url: "/mssql/sql-aws-ec2.html"
     - title: 在Azure NetApp Files上執行 SQL Server
       url: "/mssql/sql-srv-anf-overview.html"
+    - title: 在 Google Cloud NetApp Volumes 上執行 SQL Server
+      url: "/mssql/gcnv-sql-aoag-setup.html"
     - title: 將本機 SQL 工作負載遷移至 FSx ONTAP
       url: "/mssql/customer-usecase-mssql-fsx1.html"
     - title: 在 Windows 上使用叢集資料ONTAP 的SAP 與 Microsoft SQL Server

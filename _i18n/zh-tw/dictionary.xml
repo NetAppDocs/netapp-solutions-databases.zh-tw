@@ -5587,4 +5587,5 @@
   <block id="9912061c9c8234ff34f20279442a2a5c" category="list-text"><block ref="9912061c9c8234ff34f20279442a2a5c" category="inline-link-macro-rx"></block></block>
   <block id="fe2659a563c4cc8c7bd4c361d7aa7af6" category="list-text"><block ref="fe2659a563c4cc8c7bd4c361d7aa7af6" category="inline-link-macro-rx"></block></block>
   <block id="1a5eb59a4ec4e77747e800700cdc4b8d" category="sidebar">SQL Server Always On 與 Google Cloud NetApp Volumes</block>
+  <block id="4f5b4a25c5f43e17e1f438de9b459c7e" category="sidebar">在 Google Cloud NetApp Volumes 上執行 SQL Server</block>
 </blocks>
