@@ -1,0 +1,1828 @@
+---
+sidebar: sidebar 
+permalink: oracle/gcp-ora-gcnv-si-nfs.html 
+keywords: Database, Oracle, Google, GCP, GCNV, NFS, Ansible, Automation 
+summary: 此解決方案概述並詳細介紹了在 Google Cloud NetApp Volumes 上部署 Oracle 作為主要資料庫儲存（透過 NFS 協定）的情況，Oracle 資料庫部署為啟用了 dNFS 的獨立容器資料庫。 
+---
+= TR-5020：在 Google Cloud NetApp Volumes 上使用 NFS 部署 Oracle 獨立實例
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+Allen Cao、Niyaz Mohamed， NetApp
+
+[role="lead"]
+此解決方案提供在 Google Cloud NetApp Volumes 上以 NFS 協議作為主要資料庫儲存的 Oracle 部署概覽與詳細資訊，且 Oracle 資料庫以啟用 dNFS 的獨立容器資料庫方式部署。
+
+
+
+== 目的
+
+在雲端運行對效能和延遲要求高的 Oracle 工作負載可能極具挑戰性。Google Cloud NetApp Volumes (GCNV) 讓企業業務線 (LOB) 和儲存專業人員能夠輕鬆遷移和執行高要求的 Oracle 工作負載，而無需更改程式碼。Google Cloud NetApp Volumes 被廣泛用作各種場景下的底層共用檔案儲存服務，例如將 Oracle 資料庫從本地遷移到 Google Cloud 的新部署或遷移（直接遷移）。
+
+本文檔示範如何在 Google Cloud 控制台中設定 GCNV 資料庫卷，以及如何透過 Ansible 自動化，利用 NFS 掛載在 Google Cloud NetApp Volumes 中簡化 Oracle 資料庫的部署。Oracle 資料庫部署在容器資料庫（CDB）和可插拔資料庫（PDB）配置中，並啟用了 Oracle dNFS 協定以提升效能。此外，本文檔還詳細介紹了資料庫備份、復原和複製策略，並提供了一套用於在 Google Cloud 中管理 Oracle 資料庫備份的自動化工具包。
+
+此解決方案適用於以下用例：
+
+* 在 Google Cloud 中使用 NFS 協定在 Google Cloud NetApp Volumes 上自動部署 Oracle 資料庫。
+* 在 Google Cloud 上使用 Google Cloud NetApp Volumes 進行 Oracle 資料庫備份、復原和複製。
+
+
+
+
+== 對象
+
+此解決方案適用於以下人群：
+
+* 一位希望在 Google Cloud NetApp Volumes 上部署 Oracle 的 DBA。
+* 一位資料庫解決方案架構師，希望在 Google Cloud NetApp Volumes 上測試 Oracle 工作負載。
+* 一位希望在 Google Cloud NetApp Volumes 上部署和管理 Oracle 資料庫的儲存管理員。
+* 一位希望在 Google Cloud NetApp Volumes 上建立 Oracle 資料庫的應用程式擁有者。
+
+
+
+
+== 解決方案測試和驗證環境
+
+此解決方案的測試和驗證是在實驗室環境中進行的，可能與最終部署環境不符。請參閱<<部署考慮的關鍵因素>>了解更多。
+
+
+
+=== 架構
+
+image:gcp-ora-gcnv-si-nfs-architecture.png["此圖詳細展示了在 Google Cloud 中使用 NFS 和 Google Cloud NetApp Volumes 部署 Oracle 的配置。"]
+
+
+
+=== 硬體和軟體組件
+
+[cols="33%, 33%, 33%"]
+|===
+
+
+3+| *硬體* 
+
+
+| Google Cloud NetApp Volumes | Google 在 Google Cloud 目前提供的服務 | 一個儲存池，採用 Flex 服務級別，容量為 2 TiB，吞吐量為 64 MiB/s，IOPS 為 1024，為 Oracle 資料庫儲存而配置 
+
+
+| 用於資料庫伺服器的 Google Compute Engine VM | n1-standard-4 (4 個虛擬 CPU、15 GB 記憶體) | 用於部署和復原示範的兩個 Linux 虛擬機器執行個體 
+
+
+3+| *軟體* 
+
+
+| 紅帽Linux | RHEL Linux 8.10（LVM）- x64 Gen2 | 部署 RedHat 訂閱進行測試 
+
+
+| Oracle 資料庫 | 版本 21.19 | 已套用 RU 修補程式 p38068980_210000_Linux-x86-64.zip 
+
+
+| Oracle OPatch | 版本 12.2.0.1.48 | 最新修補程式 p6880880_210000_Linux-x86-64.zip 
+
+
+| NFS | 版本 3.0 | 已啟用 Oracle dNFS 
+
+
+| Ansible | 核心 2.16.2 | Python 3.10.13 
+|===
+
+
+=== 實驗室環境中的 Oracle 資料庫配置
+
+[cols="33%, 33%, 33%"]
+|===
+
+
+3+|  
+
+
+| *伺服器* | *資料庫* | *資料庫儲存* 
+
+
+| orap - 主要資料庫伺服器 | NTAP(NTAP_PDB1,NTAP_PDB2,NTAP_PDB3) | Google Cloud NetApp Volumes 儲存池上的 /u01、/u02、/u03 NFS 掛載點 
+
+
+| orap2 - 從備份還原 | NTAP(NTAP_PDB1,NTAP_PDB2,NTAP_PDB3) | Google Cloud NetApp Volumes 儲存池上的 /u01、/u02、/u03 NFS 掛載點 
+|===
+
+
+=== 部署考慮的關鍵因素
+
+* *GCNV 儲存池服務等級和吞吐量。*GCNV 提供四種不同的服務等級：Standard、Premium、Extreme 和 Flex。對於 Standard、Premium、Extreme 服務等級，IO 吞吐量根據資料庫磁碟區的大小確定並固定。總 IO 吞吐量上限取決於儲存池的大小。對於 Flex 服務等級，IO 吞吐量不固定於資料庫磁碟區的大小，而是由所有資料庫磁碟區共用，並受限於儲存池的大小。這可以適應容量較小的資料庫，並應對偶爾出現的 IOPS 激增。作為參考，Standard、Premium、Extreme 服務等級分別提供每 GiB 16 KiB/s、每 GiB 64 KiB/s 和每 GiB 128 KiB/s 的吞吐量。另一方面，Flex 服務等級每個儲存池最高可提供 5 GiB/s 的吞吐量，並支援自訂效能設定。根據 Oracle 資料庫工作負載的預期 IO 吞吐量和 IOPS 要求，正確調整服務等級和儲存池的大小至關重要。
+* *資料庫儲存配置。*在此自動化 Oracle 部署中，我們預設為每個資料庫配置三個資料庫磁碟區，以儲存 Oracle 二進位檔案、資料和日誌。這些磁碟區透過 NFS 掛載到 Oracle DB 伺服器上，分別為 /u01 - 二進位檔案、/u02 - 資料、/u03 - 日誌。在 /u02 和 /u03 掛載點上配置了雙控制檔以實現冗餘。
+* *dNFS 設定。*透過使用 Oracle dNFS（自 Oracle 11g 起提供），在 Google Compute Engine 上運行的 Oracle 資料庫搭配 Google Cloud NetApp Volumes 儲存空間，能夠比原生 NFS 用戶端提供顯著更高的 I/O 效能。自動化的 Oracle 部署預設會在 NFSv3 上設定 dNFS。
+* *快照和 Vault 備份。*相較於傳統的 RMAN 資料庫備份，NetApp 建議實作儲存高效、應用程式一致的快照和 Vault 備份，以實現快速（秒級）快照備份、快速（分鐘級）資料庫還原、恢復，以及從儲存 Vault 中的快照或備份進行複製。快照是資料庫磁碟區的時間點副本，可在數秒內建立，且在建立時不會佔用額外的儲存空間。它與主要資料庫磁碟區共存，如果主要磁碟區遭到破壞，快照可能會遺失。Vault 備份是快照的副本，儲存在物件儲存中，並位於不同的位置，用於災難復原目的。
+* *RTO/RPO 考量事項。*在設定資料庫備份策略時，務必考量復原時間目標（RTO）和復原點目標（RPO）需求。雖然基於快照的備份對資料庫效能影響極小，但備份頻率（會影響 RTO/RPO）與儲存支出之間存在取捨。更頻繁的備份有助於達成較低的 RTO/RPO，但可能會增加儲存成本。根據業務需求和預算找到適當的平衡點至關重要。此自動化解決方案提供基於 Ansible playbook 的自動化工具組，可管理 Oracle 資料庫備份，並具備使用者可設定的保留和備份排程。
+
+
+
+
+== 解決方案部署
+
+以下各節提供了在 Google Cloud NetApp Volumes 上自動部署 Oracle 21c 以及資料庫備份、復原、複製的逐步流程，其中資料庫磁碟區透過 NFS 直接掛載到 Google Cloud Compute Engine VM 作為資料庫伺服器。
+
+
+
+=== 部署先決條件
+
+[%collapsible]
+====
+部署需要以下先決條件。
+
+. 已設定 Google Cloud 帳戶，並在您的 Google Cloud 帳戶特定專案中建立了必要的 VPC 和網路設定。
+. 從 Google Cloud 主控台部署 Google Compute Engine VM 做為 Oracle DB 伺服器。確保關閉防火牆、並使用管理使用者啟用 VM SSH 私密 / 公開金鑰驗證至 DB 伺服器以進行自動化。如需環境設定的詳細資訊、請參閱上一節的架構圖。
++
+
+NOTE: 請確保在虛擬機器根磁碟中至少分配 50G 的空間，以便有足夠的空間來存放 Oracle 安裝檔案並新增作業系統交換檔案。
+
+. 設定一台 Linux 虛擬機器作為 Ansible 控制器節點，並安裝自動化工具包 README 檔案中列出的 Ansible 和 Git 版本。有關 Ansible 自動化的協助，請參閱以下連結：link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/getting-started.html["NetApp解決方案自動化入門^"^]在 -
+`Setup the Ansible Control Node for CLI deployments on RHEL / CentOS` 或
+`Setup the Ansible Control Node for CLI deployments on Ubuntu / Debian`部分。
++
+
+NOTE: Ansible 控制器節點可以位於內部部署或 Google Cloud 中，只要它可以透過 ssh 連接埠連接到 Google Cloud DB 伺服器 VM 即可。
+
+. 克隆適用於 NFS 的NetApp Oracle 部署自動化工具包的副本。
++
+[source, cli]
+----
+git clone https://bitbucket.ngage.netapp.com/scm/ns-bb/na_oracle_deploy_nfs.git
+----
++
+
+NOTE: 目前，只有具有 bitbucket 存取權限的NetApp內部使用者才能存取該工具包。對於有興趣的外部用戶，請向您的客戶團隊要求存取權限或聯絡NetApp解決方案工程團隊。
+
+. 在 Google Cloud DB VM /tmp/archive 目錄中暫存 Oracle 21c 安裝檔案，並設定 777 權限。
++
+....
+installer_archives:
+  - "LINUX.X64_213000_db_home.zip"
+  - "p34765931_210000_Linux-x86-64.zip"
+  - "p6880880_210000_Linux-x86-64.zip"
+....
+
+
+====
+
+
+=== Google Cloud NetApp Volumes Oracle 資料庫儲存配置
+
+[%collapsible]
+====
+以下步驟示範如何配置 Google Cloud NetApp Volumes 以用於 Oracle 資料庫儲存，並附有螢幕截圖。
+
+. 建立一個具有所需服務等級和容量的 Oracle 資料庫儲存儲存池。+image:gcp-ora-gcnv-si-nfs-deploy-spool.001.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"] +image:gcp-ora-gcnv-si-nfs-deploy-spool.002.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"] +image:gcp-ora-gcnv-si-nfs-deploy-spool.003.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"] +image:gcp-ora-gcnv-si-nfs-deploy-spool.004.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"] +image:gcp-ora-gcnv-si-nfs-deploy-spool.005.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"]
+. 在儲存池中為 Oracle 資料庫建立三個所需大小的 DB 磁碟區，用於資料庫儲存。例如，/u01 用於二進位檔案、/u02 用於資料檔案、/u03 用於重做記錄和控制檔案，使用 NFSv3 傳輸協定和掛載選項，如下列螢幕擷取畫面所示。+image:gcp-ora-gcnv-si-nfs-deploy-vol.001.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"] +image:gcp-ora-gcnv-si-nfs-deploy-vol.002.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"] +image:gcp-ora-gcnv-si-nfs-deploy-vol.003.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"] +image:gcp-ora-gcnv-si-nfs-deploy-vol.004.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"] +image:gcp-ora-gcnv-si-nfs-deploy-vol.005.png["此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。"]
+
+
+
+NOTE: 目前請勿在 Google Cloud NetApp Volumes 中啟用排程備份，因為其內建備份方案並非應用程式一致性備份。此解決方案提供的備份自動化工具包將管理應用程式一致性資料庫備份，並支援使用者自訂備份計畫和保留期限。
+
+====
+
+
+=== 使用 Ansible playbook 實現 Oracle 自動化部署
+
+
+
+==== 自動化參數文件
+
+[%collapsible]
+====
+Ansible playbook 使用預先定義的參數執行資料庫安裝和設定任務。該工具包目前支援 Oracle 資料庫版本 19c 和 21c 的部署。對於此 Oracle 自動化解決方案，有三個使用者自訂參數檔案需要在 playbook 執行前由使用者輸入。
+
+* 主機 - 定義自動化劇本運作的目標。
+* vars/vars.yml - 定義適用於所有目標的變數的全域變數檔案。
+* host_vars/host_name.yml - 定義僅適用於命名目標的變數的本機變數檔案。在我們的用例中，這些是 Oracle DB 伺服器。
+
+
+除了這些使用者定義的變數文件之外，還有幾個預設變數文件，其中包含預設參數，除非必要，否則不需要更改。以下部分介紹如何設定使用者定義的變數檔。
+
+====
+
+
+==== 參數檔案配置
+
+[%collapsible]
+====
+. Ansible 目標 `hosts`文件配置：
++
+....
+#Oracle hosts
+[oracle]
+orap ansible_host=10.61.180.6 ansible_ssh_private_key_file=ora_01.pem
+orap2 ansible_host=10.61.180.8 ansible_ssh_private_key_file=ora_02.pem
+....
+. 全球的 `vars/vars.yml`文件配置
++
+....
+###########################################
+### ONTAP env specific config variables ###
+###########################################
+
+# Prerequisite to create three volumes in NetApp ONTAP storage from System Manager or cloud dashboard with following naming convention:
+# {{ inventory_hostname}}_u01 or {{ inventory_hostname}}-u01 -- Oracle binary
+# {{ inventory_hostname}}_u02 or {{ inventory_hostname}}-u02 -- Oracle data
+# {{ inventory_hostname}}_u03 or {{ inventory_hostname}}-u03 -- Oracle redo
+# It is important to strictly follow the name convention or the automation will fail.
+
+host_datastores_nfs:
+  - {vol_name: "{{ inventory_hostname}}-u01", lif: "{{ nfs_lif }}"}
+  - {vol_name: "{{ inventory_hostname}}-u02", lif: "{{ nfs_lif }}"}
+  - {vol_name: "{{ inventory_hostname}}-u03", lif: "{{ nfs_lif }}"}
+
+###########################################
+### Linux env specific config variables ###
+###########################################
+
+redhat_sub_username: "xxxxxxxxxx"
+redhat_sub_password: "xxxxxxxxxx"
+
+
+####################################################
+### DB env specific install and config variables ###
+####################################################
+
+# Database version: support 19c and 21c, 19c|19.0.0 or 21c|21.0.0
+ora_version: 21c
+ora_version_num: 21.0.0
+
+# Set initial password for all required Oracle passwords. Change them after installation.
+initial_pwd_all: "xxxxxxxxxx"
+
+# Database domain name
+db_domain: cvs-pm-host-1p.internal
+....
+. 本機 DB 伺服器 `host_vars/host_name.yml`配置，例如 orap.yml、orap2.yml ...
++
+....
+# User configurable Oracle host specific parameters
+
+# Database SID. By default, a container DB is created with 3 PDBs within the CDB
+oracle_sid: NTAP
+
+# CDB is created with SGA at 75% of memory_limit, MB. Consider how many databases to be hosted on the node and how much ram to be allocated to each DB. The grand total of SGA should not exceed 75% available RAM on node.
+memory_limit: 8192
+
+# NFS server ip address to access database volumes - retrieved from Google Cloud console within the volume details.
+nfs_lif: 10.165.128.242
+
+....
+
+
+====
+
+
+==== 劇本執行
+
+[%collapsible]
+====
+自動化工具包中共有五個劇本。每個執行不同的任務區塊並服務於不同的目的。
+
+....
+0-all_playbook.yml - execute playbooks from 1-4 in one playbook run.
+1-ansible_requirements.yml - set up Ansible controller with required libs and collections.
+2-linux_config.yml - execute Linux kernel configuration on Oracle DB servers.
+4-oracle_config.yml - install and configure Oracle on DB servers and create a container database.
+5-destroy.yml - optional to undo the environment to dismantle all.
+....
+有三個選項可以使用以下命令運行劇本。
+
+. 在一次組合運行中執行所有部署劇本。
++
+[source, cli]
+----
+ansible-playbook -i hosts 0-all_playbook.yml -u admin -e @vars/vars.yml
+----
+. 依照 1-4 的數字序列逐一執行劇本。
++
+[source, cli]]
+----
+ansible-playbook -i hosts 1-ansible_requirements.yml -u admin -e @vars/vars.yml
+----
++
+[source, cli]
+----
+ansible-playbook -i hosts 2-linux_config.yml -u admin -e @vars/vars.yml
+----
++
+[source, cli]
+----
+ansible-playbook -i hosts 4-oracle_config.yml -u admin -e @vars/vars.yml
+----
+. 使用標籤執行 0-all_playbook.yml。
++
+[source, cli]
+----
+ansible-playbook -i hosts 0-all_playbook.yml -u admin -e @vars/vars.yml -t ansible_requirements
+----
++
+[source, cli]
+----
+ansible-playbook -i hosts 0-all_playbook.yml -u admin -e @vars/vars.yml -t linux_config
+----
++
+[source, cli]
+----
+ansible-playbook -i hosts 0-all_playbook.yml -u admin -e @vars/vars.yml -t oracle_config
+----
+. 撤銷環境
++
+[source, cli]
+----
+ansible-playbook -i hosts 5-destroy.yml -u admin -e @vars/vars.yml
+----
+
+
+====
+
+
+==== 執行後驗證
+
+[%collapsible]
+====
+playbook 執行完畢後，登入 Oracle DB 伺服器 VM，驗證 Oracle 是否已安裝和設定，以及容器資料庫是否已成功建立。以下是在主機 orap 上驗證 Oracle 資料庫的範例。
+
+. 驗證 NFS 掛載
++
+....
+
+[oracle@orap ~]$ df -h
+Filesystem                Size  Used Avail Use% Mounted on
+devtmpfs                  7.2G     0  7.2G   0% /dev
+tmpfs                     7.3G     0  7.3G   0% /dev/shm
+tmpfs                     7.3G  8.5M  7.2G   1% /run
+tmpfs                     7.3G     0  7.3G   0% /sys/fs/cgroup
+/dev/sda2                  50G   31G   20G  62% /
+/dev/sda1                 200M  5.9M  194M   3% /boot/efi
+10.165.128.242:/orap-u02  500G  410G   91G  82% /u02
+10.165.128.242:/orap-u03  300G  2.5G  298G   1% /u03
+10.165.128.242:/orap-u01   50G   11G   40G  21% /u01
+tmpfs                     1.5G     0  1.5G   0% /run/user/1010
+
+[admin@orap ~]$ cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Wed Jul  9 15:09:30 2025
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk/'.
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info.
+#
+# After editing this file, run 'systemctl daemon-reload' to update systemd
+# units generated from this file.
+#
+UUID=c829892e-02dc-40d8-b1b0-42a3b90b6315 /                       xfs     defaults        0 0
+UUID=6275-3342          /boot/efi               vfat    defaults,uid=0,gid=0,umask=077,shortname=winnt 0 2
+/root/swapfile swap swap defaults 0 0
+10.165.128.242:/orap-u01 /u01 nfs rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=262144,wsize=262144 0 0
+10.165.128.242:/orap-u02 /u02 nfs rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=262144,wsize=262144 0 0
+10.165.128.242:/orap-u03 /u03 nfs rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=262144,wsize=262144 0 0
+
+
+....
+. 以 oracle 使用者身份驗證 Oracle 監聽器
++
+....
+
+[oracle@orap ~]$ lsnrctl status listener
+
+LSNRCTL for Linux: Version 21.0.0.0.0 - Production on 17-FEB-2026 20:34:06
+
+Copyright (c) 1991, 2021, Oracle.  All rights reserved.
+
+Connecting to (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=orap.us-east4-b.c.cvs-pm-host-1p.internal)(PORT=1521)))
+STATUS of the LISTENER
+------------------------
+Alias                     LISTENER
+Version                   TNSLSNR for Linux: Version 21.0.0.0.0 - Production
+Start Date                17-FEB-2026 16:03:25
+Uptime                    0 days 4 hr. 30 min. 41 sec
+Trace Level               off
+Security                  ON: Local OS Authentication
+SNMP                      OFF
+Listener Parameter File   /u01/app/oracle/homes/OraDB21Home1/network/admin/listener.ora
+Listener Log File         /u01/app/oracle/diag/tnslsnr/orap/listener/alert/log.xml
+Listening Endpoints Summary...
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=orap.us-east4-b.c.cvs-pm-host-1p.internal)(PORT=1521)))
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC1521)))
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=tcps)(HOST=orap.us-east4-b.c.cvs-pm-host-1p.internal)(PORT=5500))(Security=(my_wallet_directory=/u01/app/oracle/homes/OraDB21Home1/admin/NTAP/xdb_wallet))(Presentation=HTTP)(Session=RAW))
+Services Summary...
+Service "48ea7bc6e662ab02e063130b460ac1b5.cvs-pm-host-1p.internal" has 1 instance(s).
+  Instance "NTAP", status READY, has 1 handler(s) for this service...
+Service "48ea7e8e7de8ab6de063130b460a341d.cvs-pm-host-1p.internal" has 1 instance(s).
+  Instance "NTAP", status READY, has 1 handler(s) for this service...
+Service "48ea7ff1feb4ab7ce063130b460ac700.cvs-pm-host-1p.internal" has 1 instance(s).
+  Instance "NTAP", status READY, has 1 handler(s) for this service...
+Service "NTAP.cvs-pm-host-1p.internal" has 1 instance(s).
+  Instance "NTAP", status READY, has 1 handler(s) for this service...
+Service "NTAPXDB.cvs-pm-host-1p.internal" has 1 instance(s).
+  Instance "NTAP", status READY, has 1 handler(s) for this service...
+Service "ntap_pdb1.cvs-pm-host-1p.internal" has 1 instance(s).
+  Instance "NTAP", status READY, has 1 handler(s) for this service...
+Service "ntap_pdb2.cvs-pm-host-1p.internal" has 1 instance(s).
+  Instance "NTAP", status READY, has 1 handler(s) for this service...
+Service "ntap_pdb3.cvs-pm-host-1p.internal" has 1 instance(s).
+  Instance "NTAP", status READY, has 1 handler(s) for this service...
+The command completed successfully
+
+
+....
+. 驗證 Oracle 資料庫和 dNFS
++
+....
+
+[oracle@orap ~]$ cat /etc/oratab
+#
+
+
+
+# This file is used by ORACLE utilities.  It is created by root.sh
+# and updated by either Database Configuration Assistant while creating
+# a database or ASM Configuration Assistant while creating ASM instance.
+
+# A colon, ':', is used as the field terminator.  A new line terminates
+# the entry.  Lines beginning with a pound sign, '#', are comments.
+#
+# Entries are of the form:
+#   $ORACLE_SID:$ORACLE_HOME:<N|Y>:
+#
+# The first and second fields are the system identifier and home
+# directory of the database respectively.  The third field indicates
+# to the dbstart utility that the database should , "Y", or should not,
+# "N", be brought up at system boot time.
+#
+# Multiple entries with the same $ORACLE_SID are not allowed.
+#
+#
+NTAP:/u01/app/oracle/product/21.0.0/NTAP:Y
+
+
+[oracle@orap ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 21.0.0.0.0 - Production on Wed Jan 28 18:18:02 2026
+Version 21.19.0.0.0
+
+Copyright (c) 1982, 2021, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 21c Enterprise Edition Release 21.0.0.0.0 - Production
+Version 21.19.0.0.0
+
+SQL> select name, open_mode, log_mode from v$database;
+
+NAME      OPEN_MODE            LOG_MODE
+--------- -------------------- ------------
+NTAP      READ WRITE           ARCHIVELOG
+
+SQL> show pdbs
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+         3 NTAP_PDB1                      READ WRITE NO
+         4 NTAP_PDB2                      READ WRITE NO
+         5 NTAP_PDB3                      READ WRITE NO
+SQL> select name from v$datafile;
+
+NAME
+--------------------------------------------------------------------------------
+/u02/oradata/NTAP/system01.dbf
+/u02/oradata/NTAP/sysaux01.dbf
+/u02/oradata/NTAP/undotbs01.dbf
+/u02/oradata/NTAP/pdbseed/system01.dbf
+/u02/oradata/NTAP/pdbseed/sysaux01.dbf
+/u02/oradata/NTAP/users01.dbf
+/u02/oradata/NTAP/pdbseed/undotbs01.dbf
+/u02/oradata/NTAP/NTAP_pdb1/system01.dbf
+/u02/oradata/NTAP/NTAP_pdb1/sysaux01.dbf
+/u02/oradata/NTAP/NTAP_pdb1/undotbs01.dbf
+/u02/oradata/NTAP/NTAP_pdb1/users01.dbf
+
+NAME
+--------------------------------------------------------------------------------
+/u02/oradata/NTAP/NTAP_pdb2/system01.dbf
+/u02/oradata/NTAP/NTAP_pdb2/sysaux01.dbf
+/u02/oradata/NTAP/NTAP_pdb2/undotbs01.dbf
+/u02/oradata/NTAP/NTAP_pdb2/users01.dbf
+/u02/oradata/NTAP/NTAP_pdb3/system01.dbf
+/u02/oradata/NTAP/NTAP_pdb3/sysaux01.dbf
+/u02/oradata/NTAP/NTAP_pdb3/undotbs01.dbf
+/u02/oradata/NTAP/NTAP_pdb3/users01.dbf
+/u02/oradata/NTAP/NTAP_pdb1/soe_01.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_02.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_03.pdf
+
+NAME
+--------------------------------------------------------------------------------
+/u02/oradata/NTAP/NTAP_pdb1/soe_04.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_05.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_06.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_07.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_08.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_09.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_10.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_11.pdf
+/u02/oradata/NTAP/NTAP_pdb1/soe_12.pdf
+
+31 rows selected.
+
+SQL> select name from v$controlfile;
+
+NAME
+--------------------------------------------------------------------------------
+/u02/oradata/NTAP/control01.ctl
+/u03/orareco/NTAP/control02.ctl
+
+SQL> select name from v$tempfile;
+
+NAME
+--------------------------------------------------------------------------------
+/u02/oradata/NTAP/temp01.dbf
+/u02/oradata/NTAP/pdbseed/temp012026-01-21_17-35-36-638-PM.dbf
+/u02/oradata/NTAP/NTAP_pdb1/temp01.dbf
+/u02/oradata/NTAP/NTAP_pdb2/temp01.dbf
+/u02/oradata/NTAP/NTAP_pdb3/temp01.dbf
+/u02/oradata/NTAP/NTAP_pdb1/temp02.dbf
+
+6 rows selected.
+
+SQL> select member from v$logfile;
+
+MEMBER
+--------------------------------------------------------------------------------
+/u03/orareco/NTAP/onlinelog/redo03.log
+/u03/orareco/NTAP/onlinelog/redo02.log
+/u03/orareco/NTAP/onlinelog/redo01.log
+
+SQL> select svrname, dirname from v$dnfs_servers;
+
+SVRNAME
+--------------------------------------------------------------------------------
+DIRNAME
+--------------------------------------------------------------------------------
+10.165.128.242
+/orap-u02
+
+10.165.128.242
+/orap-u03
+
+10.165.128.242
+/orap-u01
+
+
+
+
+....
+. 驗證 Oracle 服務是否自動啟動和關閉。
++
+....
+
+[admin@orap ~]$ sudo systemctl status oracle_NTAP
+● oracle_NTAP.service - Oracle Database Start/Stop Service
+   Loaded: loaded (/etc/systemd/system/oracle_NTAP.service; enabled; vendor preset: disabled)
+   Active: active (running) since Wed 2026-01-28 16:59:10 UTC; 1h 22min ago
+    Tasks: 79 (limit: 94156)
+   Memory: 7.1G
+   CGroup: /system.slice/oracle_NTAP.service
+           ├─1368 /u01/app/oracle/product/21.0.0/NTAP/bin/tnslsnr LISTENER -inherit
+           ├─1903 ora_pmon_NTAP
+           ├─1907 ora_clmn_NTAP
+           ├─1911 ora_psp0_NTAP
+           ├─1915 ora_vktm_NTAP
+           ├─1921 ora_gen0_NTAP
+           ├─1925 ora_mman_NTAP
+           ├─1931 ora_gen1_NTAP
+           ├─1933 ora_gen2_NTAP
+           ├─1935 ora_vosd_NTAP
+           ├─1937 ora_diag_NTAP
+           ├─1939 ora_ofsd_NTAP
+           ├─1941 ora_dbrm_NTAP
+           ├─1943 ora_vkrm_NTAP
+           ├─1945 ora_svcb_NTAP
+           ├─1947 ora_pman_NTAP
+           ├─1949 ora_dia0_NTAP
+           ├─1955 ora_dbw0_NTAP
+           ├─1957 ora_lgwr_NTAP
+           ├─1961 ora_ckpt_NTAP
+           ├─1965 ora_smon_NTAP
+           ├─1969 ora_smco_NTAP
+           ├─1971 ora_reco_NTAP
+           ├─1973 ora_bg00_NTAP
+           ├─1975 ora_lreg_NTAP
+           ├─1981 ora_pxmn_NTAP
+           ├─1991 ora_mmon_NTAP
+           ├─1993 ora_mmnl_NTAP
+           ├─2000 ora_lg00_NTAP
+           ├─2003 ora_bg01_NTAP
+           ├─2006 ora_d000_NTAP
+           ├─2008 ora_w000_NTAP
+           ├─2010 ora_s000_NTAP
+           ├─2015 ora_lg01_NTAP
+           ├─2017 ora_tmon_NTAP
+           ├─2019 ora_w001_NTAP
+           ├─2026 ora_m000_NTAP
+           ├─2036 ora_tt00_NTAP
+           ├─2038 ora_arc0_NTAP
+           ├─2040 ora_tt01_NTAP
+           ├─2042 ora_arc1_NTAP
+           ├─2044 ora_arc2_NTAP
+           ├─2048 ora_arc3_NTAP
+           ├─2050 ora_tt02_NTAP
+           ├─2063 ora_w002_NTAP
+           ├─2065 ora_rcbg_NTAP
+           ├─2069 ora_aqpc_NTAP
+           ├─2073 ora_p000_NTAP
+           ├─2075 ora_p001_NTAP
+           ├─2077 ora_p002_NTAP
+           ├─2079 ora_p003_NTAP
+           ├─2081 ora_p004_NTAP
+           ├─2083 ora_p005_NTAP
+           ├─2085 ora_p006_NTAP
+           ├─2087 ora_p007_NTAP
+           ├─2092 ora_w003_NTAP
+           ├─2164 ora_w004_NTAP
+           ├─2279 ora_qm02_NTAP
+           ├─2289 ora_q005_NTAP
+           ├─2296 ora_cjq0_NTAP
+           ├─2450 ora_m001_NTAP
+           ├─2454 ora_m002_NTAP
+           ├─2458 ora_m003_NTAP
+           ├─2508 ora_w005_NTAP
+           ├─2510 ora_m004_NTAP
+           ├─2512 ora_m005_NTAP
+           ├─2514 ora_m006_NTAP
+           ├─2516 ora_w006_NTAP
+           ├─2540 ora_q00i_NTAP
+           ├─2550 ora_w007_NTAP
+           └─2559 ora_cl00_NTAP
+
+Jan 28 16:58:29 orap systemd[1]: Starting Oracle Database Start/Stop Service...
+Jan 28 16:58:31 orap dbstart[1519]: Processing Database instance "NTAP": log file /u01/app/oracle/homes/OraDB21Home1/rdbms/log/startup.log
+Jan 28 16:59:10 orap systemd[1]: Started Oracle Database Start/Stop Service.
+
+[admin@orap ~]$
+
+....
+
+
+====
+
+
+=== 使用 Google Cloud NetApp Volumes 進行 Oracle 資料庫備份
+
+
+
+==== Oracle 資料庫快照與保存庫備份
+
+[%collapsible]
+====
+為了簡化 Oracle 資料庫備份的設置，NetApp Solutions Engineering 團隊開發了一個 Ansible playbook，用於自動化 Oracle 資料庫備份，並允許使用者配置保留策略和備份計畫。該 playbook 利用 Google Cloud NetApp Volumes 的快照和 vault 備份功能，實現了快速（秒級）快照備份、快速（分鐘級）資料庫還原、恢復，以及從儲存 vault 中的快照或備份進行複製。
+
+. 複製一份適用於 GCNV 的 NetApp Oracle 資料庫備份自動化工具包。
++
+[source, cli]
+----
+git clone https://bitbucket.ngage.netapp.com/scm/ns-bb/na_oracle_bkup_gcnv.git
+----
++
+
+NOTE: 目前，只有具有 bitbucket 存取權限的NetApp內部使用者才能存取該工具包。對於有興趣的外部用戶，請向您的客戶團隊要求存取權限或聯絡NetApp解決方案工程團隊。
+
+. 請閱讀工具包中的 README 文件，並按照以下說明配置備份作業，以及如何透過 crontab 或其他排程工具進行排程。此 playbook 設計用於在具有 Oracle 資料庫伺服器虛擬機器和 Google NetApp Volumes 存取權限的 Ansible 控制器節點上執行。它將根據定義的計劃和保留策略建立資料庫磁碟區的應用程式一致性快照，並將快照複製到 vault 以用於災難復原。
+. 預設情況下，該劇本會建立每日快照備份和每小時快照。預設快照保留期為 7 個每日快照和 24 個每小時快照。超出保留期的任何額外快照將被刪除，並維持 7 個每日快照和 24 個每小時快照的滾動副本。您可以根據 RTO/RPO 要求和儲存成本考量來調整備份頻率和保留期。每日快照備份所有 DB 磁碟區，而每小時快照僅備份日誌磁碟區並節省儲存空間。在每日快照備份期間，該劇本還會根據定義的保留期刪除 Oracle 歸檔日誌檔案，以節省 DB 日誌磁碟區上的儲存空間。
+. 以下是建立快照備份並複製到儲存庫的 crontab 項目範例。
++
+....
+
+[admin@ansiblectl na_oracle_bkup_gcnv]$ crontab -l
+0 0 * * * /home/admin/na_oracle_bkup_gcnv/oracle_standalone_snapshot_daily.sh
+0 1-23 * * * /home/admin/na_oracle_bkup_gcnv/oracle_standalone_snapshot_hourly.sh
+5 0 * * 7 /home/admin/na_oracle_bkup_gcnv/oracle_standalone_vaultbkup_weekly.sh
+5 0 * * 1-6 /home/admin/na_oracle_bkup_gcnv/oracle_standalone_vaultbkup_daily.sh
+5 1-23 * * * /home/admin/na_oracle_bkup_gcnv/oracle_standalone_vaultbkup_hourly.sh
+....
+. 根據您的 RTO/RPO 要求，vault 備份可以按週、日或小時間隔執行。每週和每日備份包含所有 DB 磁碟區，而每小時 vault 備份僅包含日誌磁碟區，以節省儲存空間。第一次 vault 備份需要較長時間，因為它會建立基準。基準備份建立後，所有後續 vault 備份都是使用增量永久方法的增量備份。所有 vault 備份都是在執行時從最新的應用程式一致性快照建立，以確保可恢復性。與典型的基準和增量備份不同，基準 vault 備份資料會彙總到每個增量備份中。換句話說，每個增量 vault 備份都包含完整的資料集，無需還原基準備份即可用於恢復。這種方法簡化了備份管理和恢復程序，同時在 vault 中提供高效的儲存使用率。在此方法中，所有備份都是獨立的，因此當您需要刪除任何備份時，無需擔心備份鏈和相依性。備份自動化指令碼會自動修剪備份，以符合定義的保留目標。
+. 以下日誌檔案記錄是快照備份和保留管理的範例。
++
+....
+Begin Oracle DB snapshot backup at 2026-0217-160001
+
+PLAY [Enable Oracle bkup mode for consistent snapshot] *************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [orap]
+
+TASK [Call presnap tasks block before snapshot] ********************************
+
+TASK [oracle : Copy presnap script to prod host] *******************************
+ok: [orap]
+
+TASK [oracle : Stage prod DB for snapshot] *************************************
+changed: [orap]
+
+PLAY [Take a volume snapshot or vault backup] **********************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [ontap : Open a GCP connection via cli] ***********************************
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_open_conn.yml for localhost
+
+TASK [ontap : Login to GCP with service key from cli] **************************
+changed: [localhost]
+
+TASK [ontap : Take app consistent snapshots for DB volumes] ********************
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_vol_snapshot.yml for localhost
+
+TASK [ontap : Obtain current date, time] ***************************************
+ok: [localhost] => {
+    "ansible_date_time": {
+        "date": "2026-02-17",
+        "day": "17",
+        "epoch": "1771362008",
+        "epoch_int": "1771362008",
+        "hour": "16",
+        "iso8601": "2026-02-17T21:00:08Z",
+        "iso8601_basic": "20260217T160008243394",
+        "iso8601_basic_short": "20260217T160008",
+        "iso8601_micro": "2026-02-17T21:00:08.243394Z",
+        "minute": "00",
+        "month": "02",
+        "second": "08",
+        "time": "16:00:08",
+        "tz": "EST",
+        "tz_dst": "EDT",
+        "tz_offset": "-0500",
+        "weekday": "Tuesday",
+        "weekday_number": "2",
+        "weeknumber": "07",
+        "year": "2026"
+    }
+}
+
+TASK [ontap : Take a snapshot of all DB data volumes in sequence] **************
+skipping: [localhost] => (item=orap-u01)
+skipping: [localhost] => (item=orap-u02)
+skipping: [localhost] => (item=orap-u03)
+skipping: [localhost]
+
+TASK [ontap : Take a snapshot of all DB logs volumes in sequence] **************
+changed: [localhost] => (item=orap-u03)
+
+TASK [ontap : Pause to allow snapshots to complete] ****************************
+Pausing for 15 seconds
+ok: [localhost]
+
+TASK [ontap : Take app consistent vault backups from DB volume snapshots] ******
+skipping: [localhost]
+
+TASK [ontap : Take app consistent vault backups from DB volumes] ***************
+skipping: [localhost]
+
+PLAY [End Oracle backup mode after snapshot] ***********************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [orap]
+
+TASK [Call postsnap tasks block after snapshot] ********************************
+
+TASK [oracle : Copy postsnap script to prod host] ******************************
+ok: [orap]
+
+TASK [oracle : Execute postsnapshot script] ************************************
+changed: [orap]
+
+PLAY [Prune volume snapshot based on defined retention goals] ******************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Call snapshot management tasks block] ************************************
+
+TASK [ontap : Login to GCP with service key from cli] **************************
+changed: [localhost]
+
+TASK [ontap : Process snapshots for each volume] *******************************
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_process_vol_snapshot.yml for localhost => (item=orap-u01)
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_process_vol_snapshot.yml for localhost => (item=orap-u02)
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_process_vol_snapshot.yml for localhost => (item=orap-u03)
+
+TASK [ontap : List an existing snapshot of a DB volume in sequence if exist] ***
+changed: [localhost]
+
+TASK [ontap : Debug orap-u01 snapshot list] ************************************
+ok: [localhost] => {
+    "snapshots.stdout_lines": [
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260209t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260213t103635",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260213t000008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260205t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260206t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260212t125953",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260210t153007"
+    ]
+}
+
+TASK [ontap : Parse orap-u01 snapshots count] **********************************
+ok: [localhost]
+
+TASK [ontap : Parse orap-u01 snapshots by backup frequency] ********************
+ok: [localhost] => (item=['projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260209t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260213t103635', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260213t000008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260205t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260206t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260212t125953', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260210t153007'])
+
+TASK [ontap : list orap-u01 daily snapshot] ************************************
+ok: [localhost] => {
+    "daily_snapshot_raw_0": [
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260205t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260206t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260209t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260210t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260212t125953",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260213t000008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260213t103635"
+    ]
+}
+
+TASK [ontap : list orap-u01 hourly snapshot] ***********************************
+ok: [localhost] => {
+    "hourly_snapshot_raw_0": []
+}
+
+TASK [ontap : Report snapshots count per volume] *******************************
+ok: [localhost] => {
+    "msg": [
+        "Volume orap-u01 has 7 daily snapshots",
+        "Volume orap-u01 has 0 hourly snapshots"
+    ]
+}
+
+TASK [ontap : Check if cleanup is needed] **************************************
+ok: [localhost]
+
+TASK [ontap : Report cleanup status for orap-u01 daily snapshot after check against retention policy] ***
+skipping: [localhost]
+
+TASK [ontap : Report cleanup status for orap-u01 hourly snapshot after check against retention policy] ***
+skipping: [localhost]
+
+TASK [ontap : Deletion plan for orap-u01 daily snapshots, if cleanup needed] ***
+skipping: [localhost]
+
+TASK [ontap : Deletion plan for orap-u01 hourly snapshots, if cleanup needed] ***
+skipping: [localhost]
+
+TASK [ontap : Get the orap-u01 excess daily snapshots] *************************
+skipping: [localhost] => (item=[])
+skipping: [localhost]
+
+TASK [ontap : Get the orap-u01 excess hourly snapshots] ************************
+skipping: [localhost] => (item=[])
+skipping: [localhost]
+
+TASK [ontap : Delete orap-u01 excess daily snapshots] **************************
+skipping: [localhost]
+
+TASK [ontap : Delete orap-u01 excess hourly snapshots] *************************
+skipping: [localhost]
+
+TASK [ontap : List an existing snapshot of a DB volume in sequence if exist] ***
+changed: [localhost]
+
+TASK [ontap : Debug orap-u02 snapshot list] ************************************
+ok: [localhost] => {
+    "snapshots.stdout_lines": [
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260210t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260213t000008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260206t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260205t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260212t125953",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260209t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260213t103635"
+    ]
+}
+
+TASK [ontap : Parse orap-u02 snapshots count] **********************************
+ok: [localhost]
+
+TASK [ontap : Parse orap-u02 snapshots by backup frequency] ********************
+ok: [localhost] => (item=['projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260210t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260213t000008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260206t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260205t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260212t125953', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260209t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260213t103635'])
+
+TASK [ontap : list orap-u02 daily snapshot] ************************************
+ok: [localhost] => {
+    "daily_snapshot_raw_1": [
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260205t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260206t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260209t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260210t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260212t125953",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260213t000008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260213t103635"
+    ]
+}
+
+TASK [ontap : list orap-u02 hourly snapshot] ***********************************
+ok: [localhost] => {
+    "hourly_snapshot_raw_1": []
+}
+
+TASK [ontap : Report snapshots count per volume] *******************************
+ok: [localhost] => {
+    "msg": [
+        "Volume orap-u02 has 7 daily snapshots",
+        "Volume orap-u02 has 0 hourly snapshots"
+    ]
+}
+
+TASK [ontap : Check if cleanup is needed] **************************************
+ok: [localhost]
+
+TASK [ontap : Report cleanup status for orap-u02 daily snapshot after check against retention policy] ***
+skipping: [localhost]
+
+TASK [ontap : Report cleanup status for orap-u02 hourly snapshot after check against retention policy] ***
+skipping: [localhost]
+
+TASK [ontap : Deletion plan for orap-u02 daily snapshots, if cleanup needed] ***
+skipping: [localhost]
+
+TASK [ontap : Deletion plan for orap-u02 hourly snapshots, if cleanup needed] ***
+skipping: [localhost]
+
+TASK [ontap : Get the orap-u02 excess daily snapshots] *************************
+skipping: [localhost] => (item=[])
+skipping: [localhost]
+
+TASK [ontap : Get the orap-u02 excess hourly snapshots] ************************
+skipping: [localhost] => (item=[])
+skipping: [localhost]
+
+TASK [ontap : Delete orap-u02 excess daily snapshots] **************************
+skipping: [localhost]
+
+TASK [ontap : Delete orap-u02 excess hourly snapshots] *************************
+skipping: [localhost]
+
+TASK [ontap : List an existing snapshot of a DB volume in sequence if exist] ***
+changed: [localhost]
+
+TASK [ontap : Debug orap-u03 snapshot list] ************************************
+ok: [localhost] => {
+    "snapshots.stdout_lines": [
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t090008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t120011",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t060008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260213t000008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260213t103635",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t210008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t220008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t100010",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t120009",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t150007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t030007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260210t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t080007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260209t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260205t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t150007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t050008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260206t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t130008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t230009",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260212t125953",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t160008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t110008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t160007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t020007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t040008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t130008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t140007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t070007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t200008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t010008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t140008"
+    ]
+}
+
+TASK [ontap : Parse orap-u03 snapshots count] **********************************
+ok: [localhost]
+
+TASK [ontap : Parse orap-u03 snapshots by backup frequency] ********************
+ok: [localhost] => (item=['projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t090008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t120011', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t060008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260213t000008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260213t103635', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t210008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t220008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t100010', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t120009', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t150007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t030007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260210t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t080007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260209t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260205t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t150007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t050008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260206t153007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t130008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t230009', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260212t125953', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t160008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t110008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t160007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t020007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t040008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t130008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t140007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t070007', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t200008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t010008', 'projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t140008'])
+
+TASK [ontap : list orap-u03 daily snapshot] ************************************
+ok: [localhost] => {
+    "daily_snapshot_raw_2": [
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260205t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260206t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260209t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260210t153007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260212t125953",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260213t000008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-daily-orap-u03-20260213t103635"
+    ]
+}
+
+TASK [ontap : list orap-u03 hourly snapshot] ***********************************
+ok: [localhost] => {
+    "hourly_snapshot_raw_2": [
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t200008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t210008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t220008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t230009",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t010008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t020007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t030007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t040008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t050008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t060008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t070007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t080007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t090008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t100010",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t110008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t120009",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t130008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t140007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t150007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260213t160007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t120011",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t130008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t140008",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t150007",
+        "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260217t160008"
+    ]
+}
+
+TASK [ontap : Report snapshots count per volume] *******************************
+ok: [localhost] => {
+    "msg": [
+        "Volume orap-u03 has 7 daily snapshots",
+        "Volume orap-u03 has 25 hourly snapshots"
+    ]
+}
+
+TASK [ontap : Check if cleanup is needed] **************************************
+ok: [localhost]
+
+TASK [ontap : Report cleanup status for orap-u03 daily snapshot after check against retention policy] ***
+skipping: [localhost]
+
+TASK [ontap : Report cleanup status for orap-u03 hourly snapshot after check against retention policy] ***
+ok: [localhost] => {
+    "msg": [
+        "Volume orap-u03 hourly snapshots exceeded retention limit and needs cleanup"
+    ]
+}
+
+TASK [ontap : Deletion plan for orap-u03 daily snapshots, if cleanup needed] ***
+skipping: [localhost]
+
+TASK [ontap : Deletion plan for orap-u03 hourly snapshots, if cleanup needed] ***
+ok: [localhost] => {
+    "msg": "Volume: orap-u03\nTotal hourly snapshots: 25\nWill delete excess: 1\n"
+}
+
+TASK [ontap : Get the orap-u03 excess daily snapshots] *************************
+skipping: [localhost] => (item=[])
+skipping: [localhost]
+
+TASK [ontap : Get the orap-u03 excess hourly snapshots] ************************
+ok: [localhost] => (item=['projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t200008']) => {
+    "msg": "The excess 1 hourly snapshots are: ['projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t200008']"
+}
+
+TASK [ontap : Delete orap-u03 excess daily snapshots] **************************
+skipping: [localhost]
+
+TASK [ontap : Delete orap-u03 excess hourly snapshots] *************************
+changed: [localhost] => (item=projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260212t200008)
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=40   changed=7    unreachable=0    failed=0    skipped=23   rescued=0    ignored=0
+orap                       : ok=6    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+End Oracle DB snapshot backup at 2026-0217-160040
+
+....
+. 以下日誌檔案記錄了從應用程式一致性快照進行 Vault 備份的詳細資訊。
++
+....
+
+
+Begin Oracle DB daily vault backup at 2026-0225-000501
+
+PLAY [Enable Oracle bkup mode for consistent snapshot] *************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [orap]
+
+TASK [Call presnap tasks block before snapshot] ********************************
+skipping: [orap]
+
+PLAY [Take a volume snapshot or vault backup] **********************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [ontap : Open a GCP connection via cli] ***********************************
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_open_conn.yml for localhost
+
+TASK [ontap : Login to GCP with service key from cli] **************************
+changed: [localhost]
+
+TASK [ontap : Take app consistent snapshots for DB volumes] ********************
+skipping: [localhost]
+
+TASK [ontap : Take app consistent vault backups from DB volume snapshots] ******
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_snap_bk2vault.yml for localhost
+
+TASK [ontap : Check if an existing backup vault db-vault exist] ****************
+ok: [localhost]
+
+TASK [ontap : debug] ***********************************************************
+ok: [localhost] => {
+    "vault_list_raw.stdout_lines": [
+        "db-vault",
+        "us-east4-vault",
+        "dg-backup-vault-destination-b9ec"
+    ]
+}
+
+TASK [ontap : Check if db-vault is in the list] ********************************
+ok: [localhost]
+
+TASK [ontap : Create backup vault, if not exist] *******************************
+skipping: [localhost]
+
+TASK [ontap : Assign DB volumes to backup vault] *******************************
+skipping: [localhost] => (item=orap-u01)
+skipping: [localhost] => (item=orap-u02)
+skipping: [localhost] => (item=orap-u03)
+skipping: [localhost]
+
+TASK [ontap : Purge the existing vault backups to maintain the retention] ******
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_del_vault_bkup.yml for localhost => (item=orap-u01)
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_del_vault_bkup.yml for localhost => (item=orap-u02)
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_del_vault_bkup.yml for localhost => (item=orap-u03)
+
+TASK [ontap : List existing vault bkup of the DB volume orap-u01 if exist] *****
+changed: [localhost]
+
+TASK [ontap : Display all backups for volume orap-u01] *************************
+ok: [localhost] => {
+    "vol_vault_bkup.stdout_lines": [
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u01-20260220t131037",
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-orap-u01-20260224t134624",
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u01-20260224t000504",
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u01-20260223t155123"
+    ]
+}
+
+TASK [ontap : Retrieve the vault backups to purge for volume orap-u01 with retention goal] ***
+ok: [localhost] => {
+    "msg": [
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u01-20260220t131037"
+    ]
+}
+
+TASK [ontap : Purge the extra vault backups for volume orap-u01 to maintain the retention] ***
+changed: [localhost] => (item=projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u01-20260220t131037)
+
+TASK [ontap : List existing vault bkup of the DB volume orap-u02 if exist] *****
+changed: [localhost]
+
+TASK [ontap : Display all backups for volume orap-u02] *************************
+ok: [localhost] => {
+    "vol_vault_bkup.stdout_lines": [
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u02-20260224t000504",
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u02-20260223t155123",
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u02-20260220t131037",
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-orap-u02-20260224t134624"
+    ]
+}
+
+TASK [ontap : Retrieve the vault backups to purge for volume orap-u02 with retention goal] ***
+ok: [localhost] => {
+    "msg": [
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u02-20260220t131037"
+    ]
+}
+
+TASK [ontap : Purge the extra vault backups for volume orap-u02 to maintain the retention] ***
+changed: [localhost] => (item=projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u02-20260220t131037)
+
+TASK [ontap : List existing vault bkup of the DB volume orap-u03 if exist] *****
+changed: [localhost]
+
+TASK [ontap : Display all backups for volume orap-u03] *************************
+ok: [localhost] => {
+    "vol_vault_bkup.stdout_lines": [
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u03-20260224t120840",
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u03-20260224t000504",
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-hourly-orap-u03-20260220t140451",
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-orap-u03-20260224t134624"
+    ]
+}
+
+TASK [ontap : Retrieve the vault backups to purge for volume orap-u03 with retention goal] ***
+ok: [localhost] => {
+    "msg": [
+        "projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u03-20260224t000504"
+    ]
+}
+
+TASK [ontap : Purge the extra vault backups for volume orap-u03 to maintain the retention] ***
+changed: [localhost] => (item=projects/cvs-pm-host-1p/locations/us-east4/backupVaults/db-vault/backups/bkup-daily-orap-u03-20260224t000504)
+
+TASK [ontap : Obtain current date, time] ***************************************
+ok: [localhost] => {
+    "ansible_date_time": {
+        "date": "2026-02-25",
+        "day": "25",
+        "epoch": "1771995904",
+        "epoch_int": "1771995904",
+        "hour": "00",
+        "iso8601": "2026-02-25T05:05:04Z",
+        "iso8601_basic": "20260225T000504817299",
+        "iso8601_basic_short": "20260225T000504",
+        "iso8601_micro": "2026-02-25T05:05:04.817299Z",
+        "minute": "05",
+        "month": "02",
+        "second": "04",
+        "time": "00:05:04",
+        "tz": "EST",
+        "tz_dst": "EDT",
+        "tz_offset": "-0500",
+        "weekday": "Wednesday",
+        "weekday_number": "3",
+        "weeknumber": "08",
+        "year": "2026"
+    }
+}
+
+TASK [ontap : Create a weekly vault backup for each volume from most recent volume snapshot] ***
+skipping: [localhost] => (item=orap-u01)
+skipping: [localhost] => (item=orap-u02)
+skipping: [localhost] => (item=orap-u03)
+skipping: [localhost]
+
+TASK [ontap : Create a daily vault backup for each volume from most recent volume snapshot] ***
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_process_vol_vault.yml for localhost => (item=orap-u01)
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_process_vol_vault.yml for localhost => (item=orap-u02)
+included: /home/admin/na_oracle_bkup_gcnv/roles/ontap/tasks/gcp_process_vol_vault.yml for localhost => (item=orap-u03)
+
+TASK [ontap : List existing snapshots of DB volume orap-u01 if exist] **********
+changed: [localhost]
+
+TASK [ontap : Retrieve the last or most recent snapshot] ***********************
+ok: [localhost] => {
+    "snapshots.stdout_lines | sort | last": "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u01/snapshots/snap-daily-orap-u01-20260225t000007"
+}
+
+TASK [ontap : Take a vault bkup of DB volume orap-u01 from most recent snapshot] ***
+changed: [localhost]
+
+TASK [ontap : List existing snapshots of DB volume orap-u02 if exist] **********
+changed: [localhost]
+
+TASK [ontap : Retrieve the last or most recent snapshot] ***********************
+ok: [localhost] => {
+    "snapshots.stdout_lines | sort | last": "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u02/snapshots/snap-daily-orap-u02-20260225t000007"
+}
+
+TASK [ontap : Take a vault bkup of DB volume orap-u02 from most recent snapshot] ***
+changed: [localhost]
+
+TASK [ontap : List existing snapshots of DB volume orap-u03 if exist] **********
+changed: [localhost]
+
+TASK [ontap : Retrieve the last or most recent snapshot] ***********************
+ok: [localhost] => {
+    "snapshots.stdout_lines | sort | last": "projects/cvs-pm-host-1p/locations/us-east4-b/volumes/orap-u03/snapshots/snap-hourly-orap-u03-20260224t230008"
+}
+
+TASK [ontap : Take a vault bkup of DB volume orap-u03 from most recent snapshot] ***
+changed: [localhost]
+
+TASK [ontap : Create a hourly vault backup for each volume from most recent volume snapshot] ***
+skipping: [localhost] => (item=orap-u03)
+skipping: [localhost]
+
+TASK [ontap : Take app consistent vault backups from DB volumes] ***************
+skipping: [localhost]
+
+PLAY [End Oracle backup mode after snapshot] ***********************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [orap]
+
+TASK [Call postsnap tasks block after snapshot] ********************************
+skipping: [orap]
+
+PLAY [Prune volume snapshot based on defined retention goals] ******************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Call snapshot management tasks block] ************************************
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=36   changed=13   unreachable=0    failed=0    skipped=7    rescued=0    ignored=0
+orap                       : ok=2    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0
+
+End Oracle DB daily vault backup at 2026-0225-001406
+
+
+....
+
+
+
+NOTE: 如果快照的 Vault 備份已經存在，則會跳過針對相同快照的第二次備份嘗試，且不會產生錯誤。
+
+====
+
+
+=== 使用 Google Cloud NetApp Volumes 進行 Oracle 資料庫復原和克隆
+
+
+
+==== 使用 Google Cloud NetApp Volumes 快照進行 Oracle 資料庫原地時間點恢復
+
+[%collapsible]
+====
+Oracle 資料庫時間點復原通常用於復原意外刪除或損壞的資料，或從邏輯錯誤中復原。透過 Google NetApp Volumes 快照，您可以輕鬆地透過將資料庫還原到特定快照來執行 Oracle 資料庫的時間點復原。這樣，您無需從完整備份還原即可快速從資料遺失或損壞中復原。以下步驟示範如何使用 Google NetApp Volumes 快照還原已刪除的表。
+
+. 為了演示，我們首先在「NTAP」資料庫中建立一個名為「test」的測試表，並向其中插入一些資料。然後，我們刪除該表以模擬意外刪除資料的情況。之後，我們將使用 Google NetApp Volumes 快照將資料庫還原到刪除表之前的狀態，並驗證表及其資料是否已成功復原。
++
+....
+SQL> select current_timestamp from dual;
+
+CURRENT_TIMESTAMP
+---------------------------------------------------------------------------
+06-FEB-26 08.41.29.708302 PM +00:00
+
+SQL> select * from test;
+
+        ID
+----------
+DT
+---------------------------------------------------------------------------
+EVENT
+--------------------------------------------------------------------------------
+         1
+05-FEB-26 08.14.17.000000 PM
+testing Oracle in-place restore and point-in-time recovery for GCNV
+
+
+SQL> drop table test;
+
+Table dropped.
+
+SQL> select * from test;
+select * from test
+              *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+
+....
+. 停止 Oracle 服務以關閉 Oracle 資料庫，並在從快照還原之前卸載主機上的檔案系統。
++
+....
+[root@orap admin]# systemctl stop oracle_NTAP
+[root@orap admin]# umount /u01
+[root@orap admin]# umount /u02
+[root@orap admin]# umount /u03
+[root@orap admin]# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+devtmpfs        7.2G     0  7.2G   0% /dev
+tmpfs           7.3G     0  7.3G   0% /dev/shm
+tmpfs           7.3G   17M  7.2G   1% /run
+tmpfs           7.3G     0  7.3G   0% /sys/fs/cgroup
+/dev/sda2        50G   23G   28G  46% /
+/dev/sda1       200M  5.9M  194M   3% /boot/efi
+tmpfs           1.5G     0  1.5G   0% /run/user/1010
+
+....
+. 識別包含您要復原之資料的快照。您可以使用 Google Cloud Console 或 gcloud 命令列工具列出 Oracle 資料庫磁碟區的可用快照。點擊快照清單末端的三個點，然後在 `Show More`下方查看選項。選擇 `Revert`以還原至所選快照。對所有 DB 磁碟區重複此操作。
++
+image:gcp-ora-gcnv-si-nfs-restore.001.png["此映像提供了在 Google Cloud 中使用 NFS 進行 Oracle 部署時，Google Cloud NetApp Volumes 磁碟區快照還原的螢幕截圖。"]
+
++
+image:gcp-ora-gcnv-si-nfs-restore.002.png["此映像提供了在 Google Cloud 中使用 NFS 進行 Oracle 部署時，Google Cloud NetApp Volumes 磁碟區快照還原的螢幕截圖。"]
+
++
+image:gcp-ora-gcnv-si-nfs-restore.003.png["此映像提供了在 Google Cloud 中使用 NFS 進行 Oracle 部署時，Google Cloud NetApp Volumes 磁碟區快照還原的螢幕截圖。"]
+
+. 快照還原完成後，掛載資料庫磁碟區。
++
+....
+[root@orap admin]# mount -t nfs 10.165.128.242:/orap-u01 /u01 -o rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=65536,wsize=65536
+[root@orap admin]# mount -t nfs 10.165.128.242:/orap-u02 /u02 -o rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=65536,wsize=65536
+[root@orap admin]# mount -t nfs 10.165.128.242:/orap-u03 /u03 -o rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=65536,wsize=65536
+[root@orap admin]# df -h
+Filesystem                Size  Used Avail Use% Mounted on
+devtmpfs                  7.2G     0  7.2G   0% /dev
+tmpfs                     7.3G     0  7.3G   0% /dev/shm
+tmpfs                     7.3G   17M  7.2G   1% /run
+tmpfs                     7.3G     0  7.3G   0% /sys/fs/cgroup
+/dev/sda2                  50G   23G   28G  46% /
+/dev/sda1                 200M  5.9M  194M   3% /boot/efi
+tmpfs                     1.5G     0  1.5G   0% /run/user/1010
+10.165.128.242:/orap-u01   50G   11G   40G  22% /u01
+10.165.128.242:/orap-u02  500G  477G   24G  96% /u02
+10.165.128.242:/orap-u03  300G  4.9G  296G   2% /u03
+
+....
+. 登入 Oracle 資料庫伺服器，並透過 sqlplus 執行時間點復原命令，將資料庫還原到所需的時間點。
++
+....
+[oracle@orap ~]$ env | grep ORA
+ORACLE_SID=NTAP
+ORACLE_HOME=/u01/app/oracle/product/21.0.0/NTAP
+[oracle@orap ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 21.0.0.0.0 - Production on Fri Feb 6 21:08:34 2026
+Version 21.19.0.0.0
+
+Copyright (c) 1982, 2021, Oracle.  All rights reserved.
+
+Connected to an idle instance.
+
+SQL> startup mount;
+ORACLE instance started.
+
+Total System Global Area 6442447808 bytes
+Fixed Size                  9700288 bytes
+Variable Size            1342177280 bytes
+Database Buffers         5083496448 bytes
+Redo Buffers                7073792 bytes
+Database mounted.
+
+SQL> recover database until cancel using backup controlfile;
+ORA-00279: change 6239773 generated at 02/06/2026 20:30:06 needed for thread 1
+ORA-00289: suggestion : /u03/orareco/NTAP/archivelog/2026_02_06/o1_mf_1_55_%u_.arc
+ORA-00280: change 6239773 for thread 1 is in sequence #55
+
+[oracle@orap ~]$ ls -l /u03/orareco/NTAP/archivelog/2026_02_06
+total 159376
+-r--r----- 1 oracle oinstall 118324736 Feb  6 16:05 o1_mf_1_50__4lsr8joo_.arc
+-r--r----- 1 oracle oinstall   7432704 Feb  6 17:05 o1_mf_1_51__4p51o6k4_.arc
+-r--r----- 1 oracle oinstall  11385856 Feb  6 18:05 o1_mf_1_52__4sjbbr29_.arc
+-r--r----- 1 oracle oinstall  16721920 Feb  6 19:05 o1_mf_1_53__4wvn4ohy_.arc
+-r--r----- 1 oracle oinstall   8655360 Feb  6 20:30 o1_mf_1_54__51mmc8ph_.arc
+
+
+Specify log: {<RET>=suggested | filename | AUTO | CANCEL}
+/u03/orareco/NTAP/onlinelog/redo01.log
+Log applied.
+Media recovery complete.
+SQL> alter database open resetlogs;
+
+Database altered.
+
+Note: You may need to apply the current online logs if there are any changes when the snapshot was taken.
+....
+. 恢復完成後，請確認資料已成功恢復。
++
+....
+
+SQL> alter session set container = ntap_pdb1;
+
+Session altered.
+
+SQL> select * from test;
+
+        ID DT                                                                          EVENT
+---------- --------------------------------------------------------------------------- ----------------------------------------------------------------------------------------------------
+         1 05-FEB-26 08.14.17.000000 PM                                                testing Oracle in-place restore and point-in-time recovery for GCNV
+
+SQL> select current_timestamp from dual;
+
+CURRENT_TIMESTAMP
+---------------------------------------------------------------------------
+06-FEB-26 09.39.08.097365 PM +00:00
+
+....
+. 關閉資料庫並以 systemd 服務的形式重新啟動，以完成還原程序。
++
+....
+SQL> alter session set container=cdb$root;
+
+Session altered.
+
+SQL> shutdown immediate;
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+SQL> exit
+
+
+[root@orap admin]# systemctl start oracle_NTAP
+[root@orap admin]# systemctl status oracle_NTAP
+● oracle_NTAP.service - Oracle Database Start/Stop Service
+   Loaded: loaded (/etc/systemd/system/oracle_NTAP.service; enabled; vendor preset: disabled)
+   Active: active (running) since Fri 2026-02-06 21:42:19 UTC; 9s ago
+  Process: 61431 ExecStop=/u01/app/oracle/product/21.0.0/NTAP/bin/dbshut /u01/app/oracle/product/21.0.0/NTAP (code=exited, status=0/SUCCESS)
+  Process: 62476 ExecStart=/u01/app/oracle/product/21.0.0/NTAP/bin/dbstart /u01/app/oracle/product/21.0.0/NTAP (code=exited, status=0/SUCCESS)
+    Tasks: 85 (limit: 94156)
+   Memory: 6.6G
+   CGroup: /system.slice/oracle_NTAP.service
+           ├─62487 /u01/app/oracle/product/21.0.0/NTAP/bin/tnslsnr LISTENER -inherit
+           ├─62587 ora_pmon_NTAP
+           ├─62591 ora_clmn_NTAP
+           ├─62595 ora_psp0_NTAP
+           ├─62599 ora_vktm_NTAP
+           ├─62605 ora_gen0_NTAP
+           ├─62609 ora_mman_NTAP
+           ├─62615 ora_gen1_NTAP
+           ├─62617 ora_gen2_NTAP
+           ├─62619 ora_vosd_NTAP
+           ├─62621 ora_diag_NTAP
+           ├─62623 ora_ofsd_NTAP
+           ├─62625 ora_dbrm_NTAP
+           ├─62627 ora_vkrm_NTAP
+           ├─62629 ora_svcb_NTAP
+           ├─62631 ora_pman_NTAP
+           ├─62633 ora_dia0_NTAP
+           ├─62635 ora_dbw0_NTAP
+           ├─62637 ora_lgwr_NTAP
+           ├─62642 ora_ckpt_NTAP
+           ├─62648 ora_smon_NTAP
+           ├─62651 ora_smco_NTAP
+           ├─62655 ora_reco_NTAP
+           ├─62657 ora_lreg_NTAP
+           ├─62659 ora_bg00_NTAP
+           ├─62661 ora_pxmn_NTAP
+           ├─62675 ora_mmon_NTAP
+           ├─62677 ora_mmnl_NTAP
+           ├─62685 ora_lg00_NTAP
+           ├─62688 ora_bg01_NTAP
+           ├─62690 ora_d000_NTAP
+           ├─62692 ora_w000_NTAP
+           ├─62695 ora_s000_NTAP
+           ├─62699 ora_lg01_NTAP
+           ├─62701 ora_tmon_NTAP
+           ├─62703 ora_w001_NTAP
+           ├─62710 ora_m000_NTAP
+           ├─62712 ora_m001_NTAP
+           ├─62717 ora_tt00_NTAP
+           ├─62719 ora_arc0_NTAP
+           ├─62721 ora_tt01_NTAP
+           ├─62723 ora_arc1_NTAP
+           ├─62725 ora_arc2_NTAP
+           ├─62727 ora_arc3_NTAP
+           ├─62729 ora_tt02_NTAP
+           ├─62733 ora_rcbg_NTAP
+           ├─62737 ora_w002_NTAP
+           ├─62739 ora_aqpc_NTAP
+           ├─62743 ora_p000_NTAP
+           ├─62745 ora_p001_NTAP
+           ├─62747 ora_p002_NTAP
+           ├─62749 ora_p003_NTAP
+           ├─62751 ora_p004_NTAP
+           ├─62753 ora_p005_NTAP
+           ├─62755 ora_p006_NTAP
+           ├─62757 ora_p007_NTAP
+           ├─62759 ora_s001_NTAP
+           ├─62942 ora_w003_NTAP
+           ├─62949 ora_w004_NTAP
+           ├─62958 ora_cjq0_NTAP
+           ├─62960 ora_qm02_NTAP
+           ├─63026 ora_q001_NTAP
+           ├─63028 ora_qm03_NTAP
+           ├─63030 ora_q003_NTAP
+           ├─63032 ora_q004_NTAP
+           ├─63034 ora_q005_NTAP
+           ├─63036 ora_p008_NTAP
+           ├─63038 ora_p009_NTAP
+           ├─63040 ora_p00a_NTAP
+           ├─63042 ora_p00b_NTAP
+           ├─63048 ora_m002_NTAP
+           ├─63050 ora_m003_NTAP
+           ├─63056 ora_mz00_NTAP
+           ├─63060 ora_mz03_NTAP
+           ├─63062 ora_mz02_NTAP
+           ├─63064 ora_mz04_NTAP
+           └─63072 ora_m004_NTAP
+
+Feb 06 21:41:55 orap systemd[1]: Starting Oracle Database Start/Stop Service...
+Feb 06 21:41:55 orap dbstart[62524]: Processing Database instance "NTAP": log file /u01/app/oracle/homes/OraDB21Home1/rdbms/log/startup.log
+Feb 06 21:42:19 orap systemd[1]: Started Oracle Database Start/Stop Service.
+
+....
+
+
+====
+
+
+==== 使用 Google Cloud NetApp Volumes Vault 備份將 Oracle 資料庫還原到新主機
+
+[%collapsible]
+====
+如果發生故障需要還原到新主機（例如，原始主機無法使用且主資料庫磁碟區無法存取），您可以使用 Google Cloud NetApp Volumes vault 備份在新主機上還原 Oracle 資料庫。此過程類似於使用快照進行就地恢復，但不同之處在於，您不是還原到快照，而是從 vault 備份恢復資料庫。這樣，您就可以在不同的主機上還原資料庫，這在原始主機不可用或發生硬體故障的情況下非常有用。從 vault 備份還原的步驟如下：
+
+. 識別包含您要恢復資料的 Vault 備份。您可以使用 Google Cloud Console 或 gcloud 命令列工具列出 Oracle 資料庫磁碟區的可用 Vault 備份。點選 Vault 備份清單末端的三個點，然後在 `Show more`下方查看選項。選擇 `Create new volume from backup`從所選 Vault 備份還原。對所有 DB 磁碟區重複此操作。您也可以選擇根據需要還原到相同儲存池或不同的儲存池。
++
+image:gcp-ora-gcnv-si-nfs-restore.006.png["此圖提供了在 Google Cloud 上使用 NFS 為 Oracle 部署進行 Google Cloud NetApp Volumes Vault 備份還原的螢幕截圖。"] image:gcp-ora-gcnv-si-nfs-restore.007.png["此圖提供了在 Google Cloud 上使用 NFS 為 Oracle 部署進行 Google Cloud NetApp Volumes Vault 備份還原的螢幕截圖。"] image:gcp-ora-gcnv-si-nfs-restore.008.png["此圖提供了在 Google Cloud 上使用 NFS 為 Oracle 部署進行 Google Cloud NetApp Volumes Vault 備份還原的螢幕截圖。"] image:gcp-ora-gcnv-si-nfs-restore.009.png["此圖提供了在 Google Cloud 上使用 NFS 為 Oracle 部署進行 Google Cloud NetApp Volumes Vault 備份還原的螢幕截圖。"] image:gcp-ora-gcnv-si-nfs-restore.010.png["此圖提供了在 Google Cloud 上使用 NFS 為 Oracle 部署進行 Google Cloud NetApp Volumes Vault 備份還原的螢幕截圖。"] image:gcp-ora-gcnv-si-nfs-restore.011.png["此圖提供了在 Google Cloud 上使用 NFS 為 Oracle 部署進行 Google Cloud NetApp Volumes Vault 備份還原的螢幕截圖。"]
+
+. 建立一台與原主機在硬體、作業系統和 OS 核心修補程式配置方面完全一致的新資料庫伺服器。這將確保復原過程完成後，復原的資料庫能夠正確掛載和開啟。
++
+image:gcp-ora-gcnv-si-nfs-restore.012.png["此圖提供了在 Google Cloud 上使用 NFS 為 Oracle 部署進行 Google Cloud NetApp Volumes Vault 備份還原的螢幕截圖。"]
+
++
+....
+You may also use the same Ansible playbook from automated database deployment section to automate the new database server configuration for the linux only.
+
+[admin@ansiblectl na_oracle_deploy_nfs]$ ansible-playbook -i hosts 2-linux_config.yml -u admin -e @vars/vars.yml
+
+....
+. 以管理員使用者身分登入新的 DB 伺服器。將還原的 DB 磁碟區掛載到與原始主機相同的掛載點。如有必要，請變更掛載點的所有權。
++
+....
+
+[admin@orap2 ~]$ sudo mount -t nfs 10.165.128.242:/orap-u01-bkup /u01 -o rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=262144,wsize=262144
+mount: (hint) your fstab has been modified, but systemd still uses
+       the old version; use 'systemctl daemon-reload' to reload.
+[admin@orap2 ~]$ sudo mount -t nfs 10.165.128.242:/orap-u02-bkup /u02 -o rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=262144,wsize=262144
+mount: (hint) your fstab has been modified, but systemd still uses
+       the old version; use 'systemctl daemon-reload' to reload.
+[admin@orap2 ~]$ sudo mount -t nfs 10.165.128.242:/orap-u03-bkup /u03 -o rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=262144,wsize=262144
+mount: (hint) your fstab has been modified, but systemd still uses
+       the old version; use 'systemctl daemon-reload' to reload.
+[admin@orap2 ~]$ sudo systemctl daemon-reload
+[admin@orap2 ~]$ df -h
+Filesystem                     Size  Used Avail Use% Mounted on
+devtmpfs                       7.2G     0  7.2G   0% /dev
+tmpfs                          7.3G     0  7.3G   0% /dev/shm
+tmpfs                          7.3G  8.5M  7.2G   1% /run
+tmpfs                          7.3G     0  7.3G   0% /sys/fs/cgroup
+/dev/sda2                       50G   23G   28G  45% /
+/dev/sda1                      200M  5.9M  194M   3% /boot/efi
+tmpfs                          1.5G     0  1.5G   0% /run/user/1010
+tmpfs                          1.5G     0  1.5G   0% /run/user/1011
+10.165.128.242:/orap-u01-bkup   50G   11G   40G  22% /u01
+10.165.128.242:/orap-u02-bkup  500G  382G  119G  77% /u02
+10.165.128.242:/orap-u03-bkup  300G  5.6G  295G   2% /u03
+
+[admin@orap2 ~]$ sudo chown oracle:oinstall /u01
+[admin@orap2 ~]$ sudo chown oracle:oinstall /u02
+[admin@orap2 ~]$ sudo chown oracle:oinstall /u03
+
+....
+. 配置 Oracle 資料庫環境變數和根目錄檔案，例如 oratab、oraInstall.loc 檔案。
++
+....
+[admin@orap2 ~]$ sudo vi /etc/oraInst.loc
+[admin@orap2 ~]$ vi /etc/oratab
+[admin@orap2 ~]$ sudo vi /etc/oratab
+[admin@orap2 ~]$ sudo chown oracle:oinstall /etc/oratab
+[admin@orap2 ~]$ ls -l /etc/ora*
+-rw-r--r--. 1 root   root      56 Feb 13 19:37 /etc/oraInst.loc
+-rw-rw-r--. 1 oracle oinstall 784 Feb 13 19:38 /etc/oratab
+
+[oracle@orap2 ~]$ env | grep ORA
+ORACLE_SID=NTAP
+ORACLE_HOME=/u01/app/oracle/product/21.0.0/NTAP
+
+....
+. 以 oracle 使用者身份、重新連結 Oracle 二進位檔案。
++
+....
+[oracle@orap2 ~]$ cd $ORACLE_HOME/bin
+[oracle@orap2 bin]$ ./relink
+writing relink log to: /u01/app/oracle/homes/OraDB21Home1/install/relinkActions2026-02-13_07-45-29PM.log
+
+....
+. 還原資料庫直到最後一個可用日誌，然後使用 resetlogs 選項開啟資料庫。
++
+....
+[oracle@orap2 bin]$ sqlplus / as sysdba
+
+SQL*Plus: Release 21.0.0.0.0 - Production on Fri Feb 13 19:49:50 2026
+Version 21.19.0.0.0
+
+Copyright (c) 1982, 2021, Oracle.  All rights reserved.
+
+Connected to an idle instance.
+
+SQL> startup mount;
+ORACLE instance started.
+
+Total System Global Area 6442447808 bytes
+Fixed Size                  9700288 bytes
+Variable Size            1593835520 bytes
+Database Buffers         4831838208 bytes
+Redo Buffers                7073792 bytes
+Database mounted.
+
+SQL> recover database until cancel using backup controlfile;
+ORA-00279: change 7017907 generated at 02/13/2026 05:00:07 needed for thread 1
+ORA-00289: suggestion :
+/u03/orareco/NTAP/archivelog/2026_02_13/o1_mf_1_96__938r46wf_.arc
+ORA-00280: change 7017907 for thread 1 is in sequence #96
+
+
+Specify log: {<RET>=suggested | filename | AUTO | CANCEL}
+auto
+ORA-00279: change 7022777 generated at 02/13/2026 06:00:06 needed for thread 1
+ORA-00289: suggestion :
+/u03/orareco/NTAP/archivelog/2026_02_13/o1_mf_1_97__96n12q2b_.arc
+ORA-00280: change 7022777 for thread 1 is in sequence #97
+ORA-00278: log file
+'/u03/orareco/NTAP/archivelog/2026_02_13/o1_mf_1_96__938r46wf_.arc' no longer
+needed for this recovery
+.
+.
+Specify log: {<RET>=suggested | filename | AUTO | CANCEL}
+cancel
+Media recovery cancelled.
+SQL> alter database open resetlogs;
+
+Database altered.
+
+SQL> select name, open_mode, log_mode from v$database;
+
+NAME      OPEN_MODE            LOG_MODE
+--------- -------------------- ------------
+NTAP      READ WRITE           ARCHIVELOG
+
+SQL> show pdbs;
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+         3 NTAP_PDB1                      READ WRITE NO
+         4 NTAP_PDB2                      READ WRITE NO
+         5 NTAP_PDB3                      READ WRITE NO
+SQL> select instance_name, host_name from v$instance;
+
+INSTANCE_NAME
+----------------
+HOST_NAME
+----------------------------------------------------------------
+NTAP
+orap2
+
+
+SQL> alter session set container=ntap_pdb1;
+
+Session altered.
+
+SQL> select * from test;
+
+        ID
+----------
+DT
+---------------------------------------------------------------------------
+EVENT
+--------------------------------------------------------------------------------
+         1
+05-FEB-26 08.14.17.000000 PM
+testing Oracle in-place restore and point-in-time recovery for GCNV
+
+
+....
+. 恢復完成後，您需要執行一些額外步驟，例如修改 listener.ora 和 tnsnames.ora 文件，使其與新的主機名稱或 IP 位址相符。如有必要，請設定 systemd 服務來關閉並重新啟動資料庫，以完成還原和恢復程序。
+
+
+
+NOTE: 如果您的資料庫配置中存在重複的 Oracle 控制文件副本。資料庫還原後可能會出現控制文件不一致的情況。在這種情況下，您可以使用位於日誌磁碟區中的控制文件覆寫資料磁碟區中的控制文件來解決此問題。
+
+====
+
+
+==== 使用 Google Cloud NetApp Volumes 快照或 Vault 備份將 Oracle 資料庫複製到新主機
+
+[%collapsible]
+====
+使用 Google Cloud NetApp Volumes 快照或 Vault 備份將 Oracle 資料庫複製到新主機的過程與上一節中介紹的如何使用 Google Cloud NetApp Volumes 快照或 Vault 備份在發生故障時於新主機上還原及復原 Oracle 資料庫的過程相同。但可能需要重命名複製的資料庫，這可以使用 Oracle dbnewid 工具輕鬆完成。資料庫複製可用於 UAT 測試、開發或其他用途。
+
+對於需要自動複製和刷新複製的客戶，請向 NetApp Solutions Engineering 團隊提交請求，索取可用於參考的 Ansible playbook 範例，以便使用 Google Cloud NetApp Volumes 快照或 vault 備份自動執行複製和刷新流程。以下是向 NetApp Solutions Engineering 團隊提交請求的連結：link:https://github.com/NetAppDocs/netapp-solutions-family/issues/new?labels=databases,automation&title=Request%20Automation%20-%20%3Crequest_title%3E&body==%0A%0A%20Solution%20Name:%20%0A%20Request%20Title:%20%0A%20Description:%0A%20Suggestions:%0A["自動化請求"^]
+
+====
+
+
+== 在哪裡可以找到更多信息
+
+要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：
+
+* Google Cloud NetApp Volumes 概覽
++
+link:https://docs.cloud.google.com/netapp/volumes/docs/discover/overview["https://docs.cloud.google.com/netapp/volumes/docs/discover/overview"^]
+
+* 部署 Oracle Direct NFS
++
+link:https://docs.oracle.com/en/database/oracle/oracle-database/19/ladbi/deploying-dnfs.html#GUID-D06079DB-8C71-4F68-A1E3-A75D7D96DCE2["https://docs.oracle.com/en/database/oracle/oracle-database/19/ladbi/deploying-dnfs.html#GUID-D06079DB-8C71-4F68-A1E3-A75D7D96DCE2"^]
+
+* 使用回應檔案安裝和配置 Oracle 資料庫
++
+link:https://docs.oracle.com/en/database/oracle/oracle-database/19/ladbi/installing-and-configuring-oracle-database-using-response-files.html#GUID-D53355E9-E901-4224-9A2A-B882070EDDF7["https://docs.oracle.com/en/database/oracle/oracle-database/19/ladbi/installing-and-configuring-oracle-database-using-response-files.html#GUID-D53355E9-E901-4224-9A2A-B882070EDDF7"^]
+
+

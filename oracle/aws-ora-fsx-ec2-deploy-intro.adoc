@@ -26,4 +26,5 @@ Amazon FSx ONTAP是一種 AWS 儲存服務，它使用業界領先的NetApp ONTA
 
 要了解有關解決方案和用例的更多信息，請觀看以下概述影片：
 
-link:https://www.netapp.tv/insight/details/30000?playlist_id=275&mcid=04891225598830484314259903524057913910["使用 AWS 和 FSx ONTAP中的混合雲實現 Oracle 資料庫現代化，第 1 部分 - 使用案例和解決方案架構"^]
+.使用 AWS 和 FSx ONTAP中的混合雲實現 Oracle 資料庫現代化，第 1 部分 - 使用案例和解決方案架構
+video::b1a7bb05-caea-44a0-bd9a-b01200f372e9[panopto,width=360]

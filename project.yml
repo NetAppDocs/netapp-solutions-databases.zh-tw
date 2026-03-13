@@ -88,6 +88,9 @@ sidebar:
           url: "/oracle/azure-ora-nfile-migration.html"
     - title: Google雲
       entries:
+      - title: 在 Google NetApp Volumes 上使用 NFS 部署 Oracle 獨立實例
+        pdf-filename: 在 Google NetApp Volumes 上透過 NFS 部署 Oracle 獨立實例
+        url: "/oracle/gcp-ora-gcnv-si-nfs.html"
       - title: 使用Google Cloud NetApp Volumes上的伺服器內增量合併優化 Oracle VLDB 備份與復原
         pdf-filename: 使用Google Cloud NetApp Volumes上的伺服器內增量合併優化 Oracle VLDB 備份和還原
         url: "/oracle/gcp-ora-gcnv-inc-merge.html"

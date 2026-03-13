@@ -2456,7 +2456,6 @@
   <block id="b3f95d0186b2e4989ad81f07a21d72c5" category="paragraph">本文檔的目標是提供逐步流程、程式和最佳實務指導，指導如何使用 FSx 儲存和 EC2 執行個體部署和配置 Oracle 資料庫，以提供與本機系統類似的效能。  NetApp還提供了一個自動化工具包，可以自動執行在 AWS 公有雲中部署、配置和管理 Oracle 資料庫工作負載所需的大部分任務。</block>
   <block id="eef7539c8eab25bfe5c089aab85ec418" category="paragraph">要了解有關解決方案和用例的更多信息，請觀看以下概述影片：</block>
   <block id="0df1fe5dfbca17caa87c91ffea49223a" category="inline-link-macro">使用 AWS 和 FSx ONTAP中的混合雲實現 Oracle 資料庫現代化，第 1 部分 - 使用案例和解決方案架構</block>
-  <block id="adf8d1fc36b4704904a6251fde19535e" category="paragraph"><block ref="bab032e290776958656c886d774a2bf6" category="inline-link-macro-rx"></block></block>
   <block id="32800a2387c1d841d80eab97ff7205c2" category="summary">本節詳細介紹在 AWS EC2 執行個體和 FSx 儲存體上部署 Oracle 資料庫時需要考慮的因素。</block>
   <block id="c53749244d982efb6aa5653328227c2a" category="doc">Oracle 資料庫部署需要考慮的因素</block>
   <block id="96f819dcc02d1203a3923ddad366ff4b" category="paragraph">公有雲為運算和儲存提供了許多選擇，使用正確類型的運算實例和儲存引擎是資料庫部署的良好起點。您還應該選擇針對 Oracle 資料庫最佳化的運算和儲存配置。</block>
@@ -2481,7 +2480,6 @@
   <block id="2b7570eaa12a3e472e9d0cbac6631d57" category="paragraph">其他需要考慮的因素：</block>
   <block id="6841f6ce9d9a2af93222223df564ca34" category="list-text">TCP 插槽表相當於 NFS 中的主機匯流排適配器 (HBA) 佇列深度。這些表控制著任何時候可以完成的 NFS 操作的數量。預設值通常為 16，這對於最佳效能來說太低了。相反的問題出現在較新的 Linux 核心上，它可以自動將 TCP 槽表限制增加到使 NFS 伺服器充滿請求的水平。</block>
   <block id="5a749fcdd97cee211c5fea00babe8691" category="paragraph">為了獲得最佳效能並防止效能問題，請將控制 TCP 槽表的核心參數調整為 128。</block>
-  <block id="dcd7ebfa96f217f8d20c58a185a48531" category="list-text">下表提供了針對 Linux NFSv3（單一實例）建議的 NFS 掛載選項。</block>
   <block id="5cf56cd2517ddd9e0ed46c42e2fe4ee7" category="paragraph"><block ref="5cf56cd2517ddd9e0ed46c42e2fe4ee7" category="inline-image-macro-rx" type="image"></block></block>
   <block id="5088352a7b028bc873f55b1b666d7cd8" category="admonition">在使用 dNFS 之前，請先驗證是否安裝了 Oracle Doc 1495104.1 中所述的補丁。 NetApp針對 NFSv3 和 NFSv4 的支援矩陣不包含特定的作業系統。所有遵循 RFC 的作業系統均受支援。在線上IMT中搜尋 NFSv3 或 NFSv4 支援時，請不要選擇特定的作業系統，因為不會顯示任何符合項目。所有作業系統均受到通用策略的隱含支援。</block>
   <block id="2fe1fc26875d6d38f4b15a3a03d498fb" category="paragraph">如解決方案架構所示，HA 建立在儲存層級複製之上。因此，Oracle 的啟動和可用性取決於運算和儲存的啟動和復原速度。請參考以下關鍵因素：</block>
@@ -5588,4 +5586,104 @@
   <block id="fe2659a563c4cc8c7bd4c361d7aa7af6" category="list-text"><block ref="fe2659a563c4cc8c7bd4c361d7aa7af6" category="inline-link-macro-rx"></block></block>
   <block id="1a5eb59a4ec4e77747e800700cdc4b8d" category="sidebar">SQL Server Always On 與 Google Cloud NetApp Volumes</block>
   <block id="4f5b4a25c5f43e17e1f438de9b459c7e" category="sidebar">在 Google Cloud NetApp Volumes 上執行 SQL Server</block>
+  <block id="8017d41857bcb7347f55317fbec970c7" category="list-text">下表提供 Linux 單一執行個體建議的 NFS 掛載選項。</block>
+  <block id="da1a426d29dd859cbe9aa587a457708e" category="summary">此解決方案概述並詳細介紹了在 Google Cloud NetApp Volumes 上部署 Oracle 作為主要資料庫儲存（透過 NFS 協定）的情況，Oracle 資料庫部署為啟用了 dNFS 的獨立容器資料庫。</block>
+  <block id="a85b21d1f3ef04ec3e2622a906bb93f1" category="doc">TR-5020：在 Google Cloud NetApp Volumes 上使用 NFS 部署 Oracle 獨立實例</block>
+  <block id="1848590d55317f50a41c661b9bb44e1d" category="paragraph">此解決方案提供在 Google Cloud NetApp Volumes 上以 NFS 協議作為主要資料庫儲存的 Oracle 部署概覽與詳細資訊，且 Oracle 資料庫以啟用 dNFS 的獨立容器資料庫方式部署。</block>
+  <block id="01293371a4e03507eec6b331520088fb" category="paragraph">在雲端運行對效能和延遲要求高的 Oracle 工作負載可能極具挑戰性。Google Cloud NetApp Volumes (GCNV) 讓企業業務線 (LOB) 和儲存專業人員能夠輕鬆遷移和執行高要求的 Oracle 工作負載，而無需更改程式碼。Google Cloud NetApp Volumes 被廣泛用作各種場景下的底層共用檔案儲存服務，例如將 Oracle 資料庫從本地遷移到 Google Cloud 的新部署或遷移（直接遷移）。</block>
+  <block id="019aae1ac97d482e654d917051ee44fb" category="paragraph">本文檔示範如何在 Google Cloud 控制台中設定 GCNV 資料庫卷，以及如何透過 Ansible 自動化，利用 NFS 掛載在 Google Cloud NetApp Volumes 中簡化 Oracle 資料庫的部署。Oracle 資料庫部署在容器資料庫（CDB）和可插拔資料庫（PDB）配置中，並啟用了 Oracle dNFS 協定以提升效能。此外，本文檔還詳細介紹了資料庫備份、復原和複製策略，並提供了一套用於在 Google Cloud 中管理 Oracle 資料庫備份的自動化工具包。</block>
+  <block id="bad665e7c5af3f544a622f250223171a" category="list-text">在 Google Cloud 中使用 NFS 協定在 Google Cloud NetApp Volumes 上自動部署 Oracle 資料庫。</block>
+  <block id="4adc49c5194047fd66bfe4e2b40046c7" category="list-text">在 Google Cloud 上使用 Google Cloud NetApp Volumes 進行 Oracle 資料庫備份、復原和複製。</block>
+  <block id="9a71a215d706d19c6dd688d1c3d11118" category="list-text">一位希望在 Google Cloud NetApp Volumes 上部署 Oracle 的 DBA。</block>
+  <block id="8f163912ffc77ea5a0975597bbb9b673" category="list-text">一位資料庫解決方案架構師，希望在 Google Cloud NetApp Volumes 上測試 Oracle 工作負載。</block>
+  <block id="79348eaedf621b7568f7d9338ce69b70" category="list-text">一位希望在 Google Cloud NetApp Volumes 上部署和管理 Oracle 資料庫的儲存管理員。</block>
+  <block id="72f94611fd6eaf9f5673b463d452d348" category="list-text">一位希望在 Google Cloud NetApp Volumes 上建立 Oracle 資料庫的應用程式擁有者。</block>
+  <block id="9b64087a5f8ccd53959482f7dfe2ed7c" category="inline-image-macro">此圖詳細展示了在 Google Cloud 中使用 NFS 和 Google Cloud NetApp Volumes 部署 Oracle 的配置。</block>
+  <block id="d9586fe6f28e29bf1eb9553cde4f8671" category="paragraph"><block ref="d9586fe6f28e29bf1eb9553cde4f8671" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="c818b7b030d47ac7bfca20bbf2e1b34d" category="cell">Google 在 Google Cloud 目前提供的服務</block>
+  <block id="021060c7f714315b6c621fb8a93d6d0f" category="cell">一個儲存池，採用 Flex 服務級別，容量為 2 TiB，吞吐量為 64 MiB/s，IOPS 為 1024，為 Oracle 資料庫儲存而配置</block>
+  <block id="5155bb8515180e9f0fbff1d150bc3f13" category="cell">用於資料庫伺服器的 Google Compute Engine VM</block>
+  <block id="0008e2c8001e4ef944e211a51931cd82" category="cell">n1-standard-4 (4 個虛擬 CPU、15 GB 記憶體)</block>
+  <block id="99fc2fc354130ed3679c021f9b29e6c5" category="cell">用於部署和復原示範的兩個 Linux 虛擬機器執行個體</block>
+  <block id="8e64f817d4b1afba2ecb046dda141187" category="cell">RHEL Linux 8.10（LVM）- x64 Gen2</block>
+  <block id="1579fd48068cb05c9e2ab66e479ce764" category="cell">版本 21.19</block>
+  <block id="646d1471a3c388e415fa6180c571eec6" category="cell">已套用 RU 修補程式 p38068980_210000_Linux-x86-64.zip</block>
+  <block id="c16ab5e0de3a8cae7b24abb03aca4009" category="cell">版本 12.2.0.1.48</block>
+  <block id="112960a046a30cf3834b1a7ed2ce5d13" category="cell">最新修補程式 p6880880_210000_Linux-x86-64.zip</block>
+  <block id="1d4f74ed9129463a099e9dd2826c3101" category="cell">Python 3.10.13</block>
+  <block id="c70e414eae6c849b73d895ba6a1a73c5" category="cell">orap - 主要資料庫伺服器</block>
+  <block id="1998736dcd5c14441f02a4118716ee4e" category="cell">Google Cloud NetApp Volumes 儲存池上的 /u01、/u02、/u03 NFS 掛載點</block>
+  <block id="e5d4040a7cb11766cfb57f50614836a3" category="cell">orap2 - 從備份還原</block>
+  <block id="e7beae97314dd4586792230f534ab494" category="list-text">*GCNV 儲存池服務等級和吞吐量。*GCNV 提供四種不同的服務等級：Standard、Premium、Extreme 和 Flex。對於 Standard、Premium、Extreme 服務等級，IO 吞吐量根據資料庫磁碟區的大小確定並固定。總 IO 吞吐量上限取決於儲存池的大小。對於 Flex 服務等級，IO 吞吐量不固定於資料庫磁碟區的大小，而是由所有資料庫磁碟區共用，並受限於儲存池的大小。這可以適應容量較小的資料庫，並應對偶爾出現的 IOPS 激增。作為參考，Standard、Premium、Extreme 服務等級分別提供每 GiB 16 KiB/s、每 GiB 64 KiB/s 和每 GiB 128 KiB/s 的吞吐量。另一方面，Flex 服務等級每個儲存池最高可提供 5 GiB/s 的吞吐量，並支援自訂效能設定。根據 Oracle 資料庫工作負載的預期 IO 吞吐量和 IOPS 要求，正確調整服務等級和儲存池的大小至關重要。</block>
+  <block id="fc6fc3e9a2cb1e8dcdbd0ccddc1b41bd" category="list-text">*資料庫儲存配置。*在此自動化 Oracle 部署中，我們預設為每個資料庫配置三個資料庫磁碟區，以儲存 Oracle 二進位檔案、資料和日誌。這些磁碟區透過 NFS 掛載到 Oracle DB 伺服器上，分別為 /u01 - 二進位檔案、/u02 - 資料、/u03 - 日誌。在 /u02 和 /u03 掛載點上配置了雙控制檔以實現冗餘。</block>
+  <block id="0893e95f5e89a5ab3554eb2c587201e0" category="list-text">*dNFS 設定。*透過使用 Oracle dNFS（自 Oracle 11g 起提供），在 Google Compute Engine 上運行的 Oracle 資料庫搭配 Google Cloud NetApp Volumes 儲存空間，能夠比原生 NFS 用戶端提供顯著更高的 I/O 效能。自動化的 Oracle 部署預設會在 NFSv3 上設定 dNFS。</block>
+  <block id="125cc4cdd4276309de285884c765f3a1" category="list-text">*快照和 Vault 備份。*相較於傳統的 RMAN 資料庫備份，NetApp 建議實作儲存高效、應用程式一致的快照和 Vault 備份，以實現快速（秒級）快照備份、快速（分鐘級）資料庫還原、恢復，以及從儲存 Vault 中的快照或備份進行複製。快照是資料庫磁碟區的時間點副本，可在數秒內建立，且在建立時不會佔用額外的儲存空間。它與主要資料庫磁碟區共存，如果主要磁碟區遭到破壞，快照可能會遺失。Vault 備份是快照的副本，儲存在物件儲存中，並位於不同的位置，用於災難復原目的。</block>
+  <block id="546e9b8f8945c2b04beee48831473ba2" category="list-text">*RTO/RPO 考量事項。*在設定資料庫備份策略時，務必考量復原時間目標（RTO）和復原點目標（RPO）需求。雖然基於快照的備份對資料庫效能影響極小，但備份頻率（會影響 RTO/RPO）與儲存支出之間存在取捨。更頻繁的備份有助於達成較低的 RTO/RPO，但可能會增加儲存成本。根據業務需求和預算找到適當的平衡點至關重要。此自動化解決方案提供基於 Ansible playbook 的自動化工具組，可管理 Oracle 資料庫備份，並具備使用者可設定的保留和備份排程。</block>
+  <block id="f0f2f4f42460602b70e30235a1ef5f2f" category="paragraph">以下各節提供了在 Google Cloud NetApp Volumes 上自動部署 Oracle 21c 以及資料庫備份、復原、複製的逐步流程，其中資料庫磁碟區透過 NFS 直接掛載到 Google Cloud Compute Engine VM 作為資料庫伺服器。</block>
+  <block id="328777b838aac92e22eb34e23c103f30" category="list-text">已設定 Google Cloud 帳戶，並在您的 Google Cloud 帳戶特定專案中建立了必要的 VPC 和網路設定。</block>
+  <block id="a361bac6a8777e2e7f55cdae82c547ee" category="list-text">從 Google Cloud 主控台部署 Google Compute Engine VM 做為 Oracle DB 伺服器。確保關閉防火牆、並使用管理使用者啟用 VM SSH 私密 / 公開金鑰驗證至 DB 伺服器以進行自動化。如需環境設定的詳細資訊、請參閱上一節的架構圖。</block>
+  <block id="426944ade4fc6b6c11a4fd8b1d6d086f" category="admonition">請確保在虛擬機器根磁碟中至少分配 50G 的空間，以便有足夠的空間來存放 Oracle 安裝檔案並新增作業系統交換檔案。</block>
+  <block id="6d9f706f367252d8b66a2caa18e9163a" category="list-text">設定一台 Linux 虛擬機器作為 Ansible 控制器節點，並安裝自動化工具包 README 檔案中列出的 Ansible 和 Git 版本。有關 Ansible 自動化的協助，請參閱以下連結：<block ref="5611d9cfd1946804a6fc54c4e7defca3" category="inline-link-macro-rx"></block>在 -<block ref="3d45b043c5518eca1e47fb4ba8a813da" prefix=" " category="inline-code"></block> 或<block ref="2afb5cc3404c6c8162722fd41895c2de" prefix=" " category="inline-code"></block>部分。</block>
+  <block id="cdafdfc2e4c46ccd25386ae751da682b" category="admonition">Ansible 控制器節點可以位於內部部署或 Google Cloud 中，只要它可以透過 ssh 連接埠連接到 Google Cloud DB 伺服器 VM 即可。</block>
+  <block id="6cc8f236cd794ff183bd4312806f267a" category="list-text">在 Google Cloud DB VM /tmp/archive 目錄中暫存 Oracle 21c 安裝檔案，並設定 777 權限。</block>
+  <block id="16b166ceabc98c5d27c2ea87b2554eff" category="section-title">Google Cloud NetApp Volumes Oracle 資料庫儲存配置</block>
+  <block id="456137a7cd52550e13083f4862cde320" category="paragraph">以下步驟示範如何配置 Google Cloud NetApp Volumes 以用於 Oracle 資料庫儲存，並附有螢幕截圖。</block>
+  <block id="5f8c87efbbe36560cf06a59ea1d46b47" category="inline-image-macro">此圖提供了在 Google Cloud 中使用 NFS 部署 Oracle 的 Google Cloud NetApp Volumes 磁碟區配置的螢幕截圖。</block>
+  <block id="64178f4572b0b446d747e6b227391514" category="list-text">建立一個具有所需服務等級和容量的 Oracle 資料庫儲存儲存池。+<block ref="ca060c78cf47d7fb2965ad61a6be7983" category="inline-image-macro-rx" type="image"></block> +<block ref="3aeeec97e147c3b9a14de15fbd92323f" category="inline-image-macro-rx" type="image"></block> +<block ref="0bf65428c83f2ac3a6dea1b221e326a3" category="inline-image-macro-rx" type="image"></block> +<block ref="82eaf8daed5fdad8a95a81b5c49ed98e" category="inline-image-macro-rx" type="image"></block> +<block ref="32347026f47c1c2a8dd8901b0e1c33aa" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="ef565a83077fd8f47dab7d5db07adaaa" category="list-text">在儲存池中為 Oracle 資料庫建立三個所需大小的 DB 磁碟區，用於資料庫儲存。例如，/u01 用於二進位檔案、/u02 用於資料檔案、/u03 用於重做記錄和控制檔案，使用 NFSv3 傳輸協定和掛載選項，如下列螢幕擷取畫面所示。+<block ref="5efcbfa8a8d87dc6b4392862379c0cdc" category="inline-image-macro-rx" type="image"></block> +<block ref="b851801bd7a4cd106eb633047ef2e7a0" category="inline-image-macro-rx" type="image"></block> +<block ref="802893c9e0c51f3f5bd5c7c3a8409eaa" category="inline-image-macro-rx" type="image"></block> +<block ref="6224703a7721383b986f0f5727555ea3" category="inline-image-macro-rx" type="image"></block> +<block ref="399c0b71b1a908db9caa93dcf20d021f" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="706b6bf9e38cb8af0035527ff7065fc0" category="admonition">目前請勿在 Google Cloud NetApp Volumes 中啟用排程備份，因為其內建備份方案並非應用程式一致性備份。此解決方案提供的備份自動化工具包將管理應用程式一致性資料庫備份，並支援使用者自訂備份計畫和保留期限。</block>
+  <block id="4399f1860708a3ebe509e3342d830d87" category="section-title">使用 Ansible playbook 實現 Oracle 自動化部署</block>
+  <block id="97d32bc27d996dc1322468dfd65f0b81" category="paragraph">Ansible playbook 使用預先定義的參數執行資料庫安裝和設定任務。該工具包目前支援 Oracle 資料庫版本 19c 和 21c 的部署。對於此 Oracle 自動化解決方案，有三個使用者自訂參數檔案需要在 playbook 執行前由使用者輸入。</block>
+  <block id="c661afc1de466c8bf0ab52f66cba2e4b" category="list-text">本機 DB 伺服器<block ref="0c83664bfb17d8d2c0bbc3551297e488" prefix=" " category="inline-code"></block>配置，例如 orap.yml、orap2.yml ...</block>
+  <block id="e0a9a577ab8798bf902c635f69ddb971" category="paragraph">playbook 執行完畢後，登入 Oracle DB 伺服器 VM，驗證 Oracle 是否已安裝和設定，以及容器資料庫是否已成功建立。以下是在主機 orap 上驗證 Oracle 資料庫的範例。</block>
+  <block id="1315687e0ed0c79e28773fa4309aab91" category="list-text">以 oracle 使用者身份驗證 Oracle 監聽器</block>
+  <block id="1a2b504d844499fe41debbf6458f25a8" category="list-text">驗證 Oracle 服務是否自動啟動和關閉。</block>
+  <block id="814756944e36cfad39fc423be77f9b1f" category="section-title">使用 Google Cloud NetApp Volumes 進行 Oracle 資料庫備份</block>
+  <block id="7d21d85bb0b69933067dc05152bba8b1" category="section-title">Oracle 資料庫快照與保存庫備份</block>
+  <block id="82f6b4f4cf9c252137b6975f18c262e2" category="paragraph">為了簡化 Oracle 資料庫備份的設置，NetApp Solutions Engineering 團隊開發了一個 Ansible playbook，用於自動化 Oracle 資料庫備份，並允許使用者配置保留策略和備份計畫。該 playbook 利用 Google Cloud NetApp Volumes 的快照和 vault 備份功能，實現了快速（秒級）快照備份、快速（分鐘級）資料庫還原、恢復，以及從儲存 vault 中的快照或備份進行複製。</block>
+  <block id="b7174b134c5a81802e381837d34fed1f" category="list-text">複製一份適用於 GCNV 的 NetApp Oracle 資料庫備份自動化工具包。</block>
+  <block id="d0e192368a950732fcf46c5a771b705c" category="list-text">請閱讀工具包中的 README 文件，並按照以下說明配置備份作業，以及如何透過 crontab 或其他排程工具進行排程。此 playbook 設計用於在具有 Oracle 資料庫伺服器虛擬機器和 Google NetApp Volumes 存取權限的 Ansible 控制器節點上執行。它將根據定義的計劃和保留策略建立資料庫磁碟區的應用程式一致性快照，並將快照複製到 vault 以用於災難復原。</block>
+  <block id="78cd059b79b752dd0e9d1e5fa827a55d" category="list-text">預設情況下，該劇本會建立每日快照備份和每小時快照。預設快照保留期為 7 個每日快照和 24 個每小時快照。超出保留期的任何額外快照將被刪除，並維持 7 個每日快照和 24 個每小時快照的滾動副本。您可以根據 RTO/RPO 要求和儲存成本考量來調整備份頻率和保留期。每日快照備份所有 DB 磁碟區，而每小時快照僅備份日誌磁碟區並節省儲存空間。在每日快照備份期間，該劇本還會根據定義的保留期刪除 Oracle 歸檔日誌檔案，以節省 DB 日誌磁碟區上的儲存空間。</block>
+  <block id="6581f281ceb3f9eb3e1308b9b479830c" category="list-text">以下是建立快照備份並複製到儲存庫的 crontab 項目範例。</block>
+  <block id="ed64372963d6134c186463a3b75ab713" category="list-text">根據您的 RTO/RPO 要求，vault 備份可以按週、日或小時間隔執行。每週和每日備份包含所有 DB 磁碟區，而每小時 vault 備份僅包含日誌磁碟區，以節省儲存空間。第一次 vault 備份需要較長時間，因為它會建立基準。基準備份建立後，所有後續 vault 備份都是使用增量永久方法的增量備份。所有 vault 備份都是在執行時從最新的應用程式一致性快照建立，以確保可恢復性。與典型的基準和增量備份不同，基準 vault 備份資料會彙總到每個增量備份中。換句話說，每個增量 vault 備份都包含完整的資料集，無需還原基準備份即可用於恢復。這種方法簡化了備份管理和恢復程序，同時在 vault 中提供高效的儲存使用率。在此方法中，所有備份都是獨立的，因此當您需要刪除任何備份時，無需擔心備份鏈和相依性。備份自動化指令碼會自動修剪備份，以符合定義的保留目標。</block>
+  <block id="31fc007cd9a6c108e827f7c95562900e" category="list-text">以下日誌檔案記錄是快照備份和保留管理的範例。</block>
+  <block id="545d0c3c6f5de74a8a5105a626fcc076" category="list-text">以下日誌檔案記錄了從應用程式一致性快照進行 Vault 備份的詳細資訊。</block>
+  <block id="142b9cff64e9827b50d93ce0cc6e8e88" category="admonition">如果快照的 Vault 備份已經存在，則會跳過針對相同快照的第二次備份嘗試，且不會產生錯誤。</block>
+  <block id="33f2f1845c93120ec02a30d4257182e5" category="section-title">使用 Google Cloud NetApp Volumes 進行 Oracle 資料庫復原和克隆</block>
+  <block id="08d9ebf51cb4485e07d06a07b710a19c" category="section-title">使用 Google Cloud NetApp Volumes 快照進行 Oracle 資料庫原地時間點恢復</block>
+  <block id="13e292d5cf71c947d6a47e263755d3bf" category="paragraph">Oracle 資料庫時間點復原通常用於復原意外刪除或損壞的資料，或從邏輯錯誤中復原。透過 Google NetApp Volumes 快照，您可以輕鬆地透過將資料庫還原到特定快照來執行 Oracle 資料庫的時間點復原。這樣，您無需從完整備份還原即可快速從資料遺失或損壞中復原。以下步驟示範如何使用 Google NetApp Volumes 快照還原已刪除的表。</block>
+  <block id="f22e87e8a6c54f6492436e0083a27d3b" category="list-text">為了演示，我們首先在「NTAP」資料庫中建立一個名為「test」的測試表，並向其中插入一些資料。然後，我們刪除該表以模擬意外刪除資料的情況。之後，我們將使用 Google NetApp Volumes 快照將資料庫還原到刪除表之前的狀態，並驗證表及其資料是否已成功復原。</block>
+  <block id="5b185885d47a552da42ceb51a2c6fe1c" category="list-text">停止 Oracle 服務以關閉 Oracle 資料庫，並在從快照還原之前卸載主機上的檔案系統。</block>
+  <block id="ee78c1319742a2c263b0a04e73e41a6c" category="list-text">識別包含您要復原之資料的快照。您可以使用 Google Cloud Console 或 gcloud 命令列工具列出 Oracle 資料庫磁碟區的可用快照。點擊快照清單末端的三個點，然後在<block ref="925dc7757bc7a9926f13546bb8260267" prefix=" " category="inline-code"></block>下方查看選項。選擇<block ref="5289bf157522a5cd34676f2777d27048" prefix=" " category="inline-code"></block>以還原至所選快照。對所有 DB 磁碟區重複此操作。</block>
+  <block id="a874fec6d8cde9827fb589fd9068e70d" category="inline-image-macro">此映像提供了在 Google Cloud 中使用 NFS 進行 Oracle 部署時，Google Cloud NetApp Volumes 磁碟區快照還原的螢幕截圖。</block>
+  <block id="8da571508a792e6be6059b86663f8fe5" category="paragraph"><block ref="8da571508a792e6be6059b86663f8fe5" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="cb1dad5295c18a0dc2130ac5cac71ad7" category="paragraph"><block ref="cb1dad5295c18a0dc2130ac5cac71ad7" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="874db0febe5d37e26c8ed59798db40b3" category="paragraph"><block ref="874db0febe5d37e26c8ed59798db40b3" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="56b0340048f7edd093a9db7b62abe3ec" category="list-text">快照還原完成後，掛載資料庫磁碟區。</block>
+  <block id="512aa901b442e007fc5314a3b4fd53a7" category="list-text">登入 Oracle 資料庫伺服器，並透過 sqlplus 執行時間點復原命令，將資料庫還原到所需的時間點。</block>
+  <block id="f446ec8ecb6be283e45860946f7c9385" category="list-text">恢復完成後，請確認資料已成功恢復。</block>
+  <block id="d483322847f3e47fb2eef3af90562a4a" category="list-text">關閉資料庫並以 systemd 服務的形式重新啟動，以完成還原程序。</block>
+  <block id="b640b50ba31af096bd98a38034f7820d" category="section-title">使用 Google Cloud NetApp Volumes Vault 備份將 Oracle 資料庫還原到新主機</block>
+  <block id="5554fd824ba28b5685cf82f20c43bb64" category="paragraph">如果發生故障需要還原到新主機（例如，原始主機無法使用且主資料庫磁碟區無法存取），您可以使用 Google Cloud NetApp Volumes vault 備份在新主機上還原 Oracle 資料庫。此過程類似於使用快照進行就地恢復，但不同之處在於，您不是還原到快照，而是從 vault 備份恢復資料庫。這樣，您就可以在不同的主機上還原資料庫，這在原始主機不可用或發生硬體故障的情況下非常有用。從 vault 備份還原的步驟如下：</block>
+  <block id="cf32604cc55b16c0bddd650e391302ef" category="list-text">識別包含您要恢復資料的 Vault 備份。您可以使用 Google Cloud Console 或 gcloud 命令列工具列出 Oracle 資料庫磁碟區的可用 Vault 備份。點選 Vault 備份清單末端的三個點，然後在<block ref="146ffe2fd9fa5bec3b63b52543793ec7" prefix=" " category="inline-code"></block>下方查看選項。選擇<block ref="4c156d938faba152e7cc646dc6726ca1" prefix=" " category="inline-code"></block>從所選 Vault 備份還原。對所有 DB 磁碟區重複此操作。您也可以選擇根據需要還原到相同儲存池或不同的儲存池。</block>
+  <block id="630d6532e2004bef260d47968ec36c3c" category="inline-image-macro">此圖提供了在 Google Cloud 上使用 NFS 為 Oracle 部署進行 Google Cloud NetApp Volumes Vault 備份還原的螢幕截圖。</block>
+  <block id="1702e94d72b4031843277b0c2911738a" category="paragraph"><block ref="691be4c34e7e3c20bd994a9c115bbfac" category="inline-image-macro-rx" type="image"></block> <block ref="3f08636e127436c87dd857594674a15b" category="inline-image-macro-rx" type="image"></block> <block ref="211a6d3c519edb9f91620c8955901aaa" category="inline-image-macro-rx" type="image"></block> <block ref="6c0f93484359d21f96d229b4c19e2878" category="inline-image-macro-rx" type="image"></block> <block ref="b5f964f99ba5059b801331f455444aa6" category="inline-image-macro-rx" type="image"></block> <block ref="91da906b11440d085ee207893787c892" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="c5b9b8ce6388ebdff2b3de9e836b65bf" category="list-text">建立一台與原主機在硬體、作業系統和 OS 核心修補程式配置方面完全一致的新資料庫伺服器。這將確保復原過程完成後，復原的資料庫能夠正確掛載和開啟。</block>
+  <block id="1c3935527c141c04e29a3b990bf373de" category="paragraph"><block ref="1c3935527c141c04e29a3b990bf373de" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="8469933e078dad2a383afbe7776ac50b" category="list-text">以管理員使用者身分登入新的 DB 伺服器。將還原的 DB 磁碟區掛載到與原始主機相同的掛載點。如有必要，請變更掛載點的所有權。</block>
+  <block id="3ceb1520afaa01024867536dd7201bbd" category="list-text">配置 Oracle 資料庫環境變數和根目錄檔案，例如 oratab、oraInstall.loc 檔案。</block>
+  <block id="ecea7dcd695b8ff708e79813c226c7a4" category="list-text">以 oracle 使用者身份、重新連結 Oracle 二進位檔案。</block>
+  <block id="6783bc4019057df376b706b241927027" category="list-text">還原資料庫直到最後一個可用日誌，然後使用 resetlogs 選項開啟資料庫。</block>
+  <block id="ff6ba9f54fee6e7f8cae8c7a50bf81ae" category="list-text">恢復完成後，您需要執行一些額外步驟，例如修改 listener.ora 和 tnsnames.ora 文件，使其與新的主機名稱或 IP 位址相符。如有必要，請設定 systemd 服務來關閉並重新啟動資料庫，以完成還原和恢復程序。</block>
+  <block id="53f125c47d7e11093b9aa417ce11d79e" category="admonition">如果您的資料庫配置中存在重複的 Oracle 控制文件副本。資料庫還原後可能會出現控制文件不一致的情況。在這種情況下，您可以使用位於日誌磁碟區中的控制文件覆寫資料磁碟區中的控制文件來解決此問題。</block>
+  <block id="359095d31def68e998adaa65f5398cc4" category="section-title">使用 Google Cloud NetApp Volumes 快照或 Vault 備份將 Oracle 資料庫複製到新主機</block>
+  <block id="c95b85b710ab1e7b576129510b30deb9" category="paragraph">使用 Google Cloud NetApp Volumes 快照或 Vault 備份將 Oracle 資料庫複製到新主機的過程與上一節中介紹的如何使用 Google Cloud NetApp Volumes 快照或 Vault 備份在發生故障時於新主機上還原及復原 Oracle 資料庫的過程相同。但可能需要重命名複製的資料庫，這可以使用 Oracle dbnewid 工具輕鬆完成。資料庫複製可用於 UAT 測試、開發或其他用途。</block>
+  <block id="9634d1bf32a23017a8714ecd907bb7ee" category="inline-link-macro">自動化請求</block>
+  <block id="ce91094d82db1af599461ef47796f56c" category="paragraph">對於需要自動複製和刷新複製的客戶，請向 NetApp Solutions Engineering 團隊提交請求，索取可用於參考的 Ansible playbook 範例，以便使用 Google Cloud NetApp Volumes 快照或 vault 備份自動執行複製和刷新流程。以下是向 NetApp Solutions Engineering 團隊提交請求的連結：<block ref="6d6cec44da8cd2d5bb9d0d98d27728d4" category="inline-link-macro-rx"></block></block>
+  <block id="653eee7a3c64930afdc63b901557ea7b" category="list-text">Google Cloud NetApp Volumes 概覽</block>
+  <block id="b84bc4b4d68b094803843c3a54706c72" category="inline-link-macro"><block ref="b84bc4b4d68b094803843c3a54706c72" category="inline-link-rx"></block></block>
+  <block id="4e7fadae2e08c089185d042f72643452" category="paragraph"><block ref="4e7fadae2e08c089185d042f72643452" category="inline-link-macro-rx"></block></block>
+  <block id="4cf73d6ef3868d34a0363e40eef4fa2d" category="sidebar">在 Google NetApp Volumes 上使用 NFS 部署 Oracle SI</block>
+  <block id="2fc358e366a2f0c47255223a019cdeb4" category="sidebar">在 Google NetApp Volumes 上使用 NFS 部署 Oracle 獨立實例</block>
+  <block id="8e3e5c03980534c9c25ff5b83706d4eb" category="sidebar">在 Google NetApp Volumes 上透過 NFS 部署 Oracle 獨立實例</block>
 </blocks>
