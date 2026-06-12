@@ -5686,4 +5686,410 @@
   <block id="4cf73d6ef3868d34a0363e40eef4fa2d" category="sidebar">在 Google NetApp Volumes 上使用 NFS 部署 Oracle SI</block>
   <block id="2fc358e366a2f0c47255223a019cdeb4" category="sidebar">在 Google NetApp Volumes 上使用 NFS 部署 Oracle 獨立實例</block>
   <block id="8e3e5c03980534c9c25ff5b83706d4eb" category="sidebar">在 Google NetApp Volumes 上透過 NFS 部署 Oracle 獨立實例</block>
+  <block id="6f400c01bfff3d3f8bbd7bedb4a491d7" category="summary">使用 Google Cloud NetApp Volumes 和 iSCSI 區塊儲存，在 Google Compute Engine 上部署 Oracle Database 26ai 高可用性。本指南將介紹如何佈建運算執行個體和儲存、安裝 Oracle Grid Infrastructure 和 Oracle Database、初始化備用資料庫以及配置具有快速啟動容錯移轉功能的 Oracle Data Guard。</block>
+  <block id="570d7a507bccd399a746bfcd67657b8b" category="doc">使用 Google Cloud NetApp Volumes 部署 Oracle Database 26ai 高可用性</block>
+  <block id="5c895dea5cdcb9cd0db925c45d2779f4" category="paragraph">本指南說明如何佈建運算執行個體和儲存設備、安裝 Oracle Grid Infrastructure 和 Oracle Database、初始化待命資料庫，以及設定具有快速啟動容錯移轉功能的 Oracle Data Guard。</block>
+  <block id="0e8cd694c57c67a5da0d1e6a87b7b5a3" category="paragraph">開始之前、請確認您擁有下列項目：</block>
+  <block id="14f8086b974149db9bcd1a822cff7dc3" category="list-text">一個擁有 Compute Engine、VPC 網路、防火牆組態、IAM 和 NetApp Volumes 權限的 Google Cloud 專案</block>
+  <block id="eaeb30f9f18e0c50b178676f3eaef45f" category="cell">任務</block>
+  <block id="b0c993c43c7f9b598a362c2aeae6be13" category="cell">所需存取</block>
+  <block id="d9ef5fc623a78be5196538528d37faed" category="cell">建立 Compute Engine VM</block>
+  <block id="8959e8d7ffd92dc935e1e36be7ea37bb" category="cell">運算執行個體管理員（或同等職位）</block>
+  <block id="0bf9648bdd9c67241407bac1056d10b6" category="cell">防火牆 / 防火牆原則</block>
+  <block id="507864ed765927287a9a92c1ae52fed1" category="cell">網路管理員或委派的原則管理員</block>
+  <block id="250428bf29c63465685cf422a4436958" category="cell">建立 GCNV 資源池和磁碟區</block>
+  <block id="d11cc31bc5f81b07d654dec5be90a3ef" category="cell">NetApp Volumes 管理員</block>
+  <block id="9d3186a4f401ea45bed904bbc8d00e93" category="cell">設定 PSA</block>
+  <block id="dcae26f2b4bf690b09a92249e541efa0" category="cell">主機專案中的網路管理員</block>
+  <block id="766125d706bc80b242885440440a2d87" category="cell">透過 IAP 進行 SSH</block>
+  <block id="9db60a7d01a3256c92f6d4359469b024" category="cell">IAP 安全通道使用者 + OS Login（如果使用）</block>
+  <block id="d49bf86e78539a4b9e60941b1e22764f" category="list-text">已啟用 NetApp Volumes API</block>
+  <block id="fbc9de9ec80e1368c67b77e053b3d2c5" category="list-text">為目標區域設定的 VPC 和子網路</block>
+  <block id="0c6322bb602f2d9d0cb52abbc85c41f7" category="list-text">為 Google Cloud NetApp Volumes 配置的專用服務存取（PSA）</block>
+  <block id="bd4a7964d218c4803879df18b6d051a2" category="list-text">所有必要的虛擬機器均需使用 Oracle Linux 10</block>
+  <block id="ce3af5ed8f5785c890874b010cd50ff8" category="list-text">已為資料庫主機和 Observer 主機設定 DNS 和主機名稱解析</block>
+  <block id="46df024513c5c0dbd5a8ed73af3dd210" category="list-text">適用於 Oracle Database 26ai 和 Grid Infrastructure 的 Oracle 安裝媒體和修補程式檔案</block>
+  <block id="ec395561951f382bbefa5a823677fc38" category="list-text">熟悉 Oracle Data Guard、Oracle Restart 和 iSCSI 儲存概念</block>
+  <block id="c4f0f99c0831852c4c5b694c501b7eeb" category="list-text">所有虛擬機器均已設定時間同步。</block>
+  <block id="0ceedcda92c72b47f16e1967565f68a3" category="paragraph">您可以使用以下命令：</block>
+  <block id="2603a18f720497da38e276677c294f43" category="section-title">本指南中使用的範例組態</block>
+  <block id="5b219fec69751daaf3d71c549a16bd3c" category="paragraph">本指南使用以下部署假設：</block>
+  <block id="1baad04ea35d661ee7a81655251d71f2" category="list-text">三台 Google Compute Engine 虛擬機器：</block>
+  <block id="62fc7bbc96175753d21cf4e94b1dbe97" category="list-text"><block ref="9514606aa0e81e08de08842f8136911c" prefix="" category="inline-code"></block> 主要資料庫</block>
+  <block id="ce57f48d99efde619ae9bcb04156c209" category="list-text"><block ref="307e0423cd7859aca914691fcbaacca5" prefix="" category="inline-code"></block> 適用於待命資料庫</block>
+  <block id="f515d75466d0da1e0e9ee2f6de0334a9" category="list-text"><block ref="c7f5bde16987c7d543c988c216354ee9" prefix="" category="inline-code"></block> 快速啟動容錯移轉觀察器</block>
+  <block id="65495690b3f2c82a90af58efa661b0af" category="list-text">每個資料庫區域一個 GCNV Flex Unified 儲存池</block>
+  <block id="3cd45e2461c436bac2d277a83a91bb5f" category="list-text">每個資料庫主機五個 GCNV iSCSI 磁碟區</block>
+  <block id="ca371b4b1f2da6a204eef9c0cf2f2f13" category="list-text">Oracle Data Guard Broker 與 Fast-Start Failover 實作自動故障轉移</block>
+  <block id="e7965015da23ff8abe627441a120b218" category="list-text">每個資料庫主機都擁有專用儲存空間；主主機和備用主機不共用 iSCSI 磁碟區</block>
+  <block id="b617a894739e677261d2baa49d24fe05" category="paragraph">將命令中的所有範例值替換為您環境中的值，包括主機名稱、IP 位址、區域、專案名稱、入口網站 IP、密碼和 Oracle 媒體檔案名稱。</block>
+  <block id="bfaec92b2d5de19dd08a50aa9395ccc5" category="paragraph">在此程序中、您需要完成下列工作：</block>
+  <block id="570e3ebea06ed5485a51ab8a141e8478" category="list-text">為主資料庫、備用資料庫和 Observer 配置 Compute Engine 執行個體</block>
+  <block id="0ea55a73f52ab03fcd005c3d8b336b71" category="list-text">為 Oracle 設定 GCNV iSCSI 儲存設備和多重路徑裝置</block>
+  <block id="ac23cea8234ed48e62fc280b9e2d94ce" category="list-text">在兩台資料庫主機上安裝 Oracle Grid Infrastructure 和 Oracle Database 26ai</block>
+  <block id="2ad5b6649af83bc7a6a08da75558b3d9" category="list-text">建立主要 Oracle 資料庫</block>
+  <block id="da05e7e946807759f242ae48605e9b3d" category="list-text">使用 Google Cloud NetApp Volumes 複寫、快照或複本初始化待命資料庫</block>
+  <block id="318fa9fd33ab8e3e071bedfb407f5409" category="list-text">設定 Oracle Data Guard Broker、Fast-Start Failover 和 Observer</block>
+  <block id="e2c5a3645710b0ed6fec1053fdfe0ead" category="section-title">部署選項</block>
+  <block id="996829dcca4cc326664fd6c94c212912" category="paragraph">本節比較了在 Google Compute Engine (GCE) 上使用 Google Cloud NetApp Volumes (GCNV) iSCSI 區塊儲存部署 Oracle Database 的實際 HA/DR 模式。此外，本節還重點介紹了 GCNV 複寫如何加速待命資料庫的初始化。開始之前，請使用此矩陣選擇層級。本指南實作 Prod HA（Data Guard + FSFO）－即最後一列。</block>
+  <block id="3d7e86901edfb5dd4ff831b110dc3454" category="cell">建議架構</block>
+  <block id="594c16ca0695f6665d7cf4971707adf6" category="cell">HA</block>
+  <block id="3754385271c4f2a2648b471683d21149" category="cell">災難復原</block>
+  <block id="d473532c4bfeddffde60958750e5b9f4" category="cell">主要優勢</block>
+  <block id="d5bc493e4a740ff9bbe543eb68120731" category="cell">開發 / 測試</block>
+  <block id="2b177596566cc7eb305bbc4ce55fd688" category="cell">最低成本</block>
+  <block id="c848ba0b9267c3a35f24d01b357339e0" category="cell">單一執行個體</block>
+  <block id="bafd7322c6e97d25b6299b5d6fe8920b" category="cell">否</block>
+  <block id="93cba07454f06a4a960172bbd6e2a435" category="cell">是的</block>
+  <block id="12aa38e90604e137739eb5fbf02481a1" category="cell">Snapshot 複本</block>
+  <block id="acf190ec281c8b7dcb474bec1fa476e6" category="cell">Prod Basic（重新啟動）</block>
+  <block id="7b71b8b6b25bede5402426bcb8230d1b" category="cell">減少因當機造成的停機時間</block>
+  <block id="96d479a72aa25098c1cac5d508303e11" category="cell">+ Oracle Restart</block>
+  <block id="0dae103909ed6e557fdcf65c22cf8a23" category="cell">僅限本機</block>
+  <block id="975d49c63b8f7106998f43306ea1cdfc" category="cell">自動重新啟動</block>
+  <block id="e57aafc245cb0cd1a4f39fd0df855bc3" category="cell">Prod HA（無 DG）</block>
+  <block id="2983b1a2a5db25ad1df9750881e33c8a" category="cell">可接受手動 DR</block>
+  <block id="1c71b9a95931933e47b450eebe1bfeae" category="cell">+ Snapshot / RMAN</block>
+  <block id="44ffd38a6dea695cbe2b34efdcc6cf27" category="cell">部分</block>
+  <block id="cb52167bd821b9013ebc0b810c09c2b0" category="cell">GCNV 複製還原</block>
+  <block id="b91071312ec14bc510ff935ab3d815ab" category="cell">生產 HA（DG + FSFO）</block>
+  <block id="7abf1e949646e472b36848167aa8a84d" category="cell">真正的 HA（無需 DBA）</block>
+  <block id="b16e662ab29521df679195787c66e2d0" category="cell">Data Guard ＋ FSFO</block>
+  <block id="bbd47109890259c0127154db1af26c75" category="cell">完整</block>
+  <block id="54962912fb2e8054be9d47426799a601" category="cell">真正的 HA + 快速容錯移轉</block>
+  <block id="c6b79d434f793ebf874e8413b181eca9" category="paragraph">*HA / DR / 自動化：* 是 = 達到層級目標；否 = 不在範圍內；部分 = 僅限儲存層級或手動步驟。</block>
+  <block id="d4a11793ed5dcdb8168a5f3e8f960d7c" category="section-title">您所在層級需要閱讀的章節</block>
+  <block id="a41aa4fa0a10cf20b90e80b8ca55c3c0" category="paragraph">根據您想要達到的 HA 層級，請閱讀下方矩陣中的各部分。例如，如果您想要使用 Data Guard 和 FSFO 的 Prod HA，請閱讀所有部分。如果您想要使用 Restart 的 Dev/Test 或 Prod Basic，請只閱讀第一欄。</block>
+  <block id="0247f5ba79c8fd6ea3216d9a3fb2c466" category="cell">開發 / 測試或正式作業基礎版（重新啟動）</block>
+  <block id="ebf9190be73acaf4542a69de1d99a909" category="cell">生產 HA（無 Data Guard）</block>
+  <block id="6f3432e185b2a0a8259ea8de4bd41a71" category="cell">生產 HA（Data Guard + FSFO）</block>
+  <block id="6295875e19e489debb21f5f152416fdc" category="paragraph"><block ref="9cfef9c1e7788b80af76f2c7a3395949" category="inline-xref-macro-rx"></block></block>
+  <block id="25f9d5f7c0f7b963bda6aca484c72ac2" category="paragraph"><block ref="790db1d15aa381134087e86064c1cc15" category="inline-xref-macro-rx"></block></block>
+  <block id="89c12fc930953cc9f25c37b3a18b97c4" category="paragraph"><block ref="823b6d6787566dd433a87dae5f5da72a" category="inline-xref-macro-rx"></block></block>
+  <block id="4f9ea9768f5d0dde8183758e651e6199" category="paragraph"><block ref="f8636ffb086ecd5cca26f35c27e574c8" category="inline-xref-macro-rx"></block></block>
+  <block id="18a99e643c4d2b0bc583afba7f340ea8" category="paragraph"><block ref="5a928dc4203c092ef6c0a9810e7ee53a" category="inline-xref-macro-rx"></block></block>
+  <block id="b3e8bc476ceb94843197a745ded6465f" category="paragraph"><block ref="1a51d28b819003ec401451c9a6b4ac89" category="inline-xref-macro-rx"></block></block>
+  <block id="c43278cb8138b24221eb8749f0536585" category="inline-xref">佈建 Compute Engine</block>
+  <block id="ab1db3b9583f4b742597095362669dc8" category="paragraph"><block ref="0798f80eb496dd6c656fbd9afd60cca1" category="inline-xref-macro-rx"></block></block>
+  <block id="00d0182bef9180d0aff1d0d845d42e10" category="inline-xref">配置 GCNV iSCSI 磁碟區</block>
+  <block id="615a51b5ee895bef988e751d290cd113" category="paragraph"><block ref="4ae55d7b9b6ac07a69a1c98e4d8c5546" category="inline-xref-macro-rx"></block></block>
+  <block id="6056ba56003af3745ff8fa3b66fbb670" category="inline-xref">安裝 Oracle 軟體</block>
+  <block id="596199c52877556032fbcffd480579e5" category="paragraph"><block ref="05950070aa1a509ef920318170062864" category="inline-xref-macro-rx"></block></block>
+  <block id="eee2a011536270d86e577840ae5568d9" category="inline-xref">建立主資料庫</block>
+  <block id="e08d4df472d415f254bb49e94059f32e" category="paragraph"><block ref="a22e8bc507fee62eb8c57269515eb9b0" category="inline-xref-macro-rx"></block></block>
+  <block id="4ac505713cfada8b1590e76b9e41c218" category="inline-xref">建立備用資料庫</block>
+  <block id="7971dfdf9edb733e0ab4635c9c754464" category="inline-xref">步驟 3：GCNV 待命初始化</block>
+  <block id="7c736aaab68eb0b5c5cd6427dde8792a" category="paragraph"><block ref="2325ddbeb97493991acefece02396eff" category="inline-xref-macro-rx"></block>（僅透過 <block ref="595ca2272dfa782b5226a19af86c4f37" category="inline-xref-macro-rx"></block>）</block>
+  <block id="3182ef46f1fc2349218ba2685349ae33" category="paragraph"><block ref="2325ddbeb97493991acefece02396eff" category="inline-xref-macro-rx"></block></block>
+  <block id="6c65be57ba0b7a7c5e8c087c78698514" category="inline-xref">設定 Data Guard Broker、FSFO 和 Observer</block>
+  <block id="52f62d72690015fc6f32c11bd343aa8d" category="paragraph"><block ref="570201f6cc183155f279a9ee0f1dd27c" category="inline-xref-macro-rx"></block></block>
+  <block id="051f3f699ce1b7edc3419d499e0037bd" category="paragraph">此架構利用 Google Cloud NetApp Volumes (GCNV) iSCSI 儲存和 Oracle Data Guard 在 Google Cloud 上部署 Oracle Database 26ai 高可用性。GCNV 提供高效能區塊儲存，並支援儲存層的待命初始化。Data Guard 提供持續同步、切換和快速啟動容錯移轉功能。</block>
+  <block id="359b71e88f40029251366609358a302f" category="cell">層</block>
+  <block id="79423f31b24b340dd9352be752fc5c18" category="cell">GCNV</block>
+  <block id="e3296db9b868f3df3cf0c26b374ad45b" category="cell">區塊儲存設備、待命初始化、儲存設備複寫</block>
+  <block id="edd8af7eaa131179cb70a5db89636876" category="cell">Data Guard</block>
+  <block id="eeb002a92e371795f7a90c52f2bea874" category="cell">持續同步、重做套用、切換、FSFO</block>
+  <block id="8101175ec0be8dcfbde6e362ad665912" category="paragraph">與 RMAN 主動複製相比，GCNV 複寫透過在儲存層而非 Oracle 資料庫通道上移動資料，顯著縮短了待命初始化時間。當您的環境支援時，建議優先使用 GCNV 複寫進行正式作業待命植入。</block>
+  <block id="2cb05e4bb7830be982f0922fed86b4cd" category="cell">元件</block>
+  <block id="a254c25adc7d10d7e9c4889484f875a5" category="cell">詳細資料</block>
+  <block id="ac777d777ae29687664b95ccd2875f6f" category="cell">資料庫主機</block>
+  <block id="05a1d5351e0f2fde238e808c1675d6c6" category="cell"><block ref="9514606aa0e81e08de08842f8136911c" prefix="" category="inline-code"></block> /<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block> — 不同的區域，每個區域包含五個 GCNV iSCSI Volume</block>
+  <block id="8c4aa541ee911e8d80451ef8cc304806" category="cell">儲存</block>
+  <block id="9a7240a0c943a8ab7e97981fb452769e" category="cell"><block ref="a8946fa5f211c5345e3610710e471cb4" prefix="" category="inline-code"></block> + ASM<block ref="c097579d8cb34b312d396304e0b8f487" prefix=" " category="inline-code"></block><block ref="7805bd080c8df4b5e04ec773d62b82b2" prefix=" " category="inline-code"></block><block ref="80f3131b9dc238e16c645ddfad01b783" prefix=" " category="inline-code"></block> 於 GCNV（EXTERNAL）</block>
+  <block id="fbc6afae895aa15b4de94880f94d327a" category="cell">待命初始化</block>
+  <block id="a61464b13c6b33859f09693876605ab8" category="cell">GCNV 複寫 / 快照 / 複本 → Oracle 完成 → Data Guard</block>
+  <block id="cfe42fd5d4e544839378d7a67942f434" category="cell">重新啟動、實體待命 （MOUNTED）、Broker、FSFO、Observer <block ref="c7f5bde16987c7d543c988c216354ee9" prefix="(" category="inline-code"></block>）</block>
+  <block id="a6f00c82b6eb55a13a1f242313aaf9c9" category="cell">應用程式</block>
+  <block id="5f65e71d325d775a2b58b33aeb8f1e94" category="cell">服務<block ref="4645c43c671fdeae260367b4f2fb866a" prefix=" " category="inline-code"></block></block>
+  <block id="a79eb72d4dd6fb0dda84ce7307150f42" category="paragraph">*分區：*每個資料庫區域一個 GCNV Flex Unified 池；每個主機一個專用磁碟區。啟動磁碟僅用於作業系統。*不適用：*TDE、RAC、NVMe/TCP、OEM、Active Data Guard（備用磁碟保持 *MOUNTED* 狀態）。</block>
+  <block id="1142393d49f79cd9812a1f4b3f3fa02e" category="section-title">參考圖</block>
+  <block id="2ee442b3237b97b6099735cc1a076aa1" category="paragraph">該架構提供三條獨立的資料路徑。儲存複製和 Data Guard 重做傳輸是兩條獨立的路徑。</block>
+  <block id="fba2d7931ab2a35d8d5b6cb6276830be" category="image-title">GCNV Oracle 部署 - 參考架構</block>
+  <block id="217d35c3ea12d30b07dac643ba5f02ff" category="image-alt">Oracle 26ai HA on GCNV - 參考架構</block>
+  <block id="478f5c274a903954ce7894f9b33ba59d" category="paragraph">*儲存複製 ≠ 重做複製。*路徑 1 在 GCNV 層移動資料檔以進行備用資料庫初始化。路徑 2 在切換後保持資料庫同步。路徑 3 透過 Oracle Data Guard Broker 和 Observer 協調角色轉換和自動故障轉移。</block>
+  <block id="cb9e27422b343274f9974efbc9c3dbc1" category="section-title">平台角色</block>
+  <block id="419f3742e6de8e0ec4b22cce005e7630" category="cell">平台</block>
+  <block id="7e730a226c1abe4e7a9dde9102b9c81a" category="cell">提供</block>
+  <block id="093acb110aacf54e4d298a19b7c3044c" category="cell">iSCSI 磁碟區、快照、磁碟區複寫（基準 + 增量）— 待命初始化</block>
+  <block id="175d96046645cf87adf382b378585577" category="cell">重做傳輸、MRP、Broker、FSFO — 持續同步與容錯移轉</block>
+  <block id="47febd95375e98ce605eaa32243d61b3" category="paragraph">GCNV 複製會執行基準複本，然後根據原則執行遞增區塊更新。待命資料庫初始化後，Data Guard 會擁有重做套用和 FSFO。</block>
+  <block id="ed498a266688cfb5e0faabe6d0ed4cea" category="section-title">拓撲結構和儲存設備</block>
+  <block id="b3ff996fe5c77610359114835baf9b38" category="cell">區域</block>
+  <block id="aafb1debc5120d13988900410c6d6eb1" category="cell">GCNV 池</block>
+  <block id="514eb82e5fe7f221dc1a239aee62f7c2" category="cell">磁碟區（每台主機）</block>
+  <block id="e82ca42a2c4526a67b885679fb5aa8cc" category="cell"><block ref="9514606aa0e81e08de08842f8136911c" prefix="" category="inline-code"></block></block>
+  <block id="35cdb90190eca7017839caf3eb90b30a" category="cell"><block ref="b5bcc32f2dcfcba307bfdabcd317f173" prefix="" category="inline-code"></block></block>
+  <block id="dc611284134791d99db6b8e47dc64e10" category="cell"><block ref="79d523916802ef5e588f3a0e1f37e882" prefix="" category="inline-code"></block></block>
+  <block id="13c76f99912af5d3b32f3df3cfdeb1a7" category="cell"><block ref="5adb925391dcc0e1f89a27100238aa98" prefix="" category="inline-code"></block>,<block ref="6660e84e88f4fffe513ef2edd728f3dc" prefix=" " category="inline-code"></block>,<block ref="ae4259f185708f943bcc39bd9dc36f09" prefix=" " category="inline-code"></block>,<block ref="cd5a944679e9c2fd69e4b554b51acb54" prefix=" " category="inline-code"></block></block>
+  <block id="b2610a0e2da9bc44da203c52f36fb67f" category="cell"><block ref="307e0423cd7859aca914691fcbaacca5" prefix="" category="inline-code"></block></block>
+  <block id="319fec914f6278b0e01df80f55a9901a" category="cell"><block ref="bffe9cca2446cbd9a50cb8fb48107c25" prefix="" category="inline-code"></block></block>
+  <block id="7b93f588d4beb4c71d3287f3c8a71d0c" category="cell"><block ref="dd70af3bcff9c8357ee70338cabadf23" prefix="" category="inline-code"></block></block>
+  <block id="82e39eb770809674a4bca16a31684309" category="cell">相同的命名模式</block>
+  <block id="83d694b8b98b155b8817ac412c4d3e9c" category="cell">Observer</block>
+  <block id="aa4080137b1eef796ca61e4690c790f7" category="cell"><block ref="c7f5bde16987c7d543c988c216354ee9" prefix="" category="inline-code"></block></block>
+  <block id="f095b0b316b4f06f2f1be592365e493e" category="cell"><block ref="54420979f24fe03e6067aef46b2d7b19" prefix="" category="inline-code"></block></block>
+  <block id="26aeabd0c99c77002e55825fbcd435af" category="cell">—</block>
+  <block id="8e6431c5abf069b8a3a35ed8abba8341" category="cell">僅開機磁碟</block>
+  <block id="a5bfccfcb5543ce6cd1d6a5471e3224c" category="cell">備份</block>
+  <block id="ad8783089f828b927473fb61d51940ec" category="cell">使用</block>
+  <block id="17bc10091293fdc562a6db69940ee924" category="cell">作業系統</block>
+  <block id="1b02a9477b6731aacb2e25439a422cc1" category="cell">GCE 啟動磁碟</block>
+  <block id="22f1d38eeaae97935ea60696181acf16" category="cell">僅限作業系統</block>
+  <block id="0a24867dd5f1891183c60e2ce04cc844" category="cell"><block ref="a8946fa5f211c5345e3610710e471cb4" prefix="" category="inline-code"></block></block>
+  <block id="a9a1b624d4df65057ecc4d03bd34fa08" category="cell">GCNV iSCSI</block>
+  <block id="fb4d79e081113859fc37805b64f81a53" category="cell">Grid/DB 主目錄、暫存環境 (XFS)</block>
+  <block id="cb7cc0f9531b8cfee1be7fd8953f8452" category="cell"><block ref="c097579d8cb34b312d396304e0b8f487" prefix="" category="inline-code"></block> /<block ref="7805bd080c8df4b5e04ec773d62b82b2" prefix=" " category="inline-code"></block> /<block ref="80f3131b9dc238e16c645ddfad01b783" prefix=" " category="inline-code"></block></block>
+  <block id="d6cab2913ff457e5d19c6412efb6d21f" category="cell">ASM EXTERNAL — 資料檔、歸檔、FRA</block>
+  <block id="45ce8fb9d12209f44a24f5c6625f2336" category="paragraph-title">機器類型</block>
+  <block id="d9fa131dc2f2aabbebf27c61e0944f16" category="paragraph">本指南中的範例<block ref="781e05c5c208b0d55d2b16b06ad7ccbe" prefix=" " category="inline-code"></block>；OLTP 工作負載通常使用<block ref="fe1633c2ac7a622d0b89e58f57e15903" prefix=" " category="inline-code"></block>。</block>
+  <block id="8ed982666bddcd8ff02a5747ff73e458" category="section-title">步驟 1：建立 VM</block>
+  <block id="e5ea886932e3869d766934475a76cfe8" category="paragraph">在同一區域的不同可用區建立三個虛擬機器（實現區域故障隔離）。優先選擇碳排放量較低的區域，以滿足總體擁有成本 (TCO) 和可持續性要求，同時滿足延遲和合規性要求（例如<block ref="7460527a94dd1cdca7f80472ca36103e" prefix=" " category="inline-code"></block> vs<block ref="68ceb8e3f47e5536a6434f040549ec8b" prefix=" " category="inline-code"></block>）。可以使用 Cloud Console、<block ref="7f22bf39aaf5ce5980111c3587bef5b5" prefix=" " category="inline-code"></block>、Terraform 或您常用的佈建工作流程。</block>
+  <block id="3ea4bf9da7622edeeae1bf80e9c5cded" category="cell">機器類型</block>
+  <block id="0fe30f7d2c6d9fa750acc035e9d2df03" category="cell">開機磁碟</block>
+  <block id="eec89088ee408b80387155272b113256" category="cell">網路</block>
+  <block id="acc62355c8479494569c093cd8b15090" category="cell"><block ref="781e05c5c208b0d55d2b16b06ad7ccbe" prefix="" category="inline-code"></block> （範例）或 <block ref="fe1633c2ac7a622d0b89e58f57e15903" prefix=" " category="inline-code"></block></block>
+  <block id="2dbda0c7b4f038ea79d3f9e0d1ebf6f3" category="cell">OL 10、50 GB Hyperdisk Balanced（僅作業系統）</block>
+  <block id="dacfe1c0dcff363c45cd4df2486f678d" category="cell"><block ref="2027eeee86a22251d3d3ffbc95e965b5" prefix="" category="inline-code"></block> /<block ref="ed0bf7b39c3cdb89c08c74d590dd84bf" prefix=" " category="inline-code"></block>、gVNIC</block>
+  <block id="3d8ebbee3b53ee817e0140136ee97a21" category="cell">主要資料庫</block>
+  <block id="813f96cabf1f12653e92542db7aa6f3a" category="cell">與主要相同</block>
+  <block id="c90a13d8ec8fe53c6bb33fe10af6f2fe" category="cell">相同</block>
+  <block id="2c9b2b5486c192c6e37ff3b7a69b58d3" category="cell">備用資料庫</block>
+  <block id="85b84850fdf091ce2b8db484ab9e1c33" category="cell"><block ref="2cacbf1ab442ffaa5b437941e551f041" prefix="" category="inline-code"></block></block>
+  <block id="1f06b01186359475d82c6d064be8806d" category="cell">OL 10、20 GB Hyperdisk Balanced</block>
+  <block id="0d1988376825015a69424f118fa0d9ba" category="cell">FSFO Observer（僅限 Instant Client）</block>
+  <block id="134db94cc9d355845d78fb5fd08adfb5" category="paragraph">*網路層級：*當延遲或輸出流量（&gt;~200 GiB/ 月）很重要時選擇 Premium；在開發 / 測試環境中選擇 Standard 以降低 TCO。</block>
+  <block id="3e912ad74db884147cbe49ec6e648f62" category="paragraph">在所有三個裝置上啟用 *Secure Boot*、*vTPM* 和 *Integrity Monitoring*。啟動磁碟僅包含作業系統。<block ref="a8946fa5f211c5345e3610710e471cb4" prefix=" " category="inline-code"></block>Grid/DB 主目錄、暫存環境和所有 ASM 資料使用 GCNV iSCSI 磁碟區（請參閱<block ref="4ae55d7b9b6ac07a69a1c98e4d8c5546" category="inline-xref-macro-rx"></block>）—*不要*為<block ref="a8946fa5f211c5345e3610710e471cb4" prefix=" " category="inline-code"></block>附加單獨的 GCE 資料磁碟。</block>
+  <block id="7f658ecfbb2f8abf805202d737460198" category="section-title">步驟 2：VPC 防火牆 — 在所有三個區域中允許 TCP/1521</block>
+  <block id="a233dc626e7616b1cb789efe03c51b29" category="paragraph">允許所有區域中所有三個 VM<block ref="1c2834cd351fe5f23b2e7096f2732eff" prefix=" " category="inline-code"></block> 內部 IP 位址之間的 TCP/1521 通訊<block ref="17dfa8b70fd4f9130b1e6cb3a82a8f79" prefix="(" category="inline-code"></block>。使用具有相同允許清單的 VPC 防火牆規則或防火牆原則。缺少規則會中斷重做傳輸和 Observer 連線。</block>
+  <block id="f8b89b1617aeea4320e159e39f22ad4f" category="paragraph">*Cloud Console：* VPC 網路 → 防火牆 → 建立規則<block ref="09b7b0b04e727fd655b5aec3c5b9b0c0" prefix=" " category="inline-code"></block> on<block ref="2027eeee86a22251d3d3ffbc95e965b5" prefix=" " category="inline-code"></block> — Ingress、Allow、sources = 三個<block ref="1c2834cd351fe5f23b2e7096f2732eff" prefix=" " category="inline-code"></block> IP、TCP 1521。如有需要，鏡像 egress。從每台 VM 進行驗證：</block>
+  <block id="60aaf44d4b562252c04db7f98497e9aa" category="cell">連接埠</block>
+  <block id="c87076fc9901bb23fee8eda95971b5a5" category="cell">預期</block>
+  <block id="7277de5f2ed6f17c61f1f25594591a82" category="cell">意義</block>
+  <block id="5da8d8087ef76472ac4cce5df22c3696" category="cell"><block ref="b6d767d2f8ed5d21a44b0e5886680cb9" prefix="" category="inline-code"></block></block>
+  <block id="2ec0d16e4ca169baedb9b2d50ec5c6d7" category="cell">已連接</block>
+  <block id="86bd785c9703ed9e0c9896b135786c36" category="cell">SSH 路徑有效</block>
+  <block id="47bfab5eca222340898b48d75b206e05" category="cell"><block ref="253f7b5d921338af34da817c00f42753" prefix="" category="inline-code"></block></block>
+  <block id="1867e4a765d502c76e2b022504c37d92" category="cell">連線被拒絕</block>
+  <block id="5d50b52633f5bef8715e30e4a8fc12a6" category="inline-xref">步驟 1：在每個資料庫主機上安裝 Oracle Grid Infrastructure（Oracle Restart）</block>
+  <block id="007aa00a3b581b065f771dbe79986af2" category="cell">防火牆已開啟；Grid 監聽器在以下期間啟動 <block ref="6077d869d1c17b4609a7a121dc0426ac" category="inline-xref-macro-rx"></block></block>
+  <block id="9e70a5d3dab1960c04b55a29f310331e" category="cell">任一</block>
+  <block id="c85a251cc457840f1e032f1b733e9398" category="cell">逾時</block>
+  <block id="53998773f8e834f94209b1d69c925f32" category="cell">修復防火牆或路由</block>
+  <block id="ee6f41d8b788e77298c6295e18ca7b89" category="paragraph">從所有三個 VM 向每個對等 IP 位址執行命令。</block>
+  <block id="272ab50d7a25c897af2133b0505d9153" category="section-title">步驟 3：主機名稱、DNS 和<block ref="ad942c725cd0cae65ca4c63717ec464c" prefix=" " category="inline-code"></block></block>
+  <block id="7f2f4a3547fbe3b2ab1c5468a554d07f" category="paragraph">每次虛擬機器啟動後，設定主機名稱並在所有三個主機上新增<block ref="ad942c725cd0cae65ca4c63717ec464c" prefix=" " category="inline-code"></block>項目，以便 Oracle Net、代理程式和觀察者能夠進行正向/反向名稱解析。</block>
+  <block id="8fc5a7e393f74252b30f268ee94af3bd" category="paragraph">替換為 GCE 內部 IP 位址（可在 *Compute Engine → VM instances* 清單的 _Internal IP_ 欄位中查看）。</block>
+  <block id="6276b3074f4adeb978e6e1c9789ac500" category="paragraph">從每台主機進行驗證：</block>
+  <block id="b7a6078dc05fdad35eedcb863a1a424b" category="section-title">步驟 4：OS 基準（僅限資料庫主機）</block>
+  <block id="58b64cbd6d646767067f1a3ae1d1a6dd" category="paragraph">*前提條件：* 出站 HTTPS 到<block ref="c129932d9c09d1c318e36e52fc4ef0bb" prefix=" " category="inline-code"></block>（Cloud NAT 或私有子網路上的內部鏡像）。</block>
+  <block id="8f0aa1f80b6a3fea3f5f3f35282ab944" category="inline-xref">步驟 4：在 Observer 主機上安裝 Oracle Instant Client</block>
+  <block id="928b0be7fe417cd128db374651a5f33e" category="paragraph">在<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>和<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上執行（Observer 設定涵蓋於<block ref="f834f71b7b95d7b0b6bc91d673168263" category="inline-xref-macro-rx"></block>）。</block>
+  <block id="2d602cd2927004a1baef2c08ab0be038" category="paragraph">*安全態勢 (OL 10)：* 下列指令將 SELinux 設定為寬容模式並停用<block ref="7ba21652408bcade58b8719451511f2a" prefix=" " category="inline-code"></block>。這只是最低限度的實驗室態勢。如需強化的 SELinux 和防火牆組態，請參閱貴組織的安全基準。</block>
+  <block id="30be3a68f571bdf2e2aaccce6cc938c6" category="section-title">步驟 5：擷取 iSCSI 啟動器名稱 (IQN)</block>
+  <block id="41e6b9276493ce264cc0f48065ee97a8" category="inline-xref">步驟 2：建立主機群組</block>
+  <block id="e1f105442b4fbe4f7ccfdc9bd6b3df88" category="paragraph">重新開機後，擷取每個資料庫主機的 IQN。您將使用這些 IQN 在<block ref="9fc0077264de0ccac2bc390e8e2588e0" category="inline-xref-macro-rx"></block>中建立 GCNV 主機群組。</block>
+  <block id="09a9aca5b3001f666ba2a4a0d99aa831" category="paragraph">重複上述步驟<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>。記錄每個主機的 IQN — 每個主機一個主機群組，這樣單一主機的重新啟動或 IQN 重新產生就不會影響其他主機的 GCNV iSCSI 磁碟區可見度。</block>
+  <block id="b869ecbb2882a1e727a0bdee595b1c02" category="paragraph">*複製虛擬機器：* 如果兩台主機共用同一個 IQN，則重新產生<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>（停止<block ref="39eea648dab96b0ee6022dabb38bc420" prefix=" " category="inline-code"></block>、清除<block ref="732b4f233335f6653bbc69eb25801802" prefix=" " category="inline-code"></block>、新建<block ref="c23e5c42f09add6332c9db71a9774c3f" prefix=" " category="inline-code"></block> 在<block ref="22565a44e8f73044eb2029acbb069639" prefix=" " category="inline-code"></block>、重新啟動<block ref="3fe4dc8de876aca2c78fa0cd9c6d0b65" prefix=" " category="inline-code"></block>）。</block>
+  <block id="9f0519aa4a93d0d1c0a95b0dff2bd965" category="section-title">步驟 1：為每個資料庫區域建立一個 GCNV Flex Unified iSCSI 儲存資源池</block>
+  <block id="20a31ad10baa17b5d17ac9d18e28b111" category="paragraph">每個資料庫區域一個 Flex Unified 池 （參見 <block ref="1a51d28b819003ec401451c9a6b4ac89" category="inline-xref-macro-rx"></block>）。</block>
+  <block id="a91129e4ffe7da23c62aca53e4c64cc7" category="paragraph">為此 HA 設計建立兩個集區（對每個區域重複上述步驟）：</block>
+  <block id="c931e064dd64a38adddc55cf37391292" category="cell">資源池名稱</block>
+  <block id="11cd4b12c171c74f7146ba4e4ede2f62" category="cell">使用者</block>
+  <block id="0c0bad4c5f2c059789d5fbb27a7ff0fd" category="cell"><block ref="9514606aa0e81e08de08842f8136911c" prefix="" category="inline-code"></block>（主要）</block>
+  <block id="cc6ba6c1a83cebc51fddbf1fda529f3a" category="cell"><block ref="307e0423cd7859aca914691fcbaacca5" prefix="" category="inline-code"></block>（待命）</block>
+  <block id="891870071864adba3b9808fbe1ea50a6" category="paragraph">*NetApp Volumes → Storage pools → Create* 為每個池：</block>
+  <block id="86db7eb922fddec58c408a2360a878cc" category="list-text">*服務等級：* Flex （非 Premium）</block>
+  <block id="01adb05cfd0c81e5a9ddb3835c65e849" category="list-text">*類型：*統一</block>
+  <block id="bbad578a9e9b89bf1b685de2b770e39b" category="list-text">*Zone：*符合資料庫 VM 區域<block ref="b5bcc32f2dcfcba307bfdabcd317f173" prefix="(" category="inline-code"></block> /<block ref="bffe9cca2446cbd9a50cb8fb48107c25" prefix=" " category="inline-code"></block>)</block>
+  <block id="8750f2664755ee27d7667d0c71546c87" category="list-text">*PSA:* 已連接到<block ref="2027eeee86a22251d3d3ffbc95e965b5" prefix=" " category="inline-code"></block></block>
+  <block id="02aa93caee1e448c2ec6b5203557efaa" category="list-text">*容量：* 根據工作負載進行調整；當重做、備份或還原超出預設餘裕時，使用自訂佈建的處理量 / IOPS（每個集區最高可達 5120 MiB/s 或 160K IOPS，依產品限制而定）</block>
+  <block id="38d150db7ef372a8f8970104a2e8aab0" category="inline-xref">步驟 3：建立 GCNV iSCSI 磁碟區</block>
+  <block id="d577faa76333018a77342c6c3a4529a6" category="paragraph">等待<block ref="2baa69eafc7204f3bd8648eba580c489" prefix=" " category="inline-code"></block>。根據資料庫佔用空間調整池大小（<block ref="62251f099442e38ae7b0eafb65c9d537" category="inline-xref-macro-rx"></block>中的大小僅為範例）。</block>
+  <block id="c5b12dd3623cbb4064fca1b7aad72e82" category="paragraph">*預設模式（本指南）：* Flex Unified 資源池使用預設模式<block ref="fc3ffd95288f0a9c0078286de2bc3467" prefix="(" category="inline-code"></block>）。使用 Cloud Console 或<block ref="be461f2f19fe40ccc0c8414ac6aa799f" prefix=" " category="inline-code"></block>建立資源池和 iSCSI 磁碟區。磁碟區複寫、快照和複本使用 Google Cloud API（<block ref="595ca2272dfa782b5226a19af86c4f37" category="inline-xref-macro-rx"></block>）。</block>
+  <block id="fa582d4273725bb79b90068083149121" category="section-title">步驟 2：建立主機群組（每個資料庫主機一個）</block>
+  <block id="e2d4481176265dc1a3a23e7f3918036d" category="paragraph">為每個資料庫主機建立一個主機群組，以便每個 VM 只能看到自己的磁碟區－主要和待命不得共用 GCNV iSCSI 磁碟區。Observer 沒有 GCNV 資源。在 Cloud Console 中：</block>
+  <block id="de2c98ee68fb9b9198e6f9558a6b36d5" category="list-text">*NetApp 磁碟區 → 主機群組 → 建立*</block>
+  <block id="700894200be37f60f4b74318a5a795d7" category="list-text">*名稱：*<block ref="895d9ad3946d63f2384be29aafa0979d" prefix=" " category="inline-code"></block> · *區域：*<block ref="7460527a94dd1cdca7f80472ca36103e" prefix=" " category="inline-code"></block> · *類型：* iSCSI 啟動器 · *作業系統類型：* Linux</block>
+  <block id="b4d2e8a88d73ee5dbc5b5cfcfd1d3404" category="list-text">*主機：*從<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>貼上 IQN（<block ref="22565a44e8f73044eb2029acbb069639" prefix=" " category="inline-code"></block>的值）</block>
+  <block id="43402061a1c98c9d5ba14df979a08744" category="list-text">*描述：*「Oracle 主要主機 oracdb1」 · *建立*</block>
+  <block id="80dd2a8a344fe218b6279270dfb025d6" category="list-text">重複上述步驟，<block ref="7fc5f45b049a449b87b1f9b25afbc331" prefix=" " category="inline-code"></block> 使用 <block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block> 的 IQN</block>
+  <block id="c66592ab7e27918f0f533809cac4fa24" category="section-title">步驟 3：建立 GCNV iSCSI 磁碟區（每個資料庫主機）</block>
+  <block id="dd72252c1e11b315fe48e630aaae1207" category="paragraph">每個資料庫主機在其區域池中獲得五個 GCNV iSCSI 磁碟區－一個用於<block ref="a8946fa5f211c5345e3610710e471cb4" prefix=" " category="inline-code"></block>，四個用於 ASM 後端設備：</block>
+  <block id="179f6f47f36f2f8b25930bbb5706bfdc" category="cell">GCNV iSCSI 磁碟區</block>
+  <block id="6f6cb72d544962fa333e2e34ce64f719" category="cell">大小</block>
+  <block id="f9e5c9984d5ffdf0fba283eb0e0951e4" category="cell">多重路徑別名</block>
+  <block id="9c39ecfc2f8c59671523dc76164be600" category="cell"><block ref="5adb925391dcc0e1f89a27100238aa98" prefix="" category="inline-code"></block></block>
+  <block id="d47eab2f6c8443515b4726d2c0efbcec" category="cell">100 GiB</block>
+  <block id="efc44c1e30e41258159d4cbb66737137" category="cell"><block ref="a8946fa5f211c5345e3610710e471cb4" prefix="" category="inline-code"></block> GCNV iSCSI 磁碟區 — Grid/Oracle 主目錄、暫存區</block>
+  <block id="bd9fe8750723b9b4c5110d991883be63" category="cell"><block ref="2eb81ae14809bd879fc6e7e057d1dfad" prefix="" category="inline-code"></block></block>
+  <block id="b041e3bb5d0b5396c97cd52ec88ee63e" category="cell"><block ref="647862761ab030859d9ee5d9d353d133" prefix="" category="inline-code"></block></block>
+  <block id="51fea93790588030a8f5ece2b9b6b8ee" category="cell">50 GiB</block>
+  <block id="5cff5cb48b217dd1ae99e0acb7943cfb" category="cell">ASM<block ref="c097579d8cb34b312d396304e0b8f487" prefix=" " category="inline-code"></block></block>
+  <block id="9d776048d10a556744294a5dfee22f72" category="cell"><block ref="a64d09dd04cf980346aef379dbec9261" prefix="" category="inline-code"></block></block>
+  <block id="f3befa9e72558b71a65f8698c142e3d3" category="cell"><block ref="0b6f195fbe53a7b6a5fde3604ddbd7c2" prefix="" category="inline-code"></block></block>
+  <block id="b8ac9400ebcd9a5f7fb8e22082944bea" category="cell">ASM<block ref="c097579d8cb34b312d396304e0b8f487" prefix=" " category="inline-code"></block>（條紋）</block>
+  <block id="363df9fc621846c7ff3004bb43072052" category="cell"><block ref="3f1ff14e8393895c9543235245ba40fc" prefix="" category="inline-code"></block></block>
+  <block id="b1df19f4089c0ea2cf9255348e06275e" category="cell"><block ref="ae4259f185708f943bcc39bd9dc36f09" prefix="" category="inline-code"></block></block>
+  <block id="abb61d51f2d37735fd87a2a348737347" category="cell">ASM<block ref="7805bd080c8df4b5e04ec773d62b82b2" prefix=" " category="inline-code"></block></block>
+  <block id="b5372f5adbcae35f3e65fa5f5033fc93" category="cell"><block ref="e694cc7cd4178c88a8401e2d87d3894c" prefix="" category="inline-code"></block></block>
+  <block id="caf9ddc376bbde380002424723d47be3" category="cell"><block ref="cd5a944679e9c2fd69e4b554b51acb54" prefix="" category="inline-code"></block></block>
+  <block id="e18eec2cbd6542841c2ef1e3bfde8fa3" category="cell">ASM<block ref="80f3131b9dc238e16c645ddfad01b783" prefix=" " category="inline-code"></block></block>
+  <block id="f4f9f49c93e3e3b1edebec8dd716cf6c" category="cell"><block ref="5ffa49ce3a3785edbe1a9cbd98dda743" prefix="" category="inline-code"></block></block>
+  <block id="aeb62ad031c4fac80dc64de0c2742a2a" category="paragraph">磁碟區名稱：僅使用字母、數字和底線（不使用連字號）。</block>
+  <block id="9797600304cf56e59eecd53643947707" category="paragraph">*最小佈局（僅用於驗證）：* 每個主機兩個 LUN <block ref="302d00dd053834542788c28e3e2dd381" prefix="(" category="inline-code"></block>,<block ref="7fbf99ef1c96027aac19ecd6af720594" prefix=" " category="inline-code"></block>）with<block ref="586ff5f5d1906de25c1aa22812306114" prefix=" " category="inline-code"></block><block ref="7805bd080c8df4b5e04ec773d62b82b2" prefix="→" category="inline-code"></block> 和<block ref="88dca2eaae990b0f6ab57d2245b672cd" prefix=" " category="inline-code"></block><block ref="80f3131b9dc238e16c645ddfad01b783" prefix="→" category="inline-code"></block> 對於實驗室來說是可以接受的；生產環境每個 <block ref="62251f099442e38ae7b0eafb65c9d537" category="inline-xref-macro-rx"></block> 使用五個磁碟區。</block>
+  <block id="0bacaf7bbf2eba0dba7abc42e7d17b22" category="paragraph">在<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>：在<block ref="79d523916802ef5e588f3a0e1f37e882" prefix=" " category="inline-code"></block>主機群組<block ref="895d9ad3946d63f2384be29aafa0979d" prefix=" " category="inline-code"></block>中建立所有五個磁碟區。</block>
+  <block id="0309352ded62c2362e1452265f1b6664" category="paragraph">在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>：在<block ref="dd70af3bcff9c8357ee70338cabadf23" prefix=" " category="inline-code"></block>主機群組<block ref="7fc5f45b049a449b87b1f9b25afbc331" prefix=" " category="inline-code"></block>中建立所有五個磁碟區。</block>
+  <block id="9227c7111abb4c3bc6ac07d6e6066a38" category="paragraph">*NetApp Volumes → Volumes → Create* — iSCSI、正確的資源池和主機群組、Linux。每個資源池的記錄：</block>
+  <block id="8385ecabb21384e77b969d3da9b71f83" category="list-text">iSCSI 入口網站 IP 位址→<block ref="1a166cb3995363e3b206805f722e998f" prefix=" " category="inline-code"></block>,<block ref="d1bde1532ebbeda95cf8ca6392f7cb8c" prefix=" " category="inline-code"></block>（主池入口網站位於<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>；備用池入口網站位於<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>——它們可能不同）</block>
+  <block id="234628016c35cfe67afe88cfd3570147" category="inline-xref">步驟 4：為 GCNV iSCSI 磁碟區設定 Linux iSCSI 和多重路徑</block>
+  <block id="e940f06f517df8a2d2e3787da4e73cca" category="list-text">從雲端主控台取得磁碟區序號 — 與主機發現的 WWID 一起使用 <block ref="e3e604617fdd62c104597da028962427" category="inline-xref-macro-rx"></block></block>
+  <block id="24c9df26ad3e64494e1f33835d9bd012" category="paragraph">在<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>上使用該主機的資源池入口網站執行，然後在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上使用待命資源池入口網站執行。</block>
+  <block id="fc29f66b6b53d73fdb5970962aa78ad2" category="paragraph">如果主機出口受到限制，則允許每個資料庫 VM 透過 TCP/3260 存取其 GCNV iSCSI 入口網站 IP（此外還允許 VM 間 TCP/1521 來自 <block ref="216a3dfc061d9ad1db7651f0db156818" category="inline-xref-macro-rx"></block>）。</block>
+  <block id="a1765cabcd3f7054ce66029367e15843" category="list-text">探索目標、登入並持續節點啟動：</block>
+  <block id="17564cc1bd1692fb3a6e967425b29fde" category="paragraph">重新開機後，請在啟動 Oracle 之前重新檢查：</block>
+  <block id="26b17225b626fb9238849fd60eabdf60" category="paragraph">+</block>
+  <block id="dc57dd149181e8f4b2a20c749748abd6" category="list-text">設定<block ref="a3938eeca32dce6ca3908d2eae163c75" prefix=" " category="inline-code"></block>：</block>
+  <block id="ce3834713e5b88bd239b82444cb14422" category="list-text">將主機發現的 WWID 別名加入<block ref="dd5ff67ba72768d33f75e645aa2b8e56" prefix=" " category="inline-code"></block>（不要猜測 —<block ref="9ac80d53ede05256c28cf9e043eb423c" prefix=" " category="inline-code"></block> 不會展開 shell 變數）。發現 WWID：</block>
+  <block id="c39397366affde6dc5123be9df430ed0" category="paragraph">將該主機的具體別名附加到<block ref="dd5ff67ba72768d33f75e645aa2b8e56" prefix=" " category="inline-code"></block>，然後<block ref="05f91f8866e5890377760c5f890d13a0" prefix=" " category="inline-code"></block>。</block>
+  <block id="39f6f767b6bd10e2b919e16bc4c8f4bd" category="paragraph">開啟<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>，附加：</block>
+  <block id="8fc1fe6065aa97d1a1160f4700a86a56" category="paragraph">+ 在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上，使用相同的模式建立<block ref="e206f004cb05d43b06ce54926cb4831e" prefix=" " category="inline-code"></block>別名，然後：</block>
+  <block id="4a51abd54bbd73e99fdc4a0d677b51ed" category="section-title">步驟 5：對 GCNV iSCSI 磁碟區上的 ASM 備份裝置進行分割</block>
+  <block id="3e8b963fd2c66af8116d0db159daeb1f" category="paragraph">將四個 ASM 後端裝置（非<block ref="997802bac7f8b4cb6d5cee9adf487d9d" prefix=" " category="inline-code"></block>）分別分割成一個 GPT 分割區。ASM 使用原始分割區。在每台主機上執行。所有後續區塊使用<block ref="2bb0b2911e6b14e33864a2330bd3d3b6" prefix=" " category="inline-code"></block>自動選擇本機主機的裝置。</block>
+  <block id="00aa3ade28e8ca95470f0fc6adf21b3a" category="section-title">步驟 6：格式化並掛載<block ref="a8946fa5f211c5345e3610710e471cb4" prefix=" " category="inline-code"></block>本機 GCNV iSCSI Volume</block>
+  <block id="e0ab15441764bbd4731c68ecb88f232d" category="paragraph"><block ref="5adb925391dcc0e1f89a27100238aa98" prefix=" " category="inline-code"></block> GCNV iSCSI 磁碟區包含 Grid 主目錄、Oracle 主目錄和暫存目錄。在多路徑裝置上格式化為 XFS（未針對 ASM 進行分割）。在<block ref="816a3ef77b62ade41c3f936c958aa555" prefix=" " category="inline-code"></block>中使用 UUID（而非共用檔案系統標籤）：</block>
+  <block id="5875440d1a8deaac16ec6d4d6867b7c3" category="paragraph">重新開機一次並確認<block ref="a8946fa5f211c5345e3610710e471cb4" prefix=" " category="inline-code"></block> 掛載在<block ref="05950070aa1a509ef920318170062864" category="inline-xref-macro-rx"></block> 之前。</block>
+  <block id="f24bb5955ef8c312af51871966a1f80f" category="paragraph">在 <block ref="a22e8bc507fee62eb8c57269515eb9b0" category="inline-xref-macro-rx"></block> 之前，先在每個資料庫主機上執行 Grid，然後再執行資料庫主目錄安裝程式。</block>
+  <block id="41f7fb323962901a356158d531e7b71a" category="paragraph">在<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>上執行本節所有內容，然後在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上重複此操作。兩台主機都將擁有各自的 Grid 主目錄、ASM 實例和磁碟組—— Data Guard 透過 Oracle Net 進行複製，而不是透過儲存進行複製。</block>
+  <block id="7e9c2869fdbef6d33b20c2b3eca32038" category="section-title">將 Oracle 二進位檔案暫存於<block ref="a8946fa5f211c5345e3610710e471cb4" prefix=" " category="inline-code"></block></block>
+  <block id="6183747e4e2e9f37fd8cae0389d14be4" category="section-title">原地解壓縮 Grid 主目錄</block>
+  <block id="3a178fba805e3b5abd0c8dae8878f9f1" category="paragraph">26ai Grid GoldImage 安裝方式為：在目標 Grid 主目錄中解壓縮安裝。</block>
+  <block id="c6555ecc5ab7fd21df653f4ac956cf4e" category="paragraph">*Grid RU 層級。*本指南假設 Grid GoldImage 已包含您已驗證的 RU。如果 Grid GoldImage 版本低於目標 RU，請在設定期間使用 Oracle 文件中記錄的<block ref="ee051a75e2660d642544e1a782ef2a15" prefix=" " category="inline-code"></block>流程修補 Grid 主目錄，或使用已捆綁 RU 的 Grid GoldImage。請確保 Grid 和 Database 主目錄的修補程式層級保持一致。</block>
+  <block id="125c9b978a2018acc88dbee209076fd6" category="section-title">單次觸發<block ref="6188ef2848d4d8eb4f4ed48cd6154082" prefix=" " category="inline-code"></block> — 完整的 HA_CONFIG 回應檔案</block>
+  <block id="53eac7008970891dc200af11015962d3" category="paragraph">在每台主機上建置<block ref="0e13878fba905bfdba91c98a6366125f" prefix=" " category="inline-code"></block><block ref="b32b7221bf65ca4fdf81dfafe6b4dbc2" prefix="(" category="inline-code"></block>是必須的；替換<block ref="b9361011891280a44d85b967739cc6a5" prefix=" " category="inline-code"></block>並使用強密碼）：</block>
+  <block id="975888b0eb888d23409c48cc757aff11" category="paragraph">執行<block ref="6188ef2848d4d8eb4f4ed48cd6154082" prefix=" " category="inline-code"></block>以複製二進位檔案並暫存組態：</block>
+  <block id="b21fafa1d62ca7813b4d271670c59379" category="paragraph">預期<block ref="6eae1314173532e3774a3a0c0562c5dc" prefix=" " category="inline-code"></block>和退出代碼為 6（警告）或 0。</block>
+  <block id="0614ae580480d609f45d908143248554" category="section-title">以 root 使用者身分執行<block ref="7271e605f277fd89fbb28d42f8ec0575" prefix=" " category="inline-code"></block>和<block ref="08030ad08b2b991d61b424afd8828758" prefix=" " category="inline-code"></block></block>
+  <block id="ce76c36fc6b5dd8bc4aa41d82f1e8ff0" category="paragraph"><block ref="08030ad08b2b991d61b424afd8828758" prefix="" category="inline-code"></block> 建立 <block ref="3810a6a610bef40c0a7363dd774d87a6" prefix=" " category="inline-code"></block> / <block ref="631e391a1dd104c58c129cf7d5a4d08c" prefix=" " category="inline-code"></block> / <block ref="ae709dc3414219bf2c9c8abc9ff6c67a" prefix=" " category="inline-code"></block> 包裝器並啟動 OHAS 。</block>
+  <block id="b3ff6019d8383c3567b6dcac620372ca" category="section-title"><block ref="7cea6cc86d5bdf9819f4db2ef6937ac5" prefix="" category="inline-code"></block> — 啟動 ASM 並建立<block ref="c097579d8cb34b312d396304e0b8f487" prefix=" " category="inline-code"></block></block>
+  <block id="c08defc39ee79a774de0940923405b1d" category="inline-xref">單次觸發&lt;block ref="6188ef2848d4d8eb4f4ed48cd6154082" prefix=" " category='inline-code'/&gt; — 完整的 HA_CONFIG 回應檔案</block>
+  <block id="2d49f3f41dc3a0d604a8ed8a2c7da56b" category="paragraph">對來自 <block ref="b48a0516a4c52f78b8c6c36d746121ac" category="inline-xref-macro-rx"></block> 的回應檔案執行組態助理（NETCA、ASMCA、CVU）— 這會建立 ASM 執行個體和 <block ref="c097579d8cb34b312d396304e0b8f487" prefix=" " category="inline-code"></block> 磁碟群組：</block>
+  <block id="b2ed9530f12046fa3758f714fc8777f2" category="paragraph">預計在 NETCA / ASMCA / CVU 之後<block ref="6b95da482f52dc7093ecbb9883b7852a" prefix=" " category="inline-code"></block>。</block>
+  <block id="93ed2251d17a3a2fab931580b9f1582d" category="section-title">建立<block ref="7805bd080c8df4b5e04ec773d62b82b2" prefix=" " category="inline-code"></block>和<block ref="80f3131b9dc238e16c645ddfad01b783" prefix=" " category="inline-code"></block>磁碟群組</block>
+  <block id="bc2bc650a0cf2bd1d32ffce6ccaaac81" category="paragraph">單次安裝只會建立<block ref="c097579d8cb34b312d396304e0b8f487" prefix=" " category="inline-code"></block>。透過<block ref="2f88ab4f1aea87019dee2980a5ea4867" prefix=" " category="inline-code"></block>建立另外兩個：</block>
+  <block id="a01b7485299dbd5cbd6fb2d7bbc0d6aa" category="section-title">驗證 ASM 和 Oracle Restart</block>
+  <block id="5ffa7d7e74b702f93242158a79a93a3a" category="inline-xref">建立&lt;block ref="7805bd080c8df4b5e04ec773d62b82b2" prefix=" " category='inline-code'/&gt;和&lt;block ref="80f3131b9dc238e16c645ddfad01b783" prefix=" " category='inline-code'/&gt;磁碟群組</block>
+  <block id="ce26f01bfae2e5fb146708c972b8739e" category="paragraph">在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上重複此部分。<block ref="2bb0b2911e6b14e33864a2330bd3d3b6" prefix=" " category="inline-code"></block>和<block ref="b48a0516a4c52f78b8c6c36d746121ac" category="inline-xref-macro-rx"></block>中的<block ref="5293afa6691aba6fcb1215cff8ee79ed" category="inline-xref-macro-rx"></block>模式會自動選擇該主機的 GCNV iSCSI 裝置。使用相同的 ASM 磁碟群組名稱 — Data Guard 透過 Oracle Net 進行複寫，而非透過儲存設備。</block>
+  <block id="795ea328e74e8402c26f4b4a005653f1" category="section-title">步驟 2：在每個 DB 主機上安裝 Oracle Database 26ai</block>
+  <block id="3032bb5f80cc5062f9ede1448c8f3949" category="paragraph">在<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>上執行此部分，然後在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上執行。待命資料庫是在<block ref="2325ddbeb97493991acefece02396eff" category="inline-xref-macro-rx"></block>中建立。</block>
+  <block id="28ab48133aa4c46d033ce715199b52c3" category="section-title">解壓縮 DB 主目錄和 RU 修補程式</block>
+  <block id="6027fe7360b1d70cf62ccc126cf543f1" category="paragraph">有關 RU 目錄配置和<block ref="7ce39dabc2cfedccd1c6a71515794c03" prefix=" " category="inline-code"></block> 路徑，請參閱 Oracle 文件。</block>
+  <block id="d801b8da00cfd010e24168a65e75fcd3" category="section-title">套用 RU 的僅限軟體靜默安裝</block>
+  <block id="987cc0fbf1b6d89415d8e4c3626469e3" category="paragraph">在 OL 8/9 上，請從<block ref="5235cc1b2d7c699a9b435b06f7e3c174" prefix=" " category="inline-code"></block> 行中省略<block ref="b82ce39ca01e6cecfdb6fcab38c5dce4" prefix=" " category="inline-code"></block>。</block>
+  <block id="8f24428f3a9c0fc7454920f0f9b9000d" category="paragraph">以<block ref="63a9f0ea7bb98050796b649e85481845" prefix=" " category="inline-code"></block>身分執行安裝後指令碼：</block>
+  <block id="e9f0a53f468d8b32dfcc84ba250a10fe" category="section-title">設定 Oracle 環境</block>
+  <block id="369aa96044ac762ab8dc36186b098fa6" category="paragraph">在每個資料庫主機<block ref="173ad268594dda99be99f9ab53fc66c5" prefix="(" category="inline-code"></block> 上<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>，<block ref="3ad0bd4699c7945297963a438f68d612" prefix=" " category="inline-code"></block> 在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>）：</block>
+  <block id="d2c5d9dca5cff0bb8e4e506eb1c507a2" category="paragraph">（在備用主機上使用 <block ref="2149247a998ff1efe97ec719204c2f29" prefix=" " category="inline-code"></block>。備用資料庫是在 <block ref="2325ddbeb97493991acefece02396eff" category="inline-xref-macro-rx"></block> 中建立。）</block>
+  <block id="9c6dc05580931a40c8d6159091769687" category="section-title">建立主資料庫（<block ref="9514606aa0e81e08de08842f8136911c" prefix="(" category="inline-code"></block> 僅限）</block>
+  <block id="76cdab9aa1d77dbdce41a29ca5df78ca" category="paragraph">對 ASM 磁碟群組以靜默模式執行<block ref="d45e719c39bbb431346849ed79ab89c0" prefix=" " category="inline-code"></block>：</block>
+  <block id="e84a744e65776d401eabd372c57f9857" category="inline-xref">步驟 2：待命：最小化 init.ora pfile、密碼檔案、NOMOUNT</block>
+  <block id="965b991e02cf0538142b5b6ddddae5c9" category="paragraph">將歸檔日誌指向 <block ref="7805bd080c8df4b5e04ec773d62b82b2" prefix=" " category="inline-code"></block>（備用日誌使用 <block ref="fd1521ad570f67485d657084a1a905d4" category="inline-xref-macro-rx"></block> 中的相符設定）：</block>
+  <block id="df43d9a032f76cf9f35c4df72e98a973" category="paragraph">驗證資料庫是否已在 Oracle Restart 下啟動：</block>
+  <block id="bc5fedb653a7c3519c3fd740fe85f25d" category="paragraph">*建立角色型應用程式服務（Oracle Restart）。*應用程式應透過<block ref="4645c43c671fdeae260367b4f2fb866a" prefix=" " category="inline-code"></block>連線，而非 DB 名稱，如此一來故障轉移就是透明的。</block>
+  <block id="acd771de807e8ac150ecf9644419193c" category="paragraph">啟用 Broker 後，<block ref="4645c43c671fdeae260367b4f2fb866a" prefix=" " category="inline-code"></block> 僅在 PRIMARY 上執行。跨 ASM 磁碟群組多工控制檔案；根據工作負載調整記憶體大小（本指南以 4 GB / 3 GB SGA 為例）。</block>
+  <block id="936051adc56db91d6f8864ea21ece29f" category="paragraph">在<block ref="3ad0bd4699c7945297963a438f68d612" prefix=" " category="inline-code"></block> 上<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>（專用磁碟區於<block ref="dd70af3bcff9c8357ee70338cabadf23" prefix=" " category="inline-code"></block> 上）。完成初始 primary 與 standby 設定後，然後<block ref="595ca2272dfa782b5226a19af86c4f37" category="inline-xref-macro-rx"></block>，執行 standby 完成任務，並<block ref="570201f6cc183155f279a9ee0f1dd27c" category="inline-xref-macro-rx"></block>。目標：primary READ WRITE；standby PHYSICAL STANDBY，已掛載，MRP 應用中。</block>
+  <block id="c64be7bf80cf12e9b96e4b2b52073d91" category="section-title">步驟 1：主要：SYS 密碼、密碼檔案和 DG 參數</block>
+  <block id="2c12aa0c02a34946b5a866755b080190" category="paragraph">開啟<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block> 為<block ref="a189c633d9995e11bf8607170ec9a4b8" prefix=" " category="inline-code"></block>：</block>
+  <block id="5601612151aba60574961e1e8d5febce" category="paragraph">開啟<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>：</block>
+  <block id="c15a253d69b770bc726ed46271032582" category="paragraph">在每台主機上透過 Oracle Restart 重新啟動：</block>
+  <block id="758bc5b22fd6bb6bff1b0e8ffc6255dc" category="paragraph"><block ref="1bc7636cf21813656343e52683e941aa" prefix="" category="inline-code"></block> 必須列出 <block ref="701c8da2e2528f6391b88ecdc624ae0e" prefix=" " category="inline-code"></block> 和 <block ref="1c6d7c413459631f3dcdadbc45d1ca3d" prefix=" " category="inline-code"></block>。</block>
+  <block id="a019c4084eedfd567702e9444115af51" category="paragraph">將主密碼檔案複製到備用（IAP<block ref="d6dabc84f8422e23c7543fa0791f209b" prefix=" " category="inline-code"></block>）：</block>
+  <block id="b6775709cb424d269cec2d5653f7bdaa" category="paragraph">在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上，設定所有權並建立備用 pfile。在 *primary* 上，先複製<block ref="46e839b4f4f04c535d7961774d097ca4" prefix=" " category="inline-code"></block>：</block>
+  <block id="685506ffb9c52d4724d0f4db522c0e9b" category="paragraph">在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上，在下方的區塊中將該值替換為<block ref="e63e42940889bea5eb6ebfd47a5a238b" prefix=" " category="inline-code"></block>：</block>
+  <block id="65950d148f30efa8bbf09d87304fb03f" category="paragraph">NOMOUNT 不包含任何資料檔案，直到 <block ref="595ca2272dfa782b5226a19af86c4f37" category="inline-xref-macro-rx"></block>。</block>
+  <block id="23bbaf39a9b33135d2cb8b67fba51eaa" category="inline-xref">Oracle 完成</block>
+  <block id="cee2df546018bfd30030c8f09d7558fc" category="paragraph">使用 *Google Cloud NetApp Volumes 複寫*（以 SnapMirror 為基礎、*預設模式*）、*磁碟區快照* 或 *複本* 在 <block ref="dd70af3bcff9c8357ee70338cabadf23" prefix="*" category="inline-code"></block> 中填入待命 ASM 磁碟區，然後執行 <block ref="289edb88c45052115560a4dc1eaccd93" category="inline-xref-macro-rx"></block>。iSCSI 和 ASM 與 <block ref="4ae55d7b9b6ac07a69a1c98e4d8c5546" category="inline-xref-macro-rx"></block> 相同。</block>
+  <block id="db974238714ca8de634a7ce1d083a14f" category="cell">API</block>
+  <block id="dbd56cfa99387d149de3a5873c30e3b4" category="cell"><block ref="758368f13db966aa3dba5a12085882cf" prefix="" category="inline-code"></block></block>
+  <block id="7459839e3e3ad94625734d093960ebd6" category="cell">建立 *Default-mode* Flex Unified 池<block ref="fc3ffd95288f0a9c0078286de2bc3467" prefix="(" category="inline-code"></block>）</block>
+  <block id="3e57501f3165ffc71e98dae94644bd7f" category="cell"><block ref="b15200f26d72da8bfe16e9d01ad9c57b" prefix="" category="inline-code"></block></block>
+  <block id="352a8ea7691c86e661a246713e7b8dc2" category="cell">iSCSI 磁碟區、主機群組、快照</block>
+  <block id="6b36d28ea1e5ec915fe09eafb6801b3b" category="cell"><block ref="dd2fb812573e33a308ac23e4caef3b66" prefix="" category="inline-code"></block></block>
+  <block id="231bdd36eddb3add6777610317675838" category="cell">跨位置 *Volume 複寫*</block>
+  <block id="48c7c41b72e1d678923ce3571aa65b2d" category="cell">步驟</block>
+  <block id="004bf6c9a40003140292e97330236c53" category="cell">行動</block>
+  <block id="c4ca4238a0b923820dcc509a6f75849b" category="cell">1</block>
+  <block id="763d1a0dde52d1fd91bdcb3bba067543" category="cell">主歸檔日誌 + 強制日誌記錄（<block ref="0aa1ce17ba7c90083ab1993f39b32f0b" category="inline-xref-macro-rx"></block>）</block>
+  <block id="c81e728d9d4c2f636f067f89cc14862c" category="cell">2</block>
+  <block id="00477ffde3eeceddbd94b3f467668221" category="cell">靜默：<block ref="52d95898daf10eaba00a9c07efb6bda0" prefix=" " category="inline-code"></block>、記錄 SCN、備用控制檔</block>
+  <block id="eccbc87e4b5ce2fe28308fd9f2a7baf3" category="cell">3</block>
+  <block id="43b53990d4d1ca1a2707c0fdff631215" category="inline-xref">建立磁碟區複寫</block>
+  <block id="d1342cae857f632372fcdba3b87b794f" category="inline-xref">切換 — 靜止、停止複寫、附加待命 LUN</block>
+  <block id="6948952b7a0970ea0810ec25df6e09d9" category="inline-xref">替代方案 — 快照種子</block>
+  <block id="aa441a6f01bc56294568c46ff78220f5" category="cell">Volume 複寫（<block ref="84fe70e5f2bdea3c8472398843c250e1" category="inline-xref-macro-rx"></block> 和 <block ref="66a44fc7a93076d7f9a201f18a16c2ed" category="inline-xref-macro-rx"></block>）或 Snapshot（<block ref="1fe090bf4a3df8bb672bb2d6c7e59b08" category="inline-xref-macro-rx"></block>）</block>
+  <block id="a87ff679a2f3e71d9181a67b7542122c" category="cell">4</block>
+  <block id="4dc767f87847d7940a6c997bd2d120f5" category="inline-xref">步驟 6：格式化並掛載&lt;block ref="a8946fa5f211c5345e3610710e471cb4" prefix=" " category='inline-code'/&gt;本機 Google Cloud NetApp Volumes iSCSI Volume</block>
+  <block id="545df81bf6f8665056f91045448a252a" category="cell">開啟<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>：iSCSI、多路徑、ASM 掛載（<block ref="e3e604617fdd62c104597da028962427" category="inline-xref-macro-rx"></block>、<block ref="c214ed23399347949af0c0b3367b59cf" category="inline-xref-macro-rx"></block> 和 <block ref="9bd553999d38e7cadc25828eda5ea50d" category="inline-xref-macro-rx"></block>）</block>
+  <block id="e4da3b7fbbce2345d7772b0674a318d5" category="cell">5</block>
+  <block id="bfa830b2b7309b5edbd577867bfb17ed" category="cell">Oracle 完成 — 恢復至 SCN、*已掛載*（<block ref="289edb88c45052115560a4dc1eaccd93" category="inline-xref-macro-rx"></block>）</block>
+  <block id="1679091c5a880faf6fb5e6087eb1b2dc" category="cell">6</block>
+  <block id="2b701ca7d71c8aff3dfb767d9038a67d" category="inline-xref">步驟 4：待命重做日誌檔案</block>
+  <block id="5876b5802a02d4fb6189d873597bd2c3" category="cell">SRL 重建（<block ref="17b3e040fa8435fd43de245d0dbe1b60" category="inline-xref-macro-rx"></block>）、MRP、broker（<block ref="570201f6cc183155f279a9ee0f1dd27c" category="inline-xref-macro-rx"></block>）</block>
+  <block id="7956b7dd32d04a8855f122e8445ad484" category="paragraph">RMAN 主動複製對小型實驗室仍然有效。*GCNV 複寫是生產備用資料庫植入的首選*。</block>
+  <block id="6afcb4f3a7966685ae11d809209f8b00" category="list-text"><block ref="be461f2f19fe40ccc0c8414ac6aa799f" prefix="" category="inline-code"></block> 支援磁碟區複寫。</block>
+  <block id="c6238f3076f03414fe6dbb90459cb0e9" category="list-text">兩個位於不同位置的 *預設模式* 池<block ref="79d523916802ef5e588f3a0e1f37e882" prefix="(" category="inline-code"></block>,<block ref="dd70af3bcff9c8357ee70338cabadf23" prefix=" " category="inline-code"></block>)。</block>
+  <block id="4cdf00c93e2bd3ac3179a53111653cab" category="list-text">連接到主池的來源磁碟區 <block ref="895d9ad3946d63f2384be29aafa0979d" prefix=" " category="inline-code"></block>；由複寫建立的目的地磁碟區。</block>
+  <block id="750957edeb9b4c00e9907a94eb6589ca" category="list-text">從 Cloud Shell 或工作站執行複寫，而不是從資料庫 VM 執行。</block>
+  <block id="f8645124721b8adedd49097b446aec68" category="paragraph">如有需要，請建立待命集區：</block>
+  <block id="679a6834c1819a8d18dda130b5954095" category="paragraph">等待 <block ref="dab686ada5c9477e04c2327657fc8f30" prefix=" " category="inline-code"></block> 為 *MIRRORED* / 初始同步完成。</block>
+  <block id="f7d65df1842e5b8e17b3ae3a6045ae66" category="paragraph">*主要：*</block>
+  <block id="1c7f26f53eca6373830e438a60535971" category="paragraph">允許完成最終複寫週期，然後：</block>
+  <block id="ad04544037208423c976de184a9443f4" category="paragraph">將目標磁碟區附加到<block ref="7fc5f45b049a449b87b1f9b25afbc331" prefix=" " category="inline-code"></block>（複製的 LUN 可能保留來源名稱 — 更新時使用<block ref="9fa83431ed1c0bffae3032ef4a6d7573" prefix=" " category="inline-code"></block>）：</block>
+  <block id="fd6bbc370938d4a09f36c62888a1d3c6" category="paragraph">將控制檔複製到<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>，然後在主要資料庫上：</block>
+  <block id="d50e85f8434011d66a715b40086cfdc8" category="paragraph">一次性種子：在來源磁碟區上建立快照 → 在待命資源池中從快照建立磁碟區（Cloud Console 或 API）。在附加到<block ref="7fc5f45b049a449b87b1f9b25afbc331" prefix=" " category="inline-code"></block>後，繼續<block ref="289edb88c45052115560a4dc1eaccd93" category="inline-xref-macro-rx"></block>。</block>
+  <block id="594239a62893e2e802a9b54f3c573f5a" category="section-title">備用 iSCSI 和 ASM（RMAN 之前）</block>
+  <block id="954c1cff0b808463b884948158ecd6a8" category="paragraph">在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上，登入*備用集區* iSCSI 入口網站。如果 ASM 磁碟標頭與主要命名相符，請使用*主要樣式多重路徑別名*（實驗室：<block ref="d3e577701c1159d29bb37a6897fe1195" prefix=" " category="inline-code"></block>、<block ref="325b416024d98d67ef0bf8431c889820" prefix=" " category="inline-code"></block>），在分割區上設定<block ref="89f1b02de5b3851d79f204e14b1a457d" prefix=" " category="inline-code"></block>、<block ref="cca4fb206ec312ebd25c1e99a02bbdb9" prefix=" " category="inline-code"></block>，然後：</block>
+  <block id="d55afb24fbd55b350639f4aa14b3e5ca" category="paragraph">轉換後，*重建備用重做日誌*（複製的控制檔案仍然包含 <block ref="b9be7946c3a48c46e42b29df36135b48" prefix=" " category="inline-code"></block> SRL 路徑 — 導致 <block ref="45d3f913b21d3b56afad08bf52beee16" prefix=" " category="inline-code"></block> / <block ref="c729c7564963a242b8612301629b9f19" prefix=" " category="inline-code"></block> 在主要資料庫上）。請參閱 <block ref="17b3e040fa8435fd43de245d0dbe1b60" category="inline-xref-macro-rx"></block>。</block>
+  <block id="9679c1da9528350ee52b0aaa37931ce9" category="paragraph">FSFO 需要在*兩個*主機上都進行設定。大小 ≥ 最大的主線上重做日誌；計數 = （每個執行緒的線上組數）+ 1。</block>
+  <block id="b261ae61d4cf2f97e1aa7212b93628bc" category="paragraph">*GCNV 種子產生後：* 刪除備用伺服器上的所有備用日誌檔案群組，並<block ref="c097579d8cb34b312d396304e0b8f487" prefix=" " category="inline-code"></block>僅<block ref="34d9ae742309e48f0b66756d53f849ea" prefix="(" category="inline-code"></block>在備用伺服器上重新建立）。<block ref="b9be7946c3a48c46e42b29df36135b48" prefix=" " category="inline-code"></block>下的複製路徑會導致<block ref="45d3f913b21d3b56afad08bf52beee16" prefix=" " category="inline-code"></block> / <block ref="c729c7564963a242b8612301629b9f19" prefix=" " category="inline-code"></block>直到重建完成。</block>
+  <block id="293c068c2a0a4255ddd5a7a8e134e804" category="paragraph">*主要<block ref="173ad268594dda99be99f9ab53fc66c5" prefix="(" category="inline-code"></block>）：*</block>
+  <block id="1ed0e256e075cc9ebc2a2ecdd88164a7" category="paragraph">*待機 <block ref="3ad0bd4699c7945297963a438f68d612" prefix="(" category="inline-code"></block>）在 GCNV 種子之後：*</block>
+  <block id="b9be1a8e0a9434b4f8afa7bec67d90c0" category="section-title">步驟 5：在待命資料庫上啟用 flashback 並啟動託管還原</block>
+  <block id="38e7f58a8d1391692c7407a353e68c19" category="paragraph">在啟動託管復原 *之前* 啟用閃回（MRP 處於活動狀態時無法啟用閃回）。</block>
+  <block id="daeecac992fb6cd4104c35be083b504c" category="paragraph"><block ref="96e899093a4f64e9b84092873ecb4162" prefix="" category="inline-code"></block> 可實現即時套用（重做會在抵達 SRL 時套用）。</block>
+  <block id="c7f9afee775efc258599e585d964fdba" category="section-title">步驟 6：在主要伺服器上啟用重做傳送</block>
+  <block id="501ee1ef18f9df70df5949b0586ec27c" category="paragraph"><block ref="2f8150ac9469ed6ebf4ca88b88dde4b5" prefix="" category="inline-code"></block> 之前特意將其設置為 <block ref="7f5e3f26a1a530c4cc7f9b80e963e9cc" prefix=" " category="inline-code"></block> 在 <block ref="fd1521ad570f67485d657084a1a905d4" category="inline-xref-macro-rx"></block> 中，是為了抑制備用伺服器創建期間的持續 <block ref="0089858c7dd22225c3de5be78ce29016" prefix=" " category="inline-code"></block> 錯誤。現在備用伺服器已準備就緒，請啟用它。</block>
+  <block id="bdffc58ccab03556b5a1c2ee289ff1f7" category="paragraph">切換<block ref="d0407d9670675ee36b404c4218a54bab" prefix=" " category="inline-code"></block> 到<block ref="b332708e4304e13c9b424e7465254954" prefix=" " category="inline-code"></block> 並強制執行日誌切換，以便第一輪重做立即傳送：</block>
+  <block id="9d8bb4c7d129f3129d6403ca792d40c1" category="inline-xref">步驟 1：在兩個資料庫上啟用 broker</block>
+  <block id="f2e4cb4f70ce70bdbe1fe99e172c13d3" category="paragraph">如果<block ref="2224873378f51ce78ccb598214ddcb89" prefix=" " category="inline-code"></block>顯示<block ref="0089858c7dd22225c3de5be78ce29016" prefix=" " category="inline-code"></block>，則重新啟動主伺服器。之後<block ref="4eaa53aeb4b865bec8911f2b33f7d10c" category="inline-xref-macro-rx"></block>，透過 DGMGRL 管理傳輸。</block>
+  <block id="54262be793f8c8c53336ae062920258c" category="section-title">步驟 7：驗證目標 Data Guard 狀態</block>
+  <block id="887d8fd91b7e1a1d6a5e8ec1e7ba8cc8" category="paragraph">在 *primary* <block ref="9514606aa0e81e08de08842f8136911c" prefix="(" category="inline-code"></block>）：</block>
+  <block id="9506e566b705f66a92a926b2d91eb3a3" category="paragraph">在 *standby* <block ref="307e0423cd7859aca914691fcbaacca5" prefix="(" category="inline-code"></block> 上 — Cloud Console *SSH* 或從您的工作站使用 IAP）：</block>
+  <block id="59d8e6829346a655b4e2efe2ff9cd9cb" category="paragraph">待機預期：<block ref="b054bbcaeeb7ee444b2efdecc2cf4dde" prefix=" " category="inline-code"></block>；<block ref="6a101baec717a0c2b7554a544ddf7a2f" prefix=" " category="inline-code"></block> 帶有 <block ref="1f38735e57e053804f3980f01073a19b" prefix=" " category="inline-code"></block>。</block>
+  <block id="eac1b4418af44742a4ce096fb47a4e71" category="paragraph">如果備用進程報告<block ref="483044c0a27107e78203087cbbf6d45c" prefix=" " category="inline-code"></block>但應用程式未執行，請在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上重新啟動 MRP：</block>
+  <block id="2a705826d45db40e40f108837b1cb764" category="section-title">步驟 8：向 Oracle Restart 註冊備用資料庫</block>
+  <block id="27f111f76ab683db9d1f77dca2ec5367" category="paragraph">在 GCNV 種子產生後，將備用設備註冊到 Restart，以便重新啟動後恢復 ASM、MOUNT 和 apply。</block>
+  <block id="88d88a8f7514b88b511e58e3196c107e" category="paragraph">在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上，擷取 spfile 位置並向 Oracle Restart 註冊（從查詢中替換<block ref="39f24d8681d2402426bc0254b28e4ca8" prefix=" " category="inline-code"></block>，通常在<block ref="c097579d8cb34b312d396304e0b8f487" prefix=" " category="inline-code"></block>下）：</block>
+  <block id="7382ab0ce8940a8d764a5e0c7b09acc6" category="paragraph">在<block ref="9514606aa0e81e08de08842f8136911c" prefix=" " category="inline-code"></block>，請確認主要的 Oracle Restart 資料庫資源已列出 ASM 磁碟群組的相依性。如果僅由 DBCA 註冊，請新增<block ref="a3ab56e5c68dae48c656f6149fd2626e" prefix=" " category="inline-code"></block>以及<block ref="e44f9e348e41cb272efa87387728571b" prefix=" " category="inline-code"></block>和<block ref="e52a9d7f668e660411384f7f4cfa3111" prefix=" " category="inline-code"></block>：</block>
+  <block id="528f04a6c8e9ab6d0a45ee906b3b6d52" category="paragraph">*在待命資料庫資源上新增相同的應用程式服務* <block ref="3ad0bd4699c7945297963a438f68d612" prefix="(" category="inline-code"></block> on<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>）。使用<block ref="64dfff6e31b96e0cbc5549861f919993" prefix=" " category="inline-code"></block>在兩端，以便<block ref="4645c43c671fdeae260367b4f2fb866a" prefix=" " category="inline-code"></block>在切換後可用：</block>
+  <block id="1b024149be686cd8ee5bd425f6e352fb" category="paragraph">在<block ref="307e0423cd7859aca914691fcbaacca5" prefix=" " category="inline-code"></block>上，確認待命資料庫資源：</block>
+  <block id="65e2cfb618dee5dd999fdad93779e5c0" category="paragraph">之後<block ref="a6b0d00baacd14c56c27b44792e734a9" prefix=" " category="inline-code"></block>，透過 *DGMGRL* 管理傳輸和角色（而不是臨時<block ref="9d2a8946ccbded26bb1775427bfc37d9" prefix=" " category="inline-code"></block> SQL）。</block>
+  <block id="e4de0042dcc7c786f7f6ddd14c367e01" category="paragraph">在 *primary* 和 *standby* 資料庫主機上：</block>
+  <block id="7fcab2c5b43cdf2569500ae5863fbab5" category="inline-xref">步驟 5：將 Observer 以 systemd 單元啟動</block>
+  <block id="be61dc9b5a11062afaf00930696d5bf6" category="paragraph">在*主資料庫主機*上，使用作業系統驗證進行連線（資料庫主機上不需要來自 <block ref="3f54d7f082b381eaddb4be4be13df81f" category="inline-xref-macro-rx"></block> 的 Observer 錢包）：</block>
+  <block id="67db5365c3b258a72b5c26bdcae15e6b" category="paragraph">僅在 Observer 主機上使用<block ref="060d6517833ab8e61b51eb32ccedd603" prefix=" " category="inline-code"></block>，且需在自動登入錢包存在後使用。請勿在<block ref="b684595e149fba1c667223b300ce301d" prefix=" " category="inline-code"></block>命令列中輸入密碼。</block>
+  <block id="240ba9d8a514d5462d332e5e2b4e5259" category="inline-xref">步驟 3：設定 FSFO 內容並啟用</block>
+  <block id="87cc4946c3611fa199557115946a6251" category="paragraph">立即執行<block ref="51be8c2d480dfa8386ab67552d875dc8" prefix=" " category="inline-code"></block>——它會在您嘗試切換之前發現孤立的資料檔案、遺失的 SRL、重做套用未執行以及其他常見問題。任何<block ref="059e9861e0400dfbe05c98a841f3f96b" prefix=" " category="inline-code"></block>或非 NULL<block ref="bb1ca97ec761fc37101737ba0aa2e7c5" prefix=" " category="inline-code"></block>都必須在<block ref="1e50eb0fb14dafced24bbc2ae3e645b5" category="inline-xref-macro-rx"></block>之前修復。</block>
+  <block id="69bb7c2c9e12b752761ebbfd6e95a351" category="section-title">步驟 2：確認 flashback（FSFO 自動恢復的必要條件）</block>
+  <block id="9d0499063285b7adb2cb16b599f1ea52" category="paragraph">在*兩台*主機上確認<block ref="5915cf8468db7b8035e489d020bb8412" prefix=" " category="inline-code"></block>，然後再啟用 FSFO：</block>
+  <block id="34cd217186280692ff0d91ecd32e798b" category="paragraph">僅在 *主要* 伺服器上，如果尚未設定保留：</block>
+  <block id="36cace7426375eff3116339b95314405" category="paragraph">憑證儲存在自動登入錢包中，絕不會顯示在<block ref="b684595e149fba1c667223b300ce301d" prefix=" " category="inline-code"></block> 命令列（對<block ref="8812c36aa5ae336c2a77bf63211d899a" prefix=" " category="inline-code"></block> /<block ref="eed23a3d2310f43954a09887cb36b398" prefix=" " category="inline-code"></block> 可見）。僅在 Observer 上使用<block ref="17c8111e46ce374e6a8685bbfa346ba3" prefix=" " category="inline-code"></block> 連接。</block>
+  <block id="5e70ae9485e9fef5226c828e4932c9d6" category="list-text">*使用專用帳戶：*將專用 Data Guard 管理帳戶（例如，<block ref="9c5feafb5e3cc87dcc19ba27c46c1b5b" prefix=" " category="inline-code"></block>）的憑證儲存在錢包中，而不是 <block ref="834c3d60d84e11303f54a7dabaacb567" prefix=" " category="inline-code"></block>。</block>
+  <block id="355e6dc579f9a2494ac8fe0d69c85d40" category="list-text">*需要自動登入錢包：* Observer systemd 服務需要一個自動登入錢包<block ref="71e796326554d16610b5039dc97b84cf" prefix="(" category="inline-code"></block>）。如果<block ref="71e796326554d16610b5039dc97b84cf" prefix=" " category="inline-code"></block>在執行<block ref="13f20f2533b4fd8761279f9006c67a59" prefix=" " category="inline-code"></block>後缺少該錢包，請使用 Instant Client *tools* 套件或資料庫主目錄中的<block ref="fb690b2120a681e6eead8d230367816f" prefix=" " category="inline-code"></block>建立自動登入錢包，然後重新新增已儲存的憑證。</block>
+  <block id="3abbcae4779dea2bb36bad2edfa04521" category="list-text">使用兩位成員的憑證在 Observer 上建立錢包：</block>
+  <block id="c07c0502e62d2a71c9a04cdb0844ffd7" category="list-text">Systemd 單元 + 日誌輪替：</block>
+  <block id="e3c6c14a60d971a11add738158732ffe" category="paragraph">從主要資料庫驗證 — Observer 必須讀取<block ref="a5afd6edd5336d91316964e493936858" prefix=" " category="inline-code"></block>（<block ref="99c8ce56e7ab246445d3b134724428f3" prefix=" " category="inline-code"></block> Observer 會以無訊息方式暫停 FSFO）：</block>
+  <block id="3bc2c0a95c3a5778da1c4bb024c15a52" category="section-title">步驟 6：測試 FSFO （切換和容錯移轉）</block>
+  <block id="68e7ca2683a553da37942fd93755ca42" category="paragraph">*計劃性切換：*</block>
+  <block id="18711b8dcfadb8571b6b785642834b37" category="paragraph">*計劃外故障轉移：*在測試視窗內使用 VM *Reset*（當機式測試）；正常的 *Stop* 可能不會觸發 FSFO。Tail<block ref="3ca876beeb71c8704cdac200d57596a6" prefix=" " category="inline-code"></block> on<block ref="c7f5bde16987c7d543c988c216354ee9" prefix=" " category="inline-code"></block>；完成後恢復拓撲結構。</block>
+  <block id="1b8810be65a2475a4f3e2e362dbfda33" category="sidebar">使用 Google Cloud NetApp Volumes 部署 Oracle Database 26ai 高可用性</block>
 </blocks>

@@ -1,0 +1,1760 @@
+---
+sidebar: sidebar 
+permalink: oracle/gcnv-oracle-deployment.html 
+keywords: oracle database, google cloud netapp volumes, gcnv, iscsi, data guard, fsfo, high availability, disaster recovery, google compute engine 
+summary: 使用 Google Cloud NetApp Volumes 和 iSCSI 區塊儲存，在 Google Compute Engine 上部署 Oracle Database 26ai 高可用性。本指南將介紹如何佈建運算執行個體和儲存、安裝 Oracle Grid Infrastructure 和 Oracle Database、初始化備用資料庫以及配置具有快速啟動容錯移轉功能的 Oracle Data Guard。 
+---
+= 使用 Google Cloud NetApp Volumes 部署 Oracle Database 26ai 高可用性
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+本指南說明如何佈建運算執行個體和儲存設備、安裝 Oracle Grid Infrastructure 和 Oracle Database、初始化待命資料庫，以及設定具有快速啟動容錯移轉功能的 Oracle Data Guard。
+
+
+
+== 開始之前
+
+開始之前、請確認您擁有下列項目：
+
+* 一個擁有 Compute Engine、VPC 網路、防火牆組態、IAM 和 NetApp Volumes 權限的 Google Cloud 專案
++
+[cols="1,2"]
+|===
+| 任務 | 所需存取 
+
+
+| 建立 Compute Engine VM | 運算執行個體管理員（或同等職位） 
+
+
+| 防火牆 / 防火牆原則 | 網路管理員或委派的原則管理員 
+
+
+| 建立 GCNV 資源池和磁碟區 | NetApp Volumes 管理員 
+
+
+| 設定 PSA | 主機專案中的網路管理員 
+
+
+| 透過 IAP 進行 SSH | IAP 安全通道使用者 + OS Login（如果使用） 
+|===
+* 已啟用 NetApp Volumes API
+* 為目標區域設定的 VPC 和子網路
+* 為 Google Cloud NetApp Volumes 配置的專用服務存取（PSA）
+* 所有必要的虛擬機器均需使用 Oracle Linux 10
+* 已為資料庫主機和 Observer 主機設定 DNS 和主機名稱解析
+* 適用於 Oracle Database 26ai 和 Grid Infrastructure 的 Oracle 安裝媒體和修補程式檔案
+* 熟悉 Oracle Data Guard、Oracle Restart 和 iSCSI 儲存概念
+* 所有虛擬機器均已設定時間同步。
++
+您可以使用以下命令：
+
++
+[source, bash]
+----
+gcloud services enable netapp.googleapis.com
+chronyc tracking
+timedatectl
+----
+
+
+
+
+== 本指南中使用的範例組態
+
+本指南使用以下部署假設：
+
+* 三台 Google Compute Engine 虛擬機器：
++
+** `oracdb1` 主要資料庫
+** `oracdb2` 適用於待命資料庫
+** `oradg-obs` 快速啟動容錯移轉觀察器
+
+
+* 每個資料庫區域一個 GCNV Flex Unified 儲存池
+* 每個資料庫主機五個 GCNV iSCSI 磁碟區
+* Oracle Data Guard Broker 與 Fast-Start Failover 實作自動故障轉移
+* 每個資料庫主機都擁有專用儲存空間；主主機和備用主機不共用 iSCSI 磁碟區
+
+
+將命令中的所有範例值替換為您環境中的值，包括主機名稱、IP 位址、區域、專案名稱、入口網站 IP、密碼和 Oracle 媒體檔案名稱。
+
+
+
+== 目標
+
+在此程序中、您需要完成下列工作：
+
+* 為主資料庫、備用資料庫和 Observer 配置 Compute Engine 執行個體
+* 為 Oracle 設定 GCNV iSCSI 儲存設備和多重路徑裝置
+* 在兩台資料庫主機上安裝 Oracle Grid Infrastructure 和 Oracle Database 26ai
+* 建立主要 Oracle 資料庫
+* 使用 Google Cloud NetApp Volumes 複寫、快照或複本初始化待命資料庫
+* 設定 Oracle Data Guard Broker、Fast-Start Failover 和 Observer
+
+
+
+
+== 部署選項
+
+本節比較了在 Google Compute Engine (GCE) 上使用 Google Cloud NetApp Volumes (GCNV) iSCSI 區塊儲存部署 Oracle Database 的實際 HA/DR 模式。此外，本節還重點介紹了 GCNV 複寫如何加速待命資料庫的初始化。開始之前，請使用此矩陣選擇層級。本指南實作 Prod HA（Data Guard + FSFO）－即最後一列。
+
+[cols="1,1,1,1,1,1,1"]
+|===
+| 環境 | 要求 | 建議架構 | HA | 災難復原 | 自動化 | 主要優勢 
+
+
+| 開發 / 測試 | 最低成本 | 單一執行個體 | 否 | 是的 | 否 | Snapshot 複本 
+
+
+| Prod Basic（重新啟動） | 減少因當機造成的停機時間 | + Oracle Restart | 否 | 是的 | 僅限本機 | 自動重新啟動 
+
+
+| Prod HA（無 DG） | 可接受手動 DR | + Snapshot / RMAN | 部分 | 是的 | 部分 | GCNV 複製還原 
+
+
+| 生產 HA（DG + FSFO） | 真正的 HA（無需 DBA） | Data Guard ＋ FSFO | 是的 | 是的 | 完整 | 真正的 HA + 快速容錯移轉 
+|===
+*HA / DR / 自動化：* 是 = 達到層級目標；否 = 不在範圍內；部分 = 僅限儲存層級或手動步驟。
+
+
+
+== 您所在層級需要閱讀的章節
+
+根據您想要達到的 HA 層級，請閱讀下方矩陣中的各部分。例如，如果您想要使用 Data Guard 和 FSFO 的 Prod HA，請閱讀所有部分。如果您想要使用 Restart 的 Dev/Test 或 Prod Basic，請只閱讀第一欄。
+
+[cols="1a,1a,1a"]
+|===
+| 開發 / 測試或正式作業基礎版（重新啟動） | 生產 HA（無 Data Guard） | 生產 HA（Data Guard + FSFO） 
+
+
+ a| 
+<<prerequisites,開始之前>>
+
+<<example-configuration,本指南中使用的範例組態>>
+
+<<objectives,目標>>
+
+<<deployment-options,部署選項>>
+
+<<overview,概況>>
+
+<<architecture,架構>>
+
+<<provision-compute-engine,佈建 Compute Engine>>
+
+<<provision-gcnv-iscsi-volumes,配置 GCNV iSCSI 磁碟區>>
+
+<<install-oracle-software,安裝 Oracle 軟體>>
+
+<<create-primary-database,建立主資料庫>>
+ a| 
+<<prerequisites,開始之前>>
+
+<<example-configuration,本指南中使用的範例組態>>
+
+<<objectives,目標>>
+
+<<deployment-options,部署選項>>
+
+<<overview,概況>>
+
+<<architecture,架構>>
+
+<<provision-compute-engine,佈建 Compute Engine>>
+
+<<provision-gcnv-iscsi-volumes,配置 GCNV iSCSI 磁碟區>>
+
+<<install-oracle-software,安裝 Oracle 軟體>>
+
+<<create-primary-database,建立主資料庫>>
+
+<<create-standby-database,建立備用資料庫>>（僅透過 <<gcnv-standby-initialization,步驟 3：GCNV 待命初始化>>）
+ a| 
+<<prerequisites,開始之前>>
+
+<<example-configuration,本指南中使用的範例組態>>
+
+<<objectives,目標>>
+
+<<deployment-options,部署選項>>
+
+<<overview,概況>>
+
+<<architecture,架構>>
+
+<<provision-compute-engine,佈建 Compute Engine>>
+
+<<provision-gcnv-iscsi-volumes,配置 GCNV iSCSI 磁碟區>>
+
+<<install-oracle-software,安裝 Oracle 軟體>>
+
+<<create-primary-database,建立主資料庫>>
+
+<<create-standby-database,建立備用資料庫>>
+
+<<broker-fsfo-observer,設定 Data Guard Broker、FSFO 和 Observer>>
+
+|===
+
+
+== 概況
+
+此架構利用 Google Cloud NetApp Volumes (GCNV) iSCSI 儲存和 Oracle Data Guard 在 Google Cloud 上部署 Oracle Database 26ai 高可用性。GCNV 提供高效能區塊儲存，並支援儲存層的待命初始化。Data Guard 提供持續同步、切換和快速啟動容錯移轉功能。
+
+[cols="1,2"]
+|===
+| 層 | 角色 
+
+
+| GCNV | 區塊儲存設備、待命初始化、儲存設備複寫 
+
+
+| Data Guard | 持續同步、重做套用、切換、FSFO 
+|===
+與 RMAN 主動複製相比，GCNV 複寫透過在儲存層而非 Oracle 資料庫通道上移動資料，顯著縮短了待命初始化時間。當您的環境支援時，建議優先使用 GCNV 複寫進行正式作業待命植入。
+
+[cols="1,3"]
+|===
+| 元件 | 詳細資料 
+
+
+| 資料庫主機 | `oracdb1` / `oracdb2` — 不同的區域，每個區域包含五個 GCNV iSCSI Volume 
+
+
+| 儲存 | `/u01` + ASM `+DATA` `+RECO` `+FRA` 於 GCNV（EXTERNAL） 
+
+
+| 待命初始化 | GCNV 複寫 / 快照 / 複本 → Oracle 完成 → Data Guard 
+
+
+| HA | 重新啟動、實體待命 （MOUNTED）、Broker、FSFO、Observer (`oradg-obs`） 
+
+
+| 應用程式 | 服務 `orclapp` 
+|===
+*分區：*每個資料庫區域一個 GCNV Flex Unified 池；每個主機一個專用磁碟區。啟動磁碟僅用於作業系統。*不適用：*TDE、RAC、NVMe/TCP、OEM、Active Data Guard（備用磁碟保持 *MOUNTED* 狀態）。
+
+
+
+== 架構
+
+
+
+=== 參考圖
+
+該架構提供三條獨立的資料路徑。儲存複製和 Data Guard 重做傳輸是兩條獨立的路徑。
+
+.GCNV Oracle 部署 - 參考架構
+image::oracle-26ai-ha.png[Oracle 26ai HA on GCNV - 參考架構]
+
+*儲存複製 ≠ 重做複製。*路徑 1 在 GCNV 層移動資料檔以進行備用資料庫初始化。路徑 2 在切換後保持資料庫同步。路徑 3 透過 Oracle Data Guard Broker 和 Observer 協調角色轉換和自動故障轉移。
+
+
+
+=== 平台角色
+
+[cols="1,3"]
+|===
+| 平台 | 提供 
+
+
+| GCNV | iSCSI 磁碟區、快照、磁碟區複寫（基準 + 增量）— 待命初始化 
+
+
+| Data Guard | 重做傳輸、MRP、Broker、FSFO — 持續同步與容錯移轉 
+|===
+GCNV 複製會執行基準複本，然後根據原則執行遞增區塊更新。待命資料庫初始化後，Data Guard 會擁有重做套用和 FSFO。
+
+
+
+=== 拓撲結構和儲存設備
+
+[cols="1,1,1,1,2"]
+|===
+| 角色 | VM | 區域 | GCNV 池 | 磁碟區（每台主機） 
+
+
+| 基本的 | `oracdb1` | `us-west1-a` | `oracle-pool-a` | `ora_<host>_u01`, `ora_<host>_data_01/02`, `ora_<host>_arch_01`, `ora_<host>_fra_01` 
+
+
+| 支援 | `oracdb2` | `us-west1-b` | `oracle-pool-b` | 相同的命名模式 
+
+
+| Observer | `oradg-obs` | `us-west1-c` | — | 僅開機磁碟 
+|===
+[cols="1,1,2"]
+|===
+| 儲存 | 備份 | 使用 
+
+
+| 作業系統 | GCE 啟動磁碟 | 僅限作業系統 
+
+
+| `/u01` | GCNV iSCSI | Grid/DB 主目錄、暫存環境 (XFS) 
+
+
+| `+DATA` / `+RECO` / `+FRA` | GCNV iSCSI | ASM EXTERNAL — 資料檔、歸檔、FRA 
+|===
+.機器類型
+本指南中的範例 `n4-highmem-8`；OLTP 工作負載通常使用 `c4-standard-*`。
+
+
+
+== 佈建 Compute Engine
+
+
+
+=== 步驟 1：建立 VM
+
+在同一區域的不同可用區建立三個虛擬機器（實現區域故障隔離）。優先選擇碳排放量較低的區域，以滿足總體擁有成本 (TCO) 和可持續性要求，同時滿足延遲和合規性要求（例如 `us-west1` vs `us-central1`）。可以使用 Cloud Console、 `gcloud`、Terraform 或您常用的佈建工作流程。
+
+[cols="1,1,1,2,2,2"]
+|===
+| VM | 區域 | 機器類型 | 開機磁碟 | 網路 | 目的 
+
+
+| `oracdb1` | `us-west1-a` | `n4-highmem-8` （範例）或  `c4-standard-*` | OL 10、50 GB Hyperdisk Balanced（僅作業系統） | `oracle-vpc` / `oracle-subnet`、gVNIC | 主要資料庫 
+
+
+| `oracdb2` | `us-west1-b` | 與主要相同 | OL 10、50 GB Hyperdisk Balanced（僅作業系統） | 相同 | 備用資料庫 
+
+
+| `oradg-obs` | `us-west1-c` | `e2-medium` | OL 10、20 GB Hyperdisk Balanced | 相同 | FSFO Observer（僅限 Instant Client） 
+|===
+[NOTE]
+====
+*網路層級：*當延遲或輸出流量（>~200 GiB/ 月）很重要時選擇 Premium；在開發 / 測試環境中選擇 Standard 以降低 TCO。
+
+====
+在所有三個裝置上啟用 *Secure Boot*、*vTPM* 和 *Integrity Monitoring*。啟動磁碟僅包含作業系統。 `/u01`Grid/DB 主目錄、暫存環境和所有 ASM 資料使用 GCNV iSCSI 磁碟區（請參閱<<provision-gcnv-iscsi-volumes,配置 GCNV iSCSI 磁碟區>>）—*不要*為 `/u01`附加單獨的 GCE 資料磁碟。
+
+
+
+=== 步驟 2：VPC 防火牆 — 在所有三個區域中允許 TCP/1521
+
+允許所有區域中所有三個 VM `/32` 內部 IP 位址之間的 TCP/1521 通訊(`us-west1-a/b/c`。使用具有相同允許清單的 VPC 防火牆規則或防火牆原則。缺少規則會中斷重做傳輸和 Observer 連線。
+
+*Cloud Console：* VPC 網路 → 防火牆 → 建立規則 `allow-oracle-net-dbhosts` on `oracle-vpc` — Ingress、Allow、sources = 三個 `/32` IP、TCP 1521。如有需要，鏡像 egress。從每台 VM 進行驗證：
+
+[source, bash]
+----
+sudo dnf install -y nmap-ncat
+
+for tgt in <oracdb1-ip> <oracdb2-ip> <oradg-obs-ip>; do
+  nc -zv -w 5 "$tgt" 22
+  nc -zv -w 5 "$tgt" 1521
+done
+----
+[cols="1,1,3"]
+|===
+| 連接埠 | 預期 | 意義 
+
+
+| `22` | 已連接 | SSH 路徑有效 
+
+
+| `1521` | 連線被拒絕 | 防火牆已開啟；Grid 監聽器在以下期間啟動 <<install-grid-infrastructure,步驟 1：在每個資料庫主機上安裝 Oracle Grid Infrastructure（Oracle Restart）>> 
+
+
+| 任一 | 逾時 | 修復防火牆或路由 
+|===
+從所有三個 VM 向每個對等 IP 位址執行命令。
+
+
+
+=== 步驟 3：主機名稱、DNS 和 `/etc/hosts`
+
+每次虛擬機器啟動後，設定主機名稱並在所有三個主機上新增 `/etc/hosts`項目，以便 Oracle Net、代理程式和觀察者能夠進行正向/反向名稱解析。
+
+[source, bash]
+----
+# Run on each VM, substituting the local short name (oracdb1, oracdb2, oradg-obs)
+sudo hostnamectl set-hostname <this-host>.example.internal
+
+# Run on every VM (same content)
+sudo tee -a /etc/hosts >/dev/null <<EOF
+
+# Oracle DG peers + FSFO Observer
+<oracdb1-ip>    oracdb1.example.internal    oracdb1
+<oracdb2-ip>    oracdb2.example.internal    oracdb2
+<oradg-obs-ip>  oradg-obs.example.internal  oradg-obs
+EOF
+----
+替換為 GCE 內部 IP 位址（可在 *Compute Engine → VM instances* 清單的 _Internal IP_ 欄位中查看）。
+
+從每台主機進行驗證：
+
+[source, bash]
+----
+ping -c 1 oracdb1 && ping -c 1 oracdb2 && ping -c 1 oradg-obs
+----
+
+
+=== 步驟 4：OS 基準（僅限資料庫主機）
+
+[NOTE]
+====
+*前提條件：* 出站 HTTPS 到 `yum.oracle.com`（Cloud NAT 或私有子網路上的內部鏡像）。
+
+====
+在 `oracdb1`和 `oracdb2`上執行（Observer 設定涵蓋於<<install-instant-client-on-observer,步驟 4：在 Observer 主機上安裝 Oracle Instant Client>>）。
+
+[source, bash]
+----
+# Oracle 26ai preinstall (package name varies by repo)
+sudo dnf install -y oracle-ai-database-preinstall-26ai \
+  || sudo dnf install -y oracle-database-preinstall-26ai \
+  || sudo dnf install -y oracle-database-preinstall-23ai
+
+# grid user + asm groups
+sudo groupadd -g 54327 asmadmin; sudo groupadd -g 54328 asmdba; sudo groupadd -g 54329 asmoper
+sudo useradd -u 54322 -g oinstall -G dba,oper,asmadmin,asmdba,asmoper grid
+sudo passwd -l grid; sudo passwd -l oracle
+sudo usermod -a -G asmdba,asmadmin oracle
+
+# iSCSI, multipath, OUI JDK
+sudo dnf install -y iscsi-initiator-utils device-mapper-multipath sg3_utils \
+  java-21-openjdk-headless libxcrypt-compat
+
+# THP and time
+cat /sys/kernel/mm/transparent_hugepage/enabled   # expect [never]
+timedatectl
+chronyc tracking
+----
+[NOTE]
+====
+*安全態勢 (OL 10)：* 下列指令將 SELinux 設定為寬容模式並停用 `firewalld`。這只是最低限度的實驗室態勢。如需強化的 SELinux 和防火牆組態，請參閱貴組織的安全基準。
+
+====
+[source, bash]
+----
+sudo setenforce 0
+sudo sed -i 's/^SELINUX=.*/SELINUX=permissive/' /etc/selinux/config
+sudo systemctl disable --now firewalld
+
+sudo cp -n /etc/iscsi/iscsid.conf /etc/iscsi/iscsid.conf.orig
+sudo sed -i '/^[#[:space:]]*node\.session\.timeo\.replacement_timeout/d' /etc/iscsi/iscsid.conf
+echo "node.session.timeo.replacement_timeout = 120" | sudo tee -a /etc/iscsi/iscsid.conf
+sudo systemctl enable --now iscsid
+
+sudo reboot
+----
+
+
+=== 步驟 5：擷取 iSCSI 啟動器名稱 (IQN)
+
+重新開機後，擷取每個資料庫主機的 IQN。您將使用這些 IQN 在<<create-host-groups,步驟 2：建立主機群組>>中建立 GCNV 主機群組。
+
+[source, bash]
+----
+sudo cat /etc/iscsi/initiatorname.iscsi
+# InitiatorName=iqn.1994-05.com.redhat:abc123def456
+----
+重複上述步驟 `oracdb2`。記錄每個主機的 IQN — 每個主機一個主機群組，這樣單一主機的重新啟動或 IQN 重新產生就不會影響其他主機的 GCNV iSCSI 磁碟區可見度。
+
+[NOTE]
+====
+*複製虛擬機器：* 如果兩台主機共用同一個 IQN，則重新產生 `oracdb2`（停止 `iscsi`、清除 `/var/lib/iscsi/nodes/*`、新建 `InitiatorName` 在 `/etc/iscsi/initiatorname.iscsi`、重新啟動 `iscsid`）。
+
+====
+
+
+== 配置 GCNV iSCSI 磁碟區
+
+
+
+=== 步驟 1：為每個資料庫區域建立一個 GCNV Flex Unified iSCSI 儲存資源池
+
+每個資料庫區域一個 Flex Unified 池 （參見 <<architecture,架構>>）。
+
+為此 HA 設計建立兩個集區（對每個區域重複上述步驟）：
+
+[cols="1,1,2"]
+|===
+| 資源池名稱 | 區域 | 使用者 
+
+
+| `oracle-pool-a` | `us-west1-a` | `oracdb1`（主要） 
+
+
+| `oracle-pool-b` | `us-west1-b` | `oracdb2`（待命） 
+|===
+*NetApp Volumes → Storage pools → Create* 為每個池：
+
+* *服務等級：* Flex （非 Premium）
+* *類型：*統一
+* *Zone：*符合資料庫 VM 區域(`us-west1-a` / `us-west1-b`)
+* *PSA:* 已連接到 `oracle-vpc`
+* *容量：* 根據工作負載進行調整；當重做、備份或還原超出預設餘裕時，使用自訂佈建的處理量 / IOPS（每個集區最高可達 5120 MiB/s 或 160K IOPS，依產品限制而定）
+
+
+等待 `READY`。根據資料庫佔用空間調整池大小（<<create-gcnv-iscsi-volumes,步驟 3：建立 GCNV iSCSI 磁碟區>>中的大小僅為範例）。
+
+[NOTE]
+====
+*預設模式（本指南）：* Flex Unified 資源池使用預設模式(`--mode=default`）。使用 Cloud Console 或 `gcloud netapp`建立資源池和 iSCSI 磁碟區。磁碟區複寫、快照和複本使用 Google Cloud API（<<gcnv-standby-initialization,步驟 3：GCNV 待命初始化>>）。
+
+====
+
+
+=== 步驟 2：建立主機群組（每個資料庫主機一個）
+
+為每個資料庫主機建立一個主機群組，以便每個 VM 只能看到自己的磁碟區－主要和待命不得共用 GCNV iSCSI 磁碟區。Observer 沒有 GCNV 資源。在 Cloud Console 中：
+
+. *NetApp 磁碟區 → 主機群組 → 建立*
+. *名稱：* `oracdb1-hg` · *區域：* `us-west1` · *類型：* iSCSI 啟動器 · *作業系統類型：* Linux
+. *主機：*從 `oracdb1`貼上 IQN（ `/etc/iscsi/initiatorname.iscsi`的值）
+. *描述：*「Oracle 主要主機 oracdb1」 · *建立*
+. 重複上述步驟， `oracdb2-hg` 使用  `oracdb2` 的 IQN
+
+
+
+
+=== 步驟 3：建立 GCNV iSCSI 磁碟區（每個資料庫主機）
+
+每個資料庫主機在其區域池中獲得五個 GCNV iSCSI 磁碟區－一個用於 `/u01`，四個用於 ASM 後端設備：
+
+[cols="2,1,3,2"]
+|===
+| GCNV iSCSI 磁碟區 | 大小 | 使用 | 多重路徑別名 
+
+
+| `ora_<host>_u01` | 100 GiB | `/u01` GCNV iSCSI 磁碟區 — Grid/Oracle 主目錄、暫存區 | `/dev/mapper/ora_<host>_u01` 
+
+
+| `ora_<host>_data_01` | 50 GiB | ASM `+DATA` | `/dev/mapper/ora_<host>_data_01` 
+
+
+| `ora_<host>_data_02` | 50 GiB | ASM `+DATA`（條紋） | `/dev/mapper/ora_<host>_data_02` 
+
+
+| `ora_<host>_arch_01` | 100 GiB | ASM `+RECO` | `/dev/mapper/ora_<host>_arch_01` 
+
+
+| `ora_<host>_fra_01` | 100 GiB | ASM `+FRA` | `/dev/mapper/ora_<host>_fra_01` 
+|===
+磁碟區名稱：僅使用字母、數字和底線（不使用連字號）。
+
+[NOTE]
+====
+*最小佈局（僅用於驗證）：* 每個主機兩個 LUN (`*_data`, `*_reco`）with `arch_01p1`→`+RECO` 和 `arch_01p2`→`+FRA` 對於實驗室來說是可以接受的；生產環境每個 <<create-gcnv-iscsi-volumes,步驟 3：建立 GCNV iSCSI 磁碟區>> 使用五個磁碟區。
+
+====
+在 `oracdb1`：在 `oracle-pool-a`主機群組 `oracdb1-hg`中建立所有五個磁碟區。
+
+在 `oracdb2`：在 `oracle-pool-b`主機群組 `oracdb2-hg`中建立所有五個磁碟區。
+
+*NetApp Volumes → Volumes → Create* — iSCSI、正確的資源池和主機群組、Linux。每個資源池的記錄：
+
+* iSCSI 入口網站 IP 位址→ `<ISCSI_PORTAL_1>`, `<ISCSI_PORTAL_2>`（主池入口網站位於 `oracdb1`；備用池入口網站位於 `oracdb2`——它們可能不同）
+* 從雲端主控台取得磁碟區序號 — 與主機發現的 WWID 一起使用 <<configure-iscsi-and-multipath,步驟 4：為 GCNV iSCSI 磁碟區設定 Linux iSCSI 和多重路徑>>
+
+
+
+
+=== 步驟 4：為 GCNV iSCSI 磁碟區設定 Linux iSCSI 和多重路徑
+
+在 `oracdb1`上使用該主機的資源池入口網站執行，然後在 `oracdb2`上使用待命資源池入口網站執行。
+
+如果主機出口受到限制，則允許每個資料庫 VM 透過 TCP/3260 存取其 GCNV iSCSI 入口網站 IP（此外還允許 VM 間 TCP/1521 來自 <<vpc-firewall-allow-1521,步驟 2：VPC 防火牆 — 在所有三個區域中允許 TCP/1521>>）。
+
+. 探索目標、登入並持續節點啟動：
++
+[source, bash]
+----
+sudo iscsiadm --mode discovery --op update --type sendtargets --portal <ISCSI_PORTAL_1>
+sudo iscsiadm --mode discovery --op update --type sendtargets --portal <ISCSI_PORTAL_2>
+sudo iscsiadm --mode node --op update --name node.startup --value automatic
+sudo iscsiadm --mode node -l all
+sudo systemctl enable --now iscsid iscsi multipathd
+sudo iscsiadm --mode session         # expect 10 sessions (5 GCNV iSCSI volumes × 2 portals)
+sudo lsblk -o NAME,SIZE,WWN,VENDOR,MODEL
+----
+
+
+重新開機後，請在啟動 Oracle 之前重新檢查：
+
++
+
+[source, bash]
+----
+sudo iscsiadm --mode session
+sudo multipath -ll
+----
+. 設定 `device-mapper-multipath`：
+
+
+[source, bash]
+----
+sudo tee /etc/multipath.conf >/dev/null <<'EOF'
+defaults {
+    find_multipaths     yes
+    user_friendly_names yes
+}
+blacklist {
+    devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
+    devnode "^hd[a-z]"
+    devnode "^cciss.*"
+}
+EOF
++
+sudo systemctl enable --now multipathd
+sudo multipath -ll
+----
+. 將主機發現的 WWID 別名加入 `/etc/multipath.conf`（不要猜測 — `multipath.conf` 不會展開 shell 變數）。發現 WWID：
++
+[source, bash]
+----
+sudo multipath -ll
+for dev in /dev/sd*; do
+  [ -b "$dev" ] || continue
+  printf '%s: ' "$dev"
+  sudo /usr/lib/udev/scsi_id --whitelisted --device="$dev" 2>/dev/null || true
+  echo
+done
+----
++
+將該主機的具體別名附加到 `/etc/multipath.conf`，然後 `sudo systemctl restart multipathd`。
+
++
+開啟 `oracdb1`，附加：
+
+
+
+[source]
+----
+multipaths {
+    multipath { wwid <host-discovered-wwid-for-u01>      alias ora_oracdb1_u01     }
+    multipath { wwid <host-discovered-wwid-for-data-01>  alias ora_oracdb1_data_01 }
+    multipath { wwid <host-discovered-wwid-for-data-02>  alias ora_oracdb1_data_02 }
+    multipath { wwid <host-discovered-wwid-for-arch-01>  alias ora_oracdb1_arch_01 }
+    multipath { wwid <host-discovered-wwid-for-fra-01>   alias ora_oracdb1_fra_01  }
+}
+----
++ 在 `oracdb2`上，使用相同的模式建立 `ora_oracdb2_*`別名，然後：
+
+[source, bash]
+----
+sudo systemctl restart multipathd
+ls -l /dev/mapper/ora_$(hostname -s)_*
+----
+
+
+=== 步驟 5：對 GCNV iSCSI 磁碟區上的 ASM 備份裝置進行分割
+
+將四個 ASM 後端裝置（非 `u01`）分別分割成一個 GPT 分割區。ASM 使用原始分割區。在每台主機上執行。所有後續區塊使用 `HOST=$(hostname -s)`自動選擇本機主機的裝置。
+
+[source, bash]
+----
+HOST=$(hostname -s)        # oracdb1 on the primary, oracdb2 on the standby
+for dev in /dev/mapper/ora_${HOST}_data_01 \
+           /dev/mapper/ora_${HOST}_data_02 \
+           /dev/mapper/ora_${HOST}_arch_01 \
+           /dev/mapper/ora_${HOST}_fra_01; do
+  sudo parted -s "$dev" mklabel gpt
+  sudo parted -s "$dev" mkpart primary 0% 100%
+done
+sudo partprobe
+sudo systemctl reload multipathd
+ls /dev/mapper/ora_${HOST}_*p1     # expect 4 partitions
+
+HOST=$(hostname -s)
+sudo tee /etc/udev/rules.d/99-oracle-asm.rules >/dev/null <<'EOF'
+KERNEL=="dm-*", ENV{DM_UUID}=="part?-mpath-*", ENV{DM_NAME}=="ora_oracdb*_*p?", \
+    OWNER="grid", GROUP="asmadmin", MODE="0660"
+EOF
+
+sudo udevadm control --reload-rules
+for part in /dev/mapper/ora_${HOST}_*p1; do
+  dm=$(readlink -f "$part" | xargs basename)
+  sudo udevadm trigger --action=change --name-match="/dev/${dm}"
+done
+sudo udevadm settle
+ls -lL /dev/mapper/ora_${HOST}_*p1    # grid:asmadmin 0660
+----
+
+
+=== 步驟 6：格式化並掛載 `/u01`本機 GCNV iSCSI Volume
+
+ `ora_<host>_u01` GCNV iSCSI 磁碟區包含 Grid 主目錄、Oracle 主目錄和暫存目錄。在多路徑裝置上格式化為 XFS（未針對 ASM 進行分割）。在 `/etc/fstab`中使用 UUID（而非共用檔案系統標籤）：
+
+[source, bash]
+----
+HOST=$(hostname -s)
+U01_DEV=/dev/mapper/ora_${HOST}_u01
+ls -l "$U01_DEV"
+
+sudo mkfs.xfs -f "$U01_DEV"
+U01_UUID=$(sudo blkid -s UUID -o value "$U01_DEV")
+
+sudo mkdir -p /u01
+echo "UUID=${U01_UUID} /u01 xfs defaults,_netdev,nofail,x-systemd.requires=iscsi.service,x-systemd.requires=multipathd.service,x-systemd.after=iscsi.service,x-systemd.after=multipathd.service 0 0" | sudo tee -a /etc/fstab
+sudo mount -a
+
+sudo mkdir -p /u01/app/oraInventory /u01/app/26ai/grid /u01/app/grid \
+  /u01/app/oracle/product/26ai/db_1 /u01/stage
+sudo chown -R grid:oinstall /u01/app/oraInventory /u01/app/26ai /u01/app/grid
+sudo chown -R oracle:oinstall /u01/app/oracle /u01/stage
+sudo chmod -R 775 /u01/app /u01/stage
+----
+重新開機一次並確認 `/u01` 掛載在<<install-oracle-software,安裝 Oracle 軟體>> 之前。
+
+
+
+== 安裝 Oracle 軟體
+
+在 <<create-primary-database,建立主資料庫>> 之前，先在每個資料庫主機上執行 Grid，然後再執行資料庫主目錄安裝程式。
+
+
+
+=== 步驟 1：在每個資料庫主機上安裝 Oracle Grid Infrastructure（Oracle Restart）
+
+在 `oracdb1`上執行本節所有內容，然後在 `oracdb2`上重複此操作。兩台主機都將擁有各自的 Grid 主目錄、ASM 實例和磁碟組—— Data Guard 透過 Oracle Net 進行複製，而不是透過儲存進行複製。
+
+
+
+==== 將 Oracle 二進位檔案暫存於 `/u01`
+
+[source, bash]
+----
+sudo chown oracle:oinstall /u01/stage && sudo chmod 775 /u01/stage
+# Upload GoldImages, RU, OPatch to /u01/stage.
+----
+
+
+==== 原地解壓縮 Grid 主目錄
+
+26ai Grid GoldImage 安裝方式為：在目標 Grid 主目錄中解壓縮安裝。
+
+[source, bash]
+----
+sudo -u grid bash -c '
+cd /u01/app/26ai/grid
+unzip -q /u01/stage/LINUX.X64_<RELEASE>_grid_home.zip
+'
+sudo chown -R grid:oinstall /u01/app/26ai/grid
+----
+*Grid RU 層級。*本指南假設 Grid GoldImage 已包含您已驗證的 RU。如果 Grid GoldImage 版本低於目標 RU，請在設定期間使用 Oracle 文件中記錄的 `gridSetup.sh -applyRU`流程修補 Grid 主目錄，或使用已捆綁 RU 的 Grid GoldImage。請確保 Grid 和 Database 主目錄的修補程式層級保持一致。
+
+
+
+==== 單次觸發 `gridSetup` — 完整的 HA_CONFIG 回應檔案
+
+在每台主機上建置 `/tmp/grid.rsp`(`responseFileVersion`是必須的；替換 `HOST`並使用強密碼）：
+
+[source, bash]
+----
+HOST=$(hostname -s)
+
+sudo -u grid bash -c "cat > /tmp/grid.rsp <<RSP
+oracle.install.responseFileVersion=/oracle/install/rspfmt_crsinstall_response_schema_v23.0.0
+INVENTORY_LOCATION=/u01/app/oraInventory
+installOption=HA_CONFIG
+ORACLE_BASE=/u01/app/grid
+clusterUsage=GENERAL_PURPOSE
+OSDBA=asmdba
+OSOPER=asmoper
+OSASM=asmadmin
+storageOption=FLEX_ASM_STORAGE
+sysasmPassword=WelcomeOracle1!
+asmsnmpPassword=WelcomeOracle1!
+diskGroupName=DATA
+redundancy=EXTERNAL
+auSize=4
+diskString=/dev/mapper/ora_${HOST}_*p*
+diskList=/dev/mapper/ora_${HOST}_data_01p1,/dev/mapper/ora_${HOST}_data_02p1
+managementOption=NONE
+RSP"
+sudo -u grid chmod 600 /tmp/grid.rsp
+----
+執行 `gridSetup`以複製二進位檔案並暫存組態：
+
+[source, bash]
+----
+sudo -u grid bash -c '
+export ORACLE_HOME=/u01/app/26ai/grid
+export ORACLE_BASE=/u01/app/grid
+cd /u01/app/26ai/grid
+./gridSetup.sh -silent -responseFile /tmp/grid.rsp -ignorePrereqFailure
+'
+----
+預期 `Successfully Setup Software with warning(s).`和退出代碼為 6（警告）或 0。
+
+
+
+==== 以 root 使用者身分執行 `orainstRoot.sh`和 `root.sh`
+
+[source, bash]
+----
+sudo /u01/app/oraInventory/orainstRoot.sh
+sudo /u01/app/26ai/grid/root.sh
+----
+`root.sh` 建立  `crsctl` /  `srvctl` /  `asmcmd` 包裝器並啟動 OHAS 。
+
+
+
+==== `gridSetup.sh -executeConfigTools` — 啟動 ASM 並建立 `+DATA`
+
+對來自  的回應檔案執行組態助理（NETCA、ASMCA、CVU）— 這會建立 ASM 執行個體和  `+DATA` 磁碟群組：
+
+[source, bash]
+----
+sudo -u grid bash -c '
+export ORACLE_HOME=/u01/app/26ai/grid
+export ORACLE_BASE=/u01/app/grid
+cd /u01/app/26ai/grid
+./gridSetup.sh -silent -executeConfigTools -responseFile /tmp/grid.rsp
+'
+----
+預計在 NETCA / ASMCA / CVU 之後 `Successfully Configured Software.`。
+
+
+
+==== 建立 `+RECO`和 `+FRA`磁碟群組
+
+單次安裝只會建立 `+DATA`。透過 `asmca`建立另外兩個：
+
+[source, bash]
+----
+HOST=$(hostname -s)
+
+sudo -u grid bash -c "
+export ORACLE_HOME=/u01/app/26ai/grid
+export ORACLE_SID=+ASM
+
+\$ORACLE_HOME/bin/asmca -silent -createDiskGroup \
+  -diskGroupName RECO \
+  -disk /dev/mapper/ora_${HOST}_arch_01p1 \
+  -redundancy EXTERNAL -au_size 4
+
+\$ORACLE_HOME/bin/asmca -silent -createDiskGroup \
+  -diskGroupName FRA \
+  -disk /dev/mapper/ora_${HOST}_fra_01p1 \
+  -redundancy EXTERNAL -au_size 4
+"
+----
+
+
+==== 驗證 ASM 和 Oracle Restart
+
+[source, bash]
+----
+sudo -u grid ORACLE_HOME=/u01/app/26ai/grid ORACLE_SID=+ASM \
+  /u01/app/26ai/grid/bin/sqlplus -s / as sysasm <<'SQL'
+SELECT name, total_mb, free_mb, state FROM v$asm_diskgroup ORDER BY name;
+SQL
+
+sudo /u01/app/26ai/grid/bin/crsctl stat res -t
+# Expected ONLINE: ora.DATA.dg, ora.RECO.dg, ora.FRA.dg, ora.LISTENER.lsnr, ora.asm, ora.cssd, ora.evmd.
+----
+在 `oracdb2`上重複此部分。 `HOST=$(hostname -s)`和中的模式會自動選擇該主機的 GCNV iSCSI 裝置。使用相同的 ASM 磁碟群組名稱 — Data Guard 透過 Oracle Net 進行複寫，而非透過儲存設備。
+
+
+
+=== 步驟 2：在每個 DB 主機上安裝 Oracle Database 26ai
+
+在 `oracdb1`上執行此部分，然後在 `oracdb2`上執行。待命資料庫是在<<create-standby-database,建立備用資料庫>>中建立。
+
+
+
+==== 解壓縮 DB 主目錄和 RU 修補程式
+
+[source, bash]
+----
+sudo su - oracle
+cd /u01/app/oracle/product/26ai/db_1
+unzip -q /u01/stage/LINUX.X64_<RELEASE>_db_home.zip
+rm -rf OPatch
+unzip -q /u01/stage/p6880880_<base>_Linux-x86-64.zip                    # latest OPatch
+unzip -q /u01/stage/p<RU_PATCH>_<base>_Linux-x86-64.zip -d /u01/stage   # latest 26ai RU
+----
+有關 RU 目錄配置和 `-applyRU` 路徑，請參閱 Oracle 文件。
+
+
+
+==== 套用 RU 的僅限軟體靜默安裝
+
+[source, bash]
+----
+sudo -u oracle tee /u01/stage/dbinstall.rsp >/dev/null <<'EOF'
+oracle.install.option=INSTALL_DB_SWONLY
+UNIX_GROUP_NAME=oinstall
+INVENTORY_LOCATION=/u01/app/oraInventory
+ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+ORACLE_BASE=/u01/app/oracle
+oracle.install.db.InstallEdition=EE
+oracle.install.db.OSDBA_GROUP=dba
+oracle.install.db.OSOPER_GROUP=oper
+oracle.install.db.OSBACKUPDBA_GROUP=backupdba
+oracle.install.db.OSDGDBA_GROUP=dgdba
+oracle.install.db.OSKMDBA_GROUP=kmdba
+oracle.install.db.OSRACDBA_GROUP=racdba
+oracle.install.db.rootconfig.executeRootScript=false
+EOF
+
+sudo -u oracle bash -c '
+export CV_ASSUME_DISTID=OEL10    # OEL9 / OEL8.10 if cluvfy requires it
+cd /u01/app/oracle/product/26ai/db_1
+./runInstaller -applyRU /u01/stage/<RU_PATCH> \
+  -applyOneOffs /u01/stage/39292021 \
+  -silent -ignorePrereqFailure -responseFile /u01/stage/dbinstall.rsp
+'
+----
+在 OL 8/9 上，請從 `-applyOneOffs` 行中省略 `runInstaller`。
+
+以 `root`身分執行安裝後指令碼：
+
+[source, bash]
+----
+sudo /u01/app/oracle/product/26ai/db_1/root.sh
+----
+
+
+==== 設定 Oracle 環境
+
+在每個資料庫主機(`orcl` 上 `oracdb1`， `orcls` 在 `oracdb2`）：
+
+[source, bash]
+----
+sudo -u oracle tee -a /home/oracle/.bash_profile >/dev/null <<'EOF'
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export ORACLE_SID=orcl                          # use 'orcls' on oracdb2
+export GRID_HOME=/u01/app/26ai/grid
+export PATH=$ORACLE_HOME/bin:$GRID_HOME/bin:$PATH
+export TNS_ADMIN=$ORACLE_HOME/network/admin
+EOF
+----
+（在備用主機上使用  `ORACLE_SID=orcls`。備用資料庫是在 <<create-standby-database,建立備用資料庫>> 中建立。）
+
+
+
+== 建立主資料庫（(`oracdb1` 僅限）
+
+對 ASM 磁碟群組以靜默模式執行 `dbca`：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export PATH=$ORACLE_HOME/bin:$PATH
+
+dbca -silent -createDatabase \
+  -templateName General_Purpose.dbc \
+  -gdbname orcl -sid orcl \
+  -characterSet AL32UTF8 -nationalCharacterSet AL16UTF16 \
+  -sysPassword "ChangeMe!1" -systemPassword "ChangeMe!1" \
+  -emConfiguration NONE \
+  -datafileDestination +DATA -storageType ASM \
+  -recoveryAreaDestination +FRA -recoveryAreaSize 25000 \
+  -enableArchive true -archiveLogMode AUTO \
+  -memoryMgmtType AUTO_SGA -totalMemory 4096 \
+  -databaseType MULTIPURPOSE \
+  -createAsContainerDatabase true -numberOfPDBs 1 \
+  -pdbName orclpdb -pdbAdminPassword "ChangeMe!1" \
+  -ignorePreReqs
+'
+----
+將歸檔日誌指向  `+RECO`（備用日誌使用 <<standby-init-ora-and-nomount,步驟 2：待命：最小化 init.ora pfile、密碼檔案、NOMOUNT>> 中的相符設定）：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export ORACLE_SID=orcl
+$ORACLE_HOME/bin/sqlplus -s / as sysdba <<SQL
+ALTER SYSTEM SET log_archive_dest_1='\''LOCATION=+RECO VALID_FOR=(ALL_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=orcl'\'' SCOPE=BOTH;
+ALTER PLUGGABLE DATABASE ALL OPEN;
+ALTER PLUGGABLE DATABASE ALL SAVE STATE;
+EXIT
+SQL
+'
+----
+驗證資料庫是否已在 Oracle Restart 下啟動：
+
+[source, bash]
+----
+sudo /u01/app/26ai/grid/bin/srvctl status database -d orcl
+# Expected: Database is running
+
+sudo -u oracle sqlplus -s / as sysdba <<<"SELECT name, open_mode, log_mode FROM v\$database;"
+# Expected: ORCL, READ WRITE, ARCHIVELOG
+----
+*建立角色型應用程式服務（Oracle Restart）。*應用程式應透過 `orclapp`連線，而非 DB 名稱，如此一來故障轉移就是透明的。
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+export GRID_HOME=/u01/app/26ai/grid
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export PATH=$ORACLE_HOME/bin:$GRID_HOME/bin:$PATH
+
+srvctl add service \
+  -db orcl \
+  -service orclapp \
+  -pdb orclpdb \
+  -role PRIMARY \
+  -policy AUTOMATIC
+
+srvctl start service -db orcl -service orclapp
+srvctl status service -db orcl -service orclapp
+'
+----
+啟用 Broker 後， `orclapp` 僅在 PRIMARY 上執行。跨 ASM 磁碟群組多工控制檔案；根據工作負載調整記憶體大小（本指南以 4 GB / 3 GB SGA 為例）。
+
+
+
+== 建立備用資料庫
+
+在 `orcls` 上 `oracdb2`（專用磁碟區於 `oracle-pool-b` 上）。完成初始 primary 與 standby 設定後，然後<<gcnv-standby-initialization,步驟 3：GCNV 待命初始化>>，執行 standby 完成任務，並<<broker-fsfo-observer,設定 Data Guard Broker、FSFO 和 Observer>>。目標：primary READ WRITE；standby PHYSICAL STANDBY，已掛載，MRP 應用中。
+
+
+
+=== 步驟 1：主要：SYS 密碼、密碼檔案和 DG 參數
+
+開啟 `oracdb1` 為 `oracle`：
+
+[source, bash]
+----
+sudo su - oracle
+. ~/.bash_profile        # ORACLE_SID=orcl, ORACLE_HOME set
+----
+開啟 `oracdb2`：
+
+[source, bash]
+----
+GRID_HOME=/u01/app/26ai/grid
+sudo -u grid tee "$GRID_HOME/network/admin/listener.ora" >/dev/null <<'EOF'
+LISTENER =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = oracdb2.example.internal)(PORT = 1521)))
+
+SID_LIST_LISTENER =
+  (SID_LIST =
+    (SID_DESC = (GLOBAL_DBNAME = orcls)        (ORACLE_HOME = /u01/app/oracle/product/26ai/db_1) (SID_NAME = orcls))
+    (SID_DESC = (GLOBAL_DBNAME = orcls_DGMGRL) (ORACLE_HOME = /u01/app/oracle/product/26ai/db_1) (SID_NAME = orcls)))
+EOF
+----
+在每台主機上透過 Oracle Restart 重新啟動：
+
+[source, bash]
+----
+sudo -u grid bash -c '
+export GRID_HOME=/u01/app/26ai/grid
+export ORACLE_HOME=$GRID_HOME
+$GRID_HOME/bin/srvctl stop listener
+$GRID_HOME/bin/srvctl start listener
+$GRID_HOME/bin/lsnrctl status
+'
+----
+`lsnrctl status` 必須列出  `<SID>` 和  `<SID>_DGMGRL`。
+
+
+
+=== 步驟 2：待命：最小化 init.ora pfile、密碼檔案、NOMOUNT
+
+將主密碼檔案複製到備用（IAP `gcloud compute scp`）：
+
+[source, bash]
+----
+PRIMARY_ZONE=us-west1-a       # zone of oracdb1
+STANDBY_ZONE=us-west1-b       # zone of oracdb2
+
+gcloud compute scp \
+  oracdb1:/u01/app/oracle/product/26ai/db_1/dbs/orapworcl ./orapworcl \
+  --zone=$PRIMARY_ZONE --tunnel-through-iap
+
+gcloud compute scp \
+  ./orapworcl oracdb2:/u01/app/oracle/product/26ai/db_1/dbs/orapworcls \
+  --zone=$STANDBY_ZONE --tunnel-through-iap
+----
+在 `oracdb2`上，設定所有權並建立備用 pfile。在 *primary* 上，先複製 `*.compatible`：
+
+[source, bash]
+----
+# On oracdb1
+sudo -u oracle sqlplus -s / as sysdba \
+  <<<"SELECT value FROM v\$parameter WHERE name='compatible';"
+----
+在 `oracdb2`上，在下方的區塊中將該值替換為 `<COPY_FROM_PRIMARY>`：
+
+[source, bash]
+----
+sudo -u oracle mkdir -p /u01/app/oracle/admin/orcls/adump
+sudo chown oracle:oinstall /u01/app/oracle/product/26ai/db_1/dbs/orapworcls
+sudo chmod 0600 /u01/app/oracle/product/26ai/db_1/dbs/orapworcls
+
+sudo -u oracle tee /u01/app/oracle/product/26ai/db_1/dbs/initorcls.ora >/dev/null <<'EOF'
+*.db_name='orcl'
+*.db_unique_name='orcls'
+*.audit_file_dest='/u01/app/oracle/admin/orcls/adump'
+*.diagnostic_dest='/u01/app/oracle'
+*.compatible='<COPY_FROM_PRIMARY>'
+*.sga_target=3072m
+*.pga_aggregate_target=1024m
+*.processes=320
+*.remote_login_passwordfile='EXCLUSIVE'
+*.standby_file_management='AUTO'
+*.fal_server='orcl'
+*.log_archive_config='DG_CONFIG=(orcl,orcls)'
+*.log_archive_dest_1='LOCATION=+RECO VALID_FOR=(ALL_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=orcls'
+*.log_archive_dest_2='SERVICE=orcl AFFIRM SYNC VALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) DB_UNIQUE_NAME=orcl'
+*.log_archive_dest_state_2='DEFER'
+*.log_archive_format='%t_%s_%r.arc'
+*.dg_broker_start=TRUE
+*.undo_tablespace='UNDOTBS1'
+*.open_cursors=300
+*.db_create_file_dest='+DATA'
+*.db_create_online_log_dest_1='+DATA'
+*.db_recovery_file_dest='+FRA'
+*.db_recovery_file_dest_size=25000m
+EOF
+
+echo "orcls:/u01/app/oracle/product/26ai/db_1:N" | sudo tee -a /etc/oratab
+
+sudo -u oracle bash -c '
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export ORACLE_SID=orcls
+sqlplus / as sysdba <<SQL
+STARTUP NOMOUNT PFILE=/u01/app/oracle/product/26ai/db_1/dbs/initorcls.ora;
+EXIT
+SQL
+'
+----
+NOMOUNT 不包含任何資料檔案，直到 <<gcnv-standby-initialization,步驟 3：GCNV 待命初始化>>。
+
+
+
+=== 步驟 3：GCNV 待命初始化
+
+使用 *Google Cloud NetApp Volumes 複寫*（以 SnapMirror 為基礎、*預設模式*）、*磁碟區快照* 或 *複本* 在 *`oracle-pool-b` 中填入待命 ASM 磁碟區，然後執行 <<oracle-finalize,Oracle 完成>>。iSCSI 和 ASM 與 <<provision-gcnv-iscsi-volumes,配置 GCNV iSCSI 磁碟區>> 相同。
+
+[cols="1,2"]
+|===
+| API | 使用 
+
+
+| `gcloud netapp storage-pools` | 建立 *Default-mode* Flex Unified 池(`--mode=default`） 
+
+
+| `gcloud netapp volumes` | iSCSI 磁碟區、主機群組、快照 
+
+
+| `gcloud netapp volumes replications` | 跨位置 *Volume 複寫* 
+|===
+[cols="1,4"]
+|===
+| 步驟 | 行動 
+
+
+| 1 | 主歸檔日誌 + 強制日誌記錄（<<primary-sys-password-and-dg-params,步驟 1：主要：SYS 密碼、密碼檔案和 DG 參數>>） 
+
+
+| 2 | 靜默： `BEGIN BACKUP`、記錄 SCN、備用控制檔 
+
+
+| 3 | Volume 複寫（<<create-volume-replications,建立磁碟區複寫>> 和 <<cutover-quiesce-stop-repl-attach,切換 — 靜止、停止複寫、附加待命 LUN>>）或 Snapshot（<<snapshot-seed,替代方案 — 快照種子>>） 
+
+
+| 4 | 開啟 `oracdb2`：iSCSI、多路徑、ASM 掛載（<<configure-iscsi-and-multipath,步驟 4：為 GCNV iSCSI 磁碟區設定 Linux iSCSI 和多重路徑>>、<<partition-asm-backing-devices,步驟 5：對 GCNV iSCSI 磁碟區上的 ASM 備份裝置進行分割>> 和 ） 
+
+
+| 5 | Oracle 完成 — 恢復至 SCN、*已掛載*（<<oracle-finalize,Oracle 完成>>） 
+
+
+| 6 | SRL 重建（<<standby-redo-log-files,步驟 4：待命重做日誌檔案>>）、MRP、broker（<<broker-fsfo-observer,設定 Data Guard Broker、FSFO 和 Observer>>） 
+|===
+RMAN 主動複製對小型實驗室仍然有效。*GCNV 複寫是生產備用資料庫植入的首選*。
+
+
+
+==== 先決條件
+
+* `gcloud netapp` 支援磁碟區複寫。
+* 兩個位於不同位置的 *預設模式* 池(`oracle-pool-a`, `oracle-pool-b`)。
+* 連接到主池的來源磁碟區  `oracdb1-hg`；由複寫建立的目的地磁碟區。
+* 從 Cloud Shell 或工作站執行複寫，而不是從資料庫 VM 執行。
+
+
+[source, bash]
+----
+export PROJECT=<your-gcp-project>
+export LOC_A=us-west1-a
+export LOC_B=us-west1-b
+export DEST_POOL="projects/${PROJECT}/locations/${LOC_B}/storagePools/oracle-pool-b"
+----
+如有需要，請建立待命集區：
+
+[source, bash]
+----
+gcloud netapp storage-pools create oracle-pool-b \
+  --project="${PROJECT}" --location="${LOC_B}" \
+  --service-level=flex --type=unified --mode=default \
+  --capacity=1024 --network=name=<your-vpc>
+----
+
+
+==== 建立磁碟區複寫
+
+[source, bash]
+----
+gcloud netapp volumes replications create repl-oracdb2-data \
+  --project="${PROJECT}" --location="${LOC_A}" --volume=oracdb1_data \
+  --replication-schedule=EVERY_10_MINUTES \
+  --destination-volume-parameters="storage_pool=${DEST_POOL},volume_id=oracdb2_data,share_name=oracdb2_data"
+
+gcloud netapp volumes replications create repl-oracdb2-reco \
+  --project="${PROJECT}" --location="${LOC_A}" --volume=oracdb1_reco \
+  --replication-schedule=EVERY_10_MINUTES \
+  --destination-volume-parameters="storage_pool=${DEST_POOL},volume_id=oracdb2_reco,share_name=oracdb2_reco"
+----
+等待  `mirrorState` 為 *MIRRORED* / 初始同步完成。
+
+
+
+==== 切換 — 靜止、停止複寫、附加待命 LUN
+
+*主要：*
+
+[source]
+----
+ALTER DATABASE BEGIN BACKUP;
+SELECT CURRENT_SCN FROM V$DATABASE;
+ALTER DATABASE CREATE STANDBY CONTROLFILE AS '/tmp/orcls_stby.ctl';
+----
+允許完成最終複寫週期，然後：
+
+[source, bash]
+----
+gcloud netapp volumes replications stop repl-oracdb2-data \
+  --project="${PROJECT}" --location="${LOC_A}" --volume=oracdb1_data --force
+
+gcloud netapp volumes replications stop repl-oracdb2-reco \
+  --project="${PROJECT}" --location="${LOC_A}" --volume=oracdb1_reco --force
+----
+將目標磁碟區附加到 `oracdb2-hg`（複製的 LUN 可能保留來源名稱 — 更新時使用 `name=oracdb1_data_lun`）：
+
+[source, bash]
+----
+HG=$(gcloud netapp host-groups describe oracdb2-hg --project="${PROJECT}" \
+  --location=us-west1 --format='value(name)')
+
+gcloud netapp volumes update oracdb2_data --project="${PROJECT}" --location="${LOC_B}" \
+  --block-devices="name=oracdb1_data_lun,host-groups=${HG},os-type=LINUX"
+----
+將控制檔複製到 `oracdb2`，然後在主要資料庫上：
+
+[source]
+----
+ALTER DATABASE END BACKUP;
+----
+
+
+==== 替代方案 — 快照種子
+
+一次性種子：在來源磁碟區上建立快照 → 在待命資源池中從快照建立磁碟區（Cloud Console 或 API）。在附加到 `oracdb2-hg`後，繼續<<oracle-finalize,Oracle 完成>>。
+
+
+
+==== 備用 iSCSI 和 ASM（RMAN 之前）
+
+在 `oracdb2`上，登入*備用集區* iSCSI 入口網站。如果 ASM 磁碟標頭與主要命名相符，請使用*主要樣式多重路徑別名*（實驗室： `ora_oracdb1_data_01`、 `ora_oracdb1_arch_01`），在分割區上設定 `asm_diskstring='/dev/mapper/ora_oracdb1_*p*'`、 `chown grid:asmadmin`，然後：
+
+[source]
+----
+ALTER DISKGROUP DATA MOUNT FORCE;
+ALTER DISKGROUP RECO MOUNT FORCE;
+ALTER DISKGROUP FRA MOUNT FORCE;
+----
+
+
+==== Oracle 完成
+
+[source]
+----
+STARTUP NOMOUNT;
+RESTORE STANDBY CONTROLFILE FROM '/tmp/orcls_stby.ctl';
+ALTER DATABASE MOUNT;
+RECOVER DATABASE UNTIL SCN <quiesce_scn>;
+ALTER DATABASE CONVERT TO PHYSICAL STANDBY;
+SHUTDOWN IMMEDIATE;
+STARTUP MOUNT;
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION;
+----
+轉換後，*重建備用重做日誌*（複製的控制檔案仍然包含  `+DATA/ORCL/…` SRL 路徑 — 導致  `ORA-19527` /  `ORA-16086` 在主要資料庫上）。請參閱 <<standby-redo-log-files,步驟 4：待命重做日誌檔案>>。
+
+
+
+=== 步驟 4：待命重做日誌檔案
+
+FSFO 需要在*兩個*主機上都進行設定。大小 ≥ 最大的主線上重做日誌；計數 = （每個執行緒的線上組數）+ 1。
+
+*GCNV 種子產生後：* 刪除備用伺服器上的所有備用日誌檔案群組，並 `+DATA`僅(`db_create_file_dest='+DATA'`在備用伺服器上重新建立）。 `+DATA/ORCL/…`下的複製路徑會導致 `ORA-19527` /  `ORA-16086`直到重建完成。
+
+*主要(`orcl`）：*
+
+[source]
+----
+ALTER SYSTEM SET db_create_file_dest='+DATA' SCOPE=BOTH;
+ALTER DATABASE ADD STANDBY LOGFILE THREAD 1 ('+DATA') SIZE 1024M;
+-- repeat (online log groups + 1) times
+----
+*待機 (`orcls`）在 GCNV 種子之後：*
+
+[source]
+----
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+ALTER SYSTEM SET standby_file_management=MANUAL SCOPE=BOTH;
+-- DROP STANDBY LOGFILE GROUP for each group# in v$standby_log;
+ALTER SYSTEM SET db_create_file_dest='+DATA' SCOPE=BOTH;
+ALTER SYSTEM SET standby_file_management=AUTO SCOPE=BOTH;
+ALTER DATABASE ADD STANDBY LOGFILE THREAD 1 ('+DATA') SIZE 1024M;
+-- repeat (online groups + 1) times; one member per group
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+----
+
+
+=== 步驟 5：在待命資料庫上啟用 flashback 並啟動託管還原
+
+在啟動託管復原 *之前* 啟用閃回（MRP 處於活動狀態時無法啟用閃回）。
+
+[source, bash]
+----
+# On oracdb2
+sudo -u oracle bash -c '
+. ~/.bash_profile
+export ORACLE_SID=orcls
+sqlplus / as sysdba <<SQL
+SHUTDOWN IMMEDIATE;
+STARTUP MOUNT;
+ALTER SYSTEM SET db_flashback_retention_target=1440 SCOPE=BOTH;
+ALTER DATABASE FLASHBACK ON;
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+EXIT
+SQL'
+----
+`USING CURRENT LOGFILE` 可實現即時套用（重做會在抵達 SRL 時套用）。
+
+
+
+=== 步驟 6：在主要伺服器上啟用重做傳送
+
+[NOTE]
+====
+`LOG_ARCHIVE_DEST_2` 之前特意將其設置為  `DEFER` 在 <<standby-init-ora-and-nomount,步驟 2：待命：最小化 init.ora pfile、密碼檔案、NOMOUNT>> 中，是為了抑制備用伺服器創建期間的持續  `ORA-12154` 錯誤。現在備用伺服器已準備就緒，請啟用它。
+
+====
+切換 `LOG_ARCHIVE_DEST_STATE_2` 到 `ENABLE` 並強制執行日誌切換，以便第一輪重做立即傳送：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+. ~/.bash_profile
+sqlplus / as sysdba <<SQL
+ALTER SYSTEM SET LOG_ARCHIVE_DEST_STATE_2=ENABLE SCOPE=BOTH;
+ALTER SYSTEM SWITCH LOGFILE;
+ALTER SYSTEM ARCHIVE LOG CURRENT;
+SELECT dest_id, status, error FROM v$archive_dest_status WHERE dest_id IN (1,2);
+EXIT
+SQL
+'
+# Expected: dest_id=2, STATUS=VALID, ERROR null.
+----
+如果 `dest_2`顯示 `ORA-12154`，則重新啟動主伺服器。之後<<enable-broker-on-both-databases,步驟 1：在兩個資料庫上啟用 broker>>，透過 DGMGRL 管理傳輸。
+
+
+
+=== 步驟 7：驗證目標 Data Guard 狀態
+
+在 *primary* (`oracdb1`）：
+
+[source, bash]
+----
+sudo -u oracle sqlplus -s / as sysdba \
+  <<<"SELECT database_role || ' | ' || open_mode FROM v\$database;"
+# Expected: PRIMARY | READ WRITE
+----
+在 *standby* (`oracdb2` 上 — Cloud Console *SSH* 或從您的工作站使用 IAP）：
+
+[source, bash]
+----
+gcloud compute ssh oracdb2 --tunnel-through-iap --zone=us-west1-b
+
+sudo -u oracle bash <<'BASH'
+. ~/.bash_profile
+export ORACLE_SID=orcls
+
+sqlplus -s / as sysdba <<'SQL'
+SELECT database_role || ' | ' || open_mode
+FROM v$database;
+
+SELECT process, status, sequence#
+FROM v$managed_standby
+WHERE process IN ('MRP0','RFS');
+
+EXIT
+SQL
+BASH
+----
+待機預期： `PHYSICAL STANDBY | MOUNTED`； `MRP0` 帶有  `APPLYING_LOG`。
+
+如果備用進程報告 `MOUNTED`但應用程式未執行，請在 `oracdb2`上重新啟動 MRP：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+. ~/.bash_profile
+export ORACLE_SID=orcls
+sqlplus / as sysdba <<SQL
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+EXIT
+SQL'
+----
+
+
+=== 步驟 8：向 Oracle Restart 註冊備用資料庫
+
+在 GCNV 種子產生後，將備用設備註冊到 Restart，以便重新啟動後恢復 ASM、MOUNT 和 apply。
+
+在 `oracdb2`上，擷取 spfile 位置並向 Oracle Restart 註冊（從查詢中替換 `<STANDBY_SPFILE_PATH>`，通常在 `+DATA`下）：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+export ORACLE_SID=orcls
+sqlplus -s / as sysdba <<< "SHOW PARAMETER spfile;"
+'
+
+sudo -u oracle bash -c '
+export GRID_HOME=/u01/app/26ai/grid
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export PATH=$ORACLE_HOME/bin:$GRID_HOME/bin:$PATH
+
+srvctl add database \
+  -db orcls \
+  -dbname orcl \
+  -oraclehome /u01/app/oracle/product/26ai/db_1 \
+  -spfile <STANDBY_SPFILE_PATH> \
+  -pwfile /u01/app/oracle/product/26ai/db_1/dbs/orapworcls \
+  -role PHYSICAL_STANDBY \
+  -startoption MOUNT \
+  -stopoption IMMEDIATE \
+  -diskgroup DATA,RECO,FRA
+
+srvctl config database -db orcls
+srvctl status database -db orcls
+'
+----
+在 `oracdb1`，請確認主要的 Oracle Restart 資料庫資源已列出 ASM 磁碟群組的相依性。如果僅由 DBCA 註冊，請新增 `RECO`以及 `DATA`和 `FRA`：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+export GRID_HOME=/u01/app/26ai/grid
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export PATH=$ORACLE_HOME/bin:$GRID_HOME/bin:$PATH
+srvctl config database -db orcl
+srvctl modify database -db orcl -diskgroup DATA,RECO,FRA
+srvctl config database -db orcl
+'
+----
+*在待命資料庫資源上新增相同的應用程式服務* (`orcls` on `oracdb2`）。使用 `role PRIMARY`在兩端，以便 `orclapp`在切換後可用：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+export GRID_HOME=/u01/app/26ai/grid
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export PATH=$ORACLE_HOME/bin:$GRID_HOME/bin:$PATH
+
+srvctl add service \
+  -db orcls \
+  -service orclapp \
+  -pdb orclpdb \
+  -role PRIMARY \
+  -policy AUTOMATIC
+
+srvctl config service -db orcls -service orclapp
+'
+----
+在 `oracdb2`上，確認待命資料庫資源：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+export GRID_HOME=/u01/app/26ai/grid
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export PATH=$ORACLE_HOME/bin:$GRID_HOME/bin:$PATH
+srvctl status database -db orcls
+'
+----
+
+
+== 設定 Data Guard Broker、FSFO 和 Observer
+
+之後 `ENABLE CONFIGURATION`，透過 *DGMGRL* 管理傳輸和角色（而不是臨時 `LOG_ARCHIVE_DEST_*` SQL）。
+
+
+
+=== 步驟 1：在兩個資料庫上啟用 broker
+
+在 *primary* 和 *standby* 資料庫主機上：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+. ~/.bash_profile
+sqlplus / as sysdba <<SQL
+ALTER SYSTEM SET dg_broker_start=TRUE SCOPE=BOTH;
+EXIT
+SQL'
+----
+在*主資料庫主機*上，使用作業系統驗證進行連線（資料庫主機上不需要來自 <<start-observer-systemd,步驟 5：將 Observer 以 systemd 單元啟動>> 的 Observer 錢包）：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+export ORACLE_HOME=/u01/app/oracle/product/26ai/db_1
+export ORACLE_SID=orcl
+export PATH=$ORACLE_HOME/bin:$PATH
+dgmgrl /
+'
+----
+[NOTE]
+====
+僅在 Observer 主機上使用 `dgmgrl /@orcl`，且需在自動登入錢包存在後使用。請勿在 `dgmgrl`命令列中輸入密碼。
+
+====
+[source]
+----
+DGMGRL> CREATE CONFIGURATION 'orcl_dg' AS
+        PRIMARY DATABASE IS 'orcl' CONNECT IDENTIFIER IS orcl;
+DGMGRL> ADD DATABASE 'orcls' AS CONNECT IDENTIFIER IS orcls;
+DGMGRL> ENABLE CONFIGURATION;
+DGMGRL> SHOW CONFIGURATION;
+-- Expect: Configuration Status: SUCCESS, both members SUCCESS.
+----
+立即執行 `VALIDATE DATABASE`——它會在您嘗試切換之前發現孤立的資料檔案、遺失的 SRL、重做套用未執行以及其他常見問題。任何 `WARNING`或非 NULL `ERROR`都必須在<<configure-fsfo-properties-and-enable,步驟 3：設定 FSFO 內容並啟用>>之前修復。
+
+[source]
+----
+DGMGRL> VALIDATE DATABASE 'orcls';
+DGMGRL> SHOW CONFIGURATION VERBOSE;
+----
+
+
+=== 步驟 2：確認 flashback（FSFO 自動恢復的必要條件）
+
+在*兩台*主機上確認 `flashback_on`，然後再啟用 FSFO：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+. ~/.bash_profile
+sqlplus -s / as sysdba <<<"SELECT flashback_on FROM v\$database;"
+'
+# Expected on both hosts: YES
+----
+僅在 *主要* 伺服器上，如果尚未設定保留：
+
+[source, bash]
+----
+sudo -u oracle bash -c '
+. ~/.bash_profile
+export ORACLE_SID=orcl
+sqlplus / as sysdba <<SQL
+ALTER SYSTEM SET db_flashback_retention_target=1440 SCOPE=BOTH;
+EXIT
+SQL'
+----
+
+
+=== 步驟 3：設定 FSFO 內容並啟用
+
+[source]
+----
+-- Transport mode and protection mode
+DGMGRL> EDIT DATABASE 'orcl'  SET PROPERTY LogXptMode='SYNC';
+DGMGRL> EDIT DATABASE 'orcls' SET PROPERTY LogXptMode='SYNC';
+DGMGRL> EDIT CONFIGURATION SET PROTECTION MODE AS MaxAvailability;
+
+-- FSFO targets (each side names the other)
+DGMGRL> EDIT DATABASE 'orcl'  SET PROPERTY FastStartFailoverTarget = 'orcls';
+DGMGRL> EDIT DATABASE 'orcls' SET PROPERTY FastStartFailoverTarget = 'orcl';
+
+-- 30 s = default; lower for faster RTO but more sensitive to network blips
+DGMGRL> EDIT CONFIGURATION SET PROPERTY FastStartFailoverThreshold = 30;
+DGMGRL> EDIT CONFIGURATION SET PROPERTY FastStartFailoverAutoReinstate = TRUE;
+
+DGMGRL> ENABLE FAST_START FAILOVER;
+DGMGRL> SHOW FAST_START FAILOVER;
+-- Expected: Threshold 30 seconds, Target orcls, Observer not yet registered.
+----
+
+
+=== 步驟 4：在 Observer 主機上安裝 Oracle Instant Client
+
+[source, bash]
+----
+# On oradg-obs, as root (use -el8 / -el9 if the Observer is on an older OL/RHEL)
+sudo dnf install -y oracle-instantclient-release-el10
+sudo dnf install -y oracle-instantclient-basic \
+                    oracle-instantclient-sqlplus \
+                    oracle-instantclient-tools
+
+# Dedicated 'oracle' OS user (owns the wallet and the systemd unit)
+sudo useradd -u 54321 -m oracle
+sudo passwd -l oracle
+
+# Oracle environment for the user
+sudo mkdir -p /etc/oracle/network/admin
+sudo chown -R oracle:oracle /etc/oracle
+sudo -u oracle tee /home/oracle/.bash_profile >/dev/null <<'EOF'
+export ORACLE_HOME=/usr/lib/oracle/26/client64
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib
+export PATH=$ORACLE_HOME/bin:$PATH
+export TNS_ADMIN=/etc/oracle/network/admin
+EOF
+
+# tnsnames.ora — must reach both DB hosts on TCP/1521
+sudo tee /etc/oracle/network/admin/tnsnames.ora >/dev/null <<'EOF'
+orcl =
+  (DESCRIPTION =
+  (ADDRESS = (PROTOCOL = TCP)(HOST = oracdb1)(PORT = 1521))
+                (CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = orcl)))
+orcls =
+  (DESCRIPTION =
+  (ADDRESS = (PROTOCOL = TCP)(HOST = oracdb2)(PORT = 1521))
+                (CONNECT_DATA = (SERVER = DEDICATED)(SERVICE_NAME = orcls)))
+EOF
+sudo chown oracle:oracle /etc/oracle/network/admin/tnsnames.ora
+----
+
+
+=== 步驟 5：將 Observer 以 systemd 單元啟動
+
+憑證儲存在自動登入錢包中，絕不會顯示在 `dgmgrl` 命令列（對 `ps` / `journalctl` 可見）。僅在 Observer 上使用 `/@<tns_alias>` 連接。
+
+[NOTE]
+====
+* *使用專用帳戶：*將專用 Data Guard 管理帳戶（例如， `SYSDG`）的憑證儲存在錢包中，而不是  `SYS`。
+* *需要自動登入錢包：* Observer systemd 服務需要一個自動登入錢包 `cwallet.sso`）。如果 `cwallet.sso`在執行 `mkstore`後缺少該錢包，請使用 Instant Client *tools* 套件或資料庫主目錄中的 `orapki`建立自動登入錢包，然後重新新增已儲存的憑證。
+
+
+====
+. 使用兩位成員的憑證在 Observer 上建立錢包：
+
+
+[source, bash]
+----
+sudo -iu oracle bash <<'BASH'
+mkdir -p $TNS_ADMIN/wallet
+mkstore -wrl $TNS_ADMIN/wallet -create     # prompts for a wallet password — store in your secrets manager
+mkstore -wrl $TNS_ADMIN/wallet -createCredential orcl  sys ChangeMe!1
+mkstore -wrl $TNS_ADMIN/wallet -createCredential orcls sys ChangeMe!1
+BASH
+
+sudo tee /etc/oracle/network/admin/sqlnet.ora >/dev/null <<'EOF'
+WALLET_LOCATION = (SOURCE = (METHOD = FILE) (METHOD_DATA = (DIRECTORY = /etc/oracle/network/admin/wallet)))
+SQLNET.WALLET_OVERRIDE = TRUE
+EOF
+sudo chown oracle:oracle /etc/oracle/network/admin/sqlnet.ora
+sudo chmod -R 0700 /etc/oracle/network/admin/wallet
+
+sudo -iu oracle ls -l /etc/oracle/network/admin/wallet
+# Expected: cwallet.sso and ewallet.p12
+
+sudo -iu oracle bash <<'BASH'
+sqlplus -L "/@orcl as sysdba" <<'SQL'
+SELECT database_role FROM v$database;
+EXIT
+SQL
+BASH
+
+sudo -iu oracle bash <<'BASH'
+sqlplus -L "/@orcls as sysdba" <<'SQL'
+SELECT database_role FROM v$database;
+EXIT
+SQL
+BASH
+
+sudo -iu oracle dgmgrl /@orcl  'SHOW CONFIGURATION;'
+sudo -iu oracle dgmgrl /@orcls 'SHOW CONFIGURATION;'
+----
+[source, bash]
+----
+sudo -iu oracle orapki wallet create \
+  -wallet /etc/oracle/network/admin/wallet \
+  -auto_login
+sudo -iu oracle ls -l /etc/oracle/network/admin/wallet
+# Expected: cwallet.sso and ewallet.p12
+----
+. Systemd 單元 + 日誌輪替：
+
+
+[source, ini]
+----
+sudo tee /etc/systemd/system/dgmgrl-observer.service >/dev/null <<'EOF'
+[Unit]
+Description=Oracle Data Guard Fast-Start Failover Observer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=oracle
+Group=oracle
+Environment=ORACLE_HOME=/usr/lib/oracle/26/client64
+Environment=LD_LIBRARY_PATH=/usr/lib/oracle/26/client64/lib
+Environment=TNS_ADMIN=/etc/oracle/network/admin
+Environment=PATH=/usr/lib/oracle/26/client64/bin:/usr/bin:/bin
+ExecStart=/usr/lib/oracle/26/client64/bin/dgmgrl -silent /@orcl "START OBSERVER FILE IS '/var/lib/oracle/dgmgrl-observer.dat'"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+----
+[source, bash]
+----
+sudo install -d -o oracle -g oracle -m 0755 /var/lib/oracle
+sudo install -o oracle -g oracle -m 0640 /dev/null /var/log/dgmgrl-observer.log
+
+sudo tee /etc/logrotate.d/dgmgrl-observer >/dev/null <<'EOF'
+/var/log/dgmgrl-observer.log {
+    weekly
+    rotate 8
+    compress delaycompress missingok notifempty
+    create 0640 oracle oracle
+    copytruncate
+}
+EOF
+
+sudo systemctl daemon-reload && sudo systemctl enable --now dgmgrl-observer.service
+sudo systemctl status dgmgrl-observer.service
+----
+從主要資料庫驗證 — Observer 必須讀取 `CONNECTED`（ `DISCONNECTED` Observer 會以無訊息方式暫停 FSFO）：
+
+[source]
+----
+DGMGRL> SHOW FAST_START FAILOVER;
+DGMGRL> SHOW CONFIGURATION;       -- Configuration Status: SUCCESS, FSFO: ENABLED
+----
+
+
+=== 步驟 6：測試 FSFO （切換和容錯移轉）
+
+*計劃性切換：*
+
+[source]
+----
+DGMGRL> VALIDATE DATABASE 'orcls';
+DGMGRL> SWITCHOVER TO 'orcls';
+DGMGRL> SHOW CONFIGURATION;
+DGMGRL> SWITCHOVER TO 'orcl';        -- restore topology
+----
+*計劃外故障轉移：*在測試視窗內使用 VM *Reset*（當機式測試）；正常的 *Stop* 可能不會觸發 FSFO。Tail `/var/log/dgmgrl-observer.log` on `oradg-obs`；完成後恢復拓撲結構。
