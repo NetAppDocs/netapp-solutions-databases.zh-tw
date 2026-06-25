@@ -20,6 +20,7 @@ Oracle 資料庫工作負載需要可擴充的儲存容量，以提供一致的 
 
 
 
+[[benfits-of-google-cloud-netapp-volumes]]
 == Google Cloud NetApp Volumes的優勢
 
 Google Cloud NetApp Volumes有以下優勢：
@@ -52,6 +53,7 @@ NetApp Volumes 透過高效的磁碟區克隆功能簡化了資料庫副本的�
 
 
 
+[[use-cases]]
 == 用例
 
 *高效能生產環境：*
@@ -72,6 +74,7 @@ NetApp Volumes 支援需要持續 IOPS 和低延遲效能特性的任務關鍵�
 
 
 
+[[architecture]]
 == 架構
 
 您可以在具有一個或多個儲存磁碟區的 Google Compute Engine 上執行 Oracle 資料庫。卷的數量取決於資料分離的等級。例如，較小的資料庫可能被放置在單一磁碟區上。具有更嚴格的 IO 或管理要求的大型資料庫可能需要單獨的資料檔案、重做日誌和存檔日誌磁碟區。也可以新增用於應用程式或備份資料的附加磁碟區。每個磁碟區的大小都可以根據要託管的資料的需要進行調整。
@@ -80,6 +83,7 @@ image:oracle-gcnv-001.png["此圖顯示輸入/輸出對話框或表示書面內�
 
 
 
+[[preparing-the-google-cloud-netapp-volumes]]
 == 準備Google Cloud NetApp Volumes
 
 建立所需容量和服務等級的Google Cloud NetApp Volumes儲存池。查看快速入門以了解如何設定Google Cloud NetApp Volumes。如果您要將現有的 Oracle 資料庫從本地遷移到 Google，則可以利用 Metrics Explorer 獲取當前吞吐量統計信息，以便確定Google Cloud NetApp Volumes存儲池和卷的大小。有關如何使用該服務的詳細信息，請聯絡您的 Oracle on Google 專家。儲存池中磁碟區的可用吞吐量由所選儲存池的大小和服務等級（標準、進階或極限等）定義
@@ -100,6 +104,7 @@ NetApp磁碟區能夠輕鬆擴展以適應不斷增長的資料和工作負載�
 
 
 
+[[key-benefits]]
 == 主要優點
 
 此圖（圖 2）顯示了將Google Cloud NetApp Volumes與 Oracle Database 結合使用的好處。
@@ -154,6 +159,7 @@ Google Cloud NetApp Volumes提供適用於雲端和混合式環境的全面災�
 
 
 
+[[considerations]]
 == 注意事項
 
 此解決方案需要考慮以下事項：
@@ -213,6 +219,7 @@ VM 大小最佳化：
 
 
 
+[[conclusion]]
 == 結論
 
 靈活的擴展、最佳化的效能和高效的資源利用率的結合使Google Cloud NetApp Volumes成為滿足企業儲存需求的經濟實惠的選擇。適當調整儲存和運算資源的能力使組織能夠在有效控製成本的同時保持高效能。

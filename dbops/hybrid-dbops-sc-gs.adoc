@@ -18,6 +18,7 @@ keywords: introduction, workflow
 
 
 
+[[on-premises]]
 == 本地
 
 * 在SnapCenter中設定資料庫管理員用戶
@@ -33,6 +34,7 @@ keywords: introduction, workflow
 
 
 
+[[aws-public-cloud]]
 == AWS 公有雲
 
 * 飛行前檢查

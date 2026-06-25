@@ -18,6 +18,7 @@ keywords: AWS, cloud volumes ontap, cloud manager, deploy
 
 
 
+[[aws-public-cloud]]
 == AWS 公有雲
 
 
@@ -25,6 +26,7 @@ NOTE: 為了讓事情更容易理解，我們根據 AWS 中的部署建立了此
 
 
 
+[[1-pre-flight-check]]
 === 1.飛行前檢查
 
 在部署之前，請確保基礎架構已到位，以便進行下一階段的部署。其中包括以下內容：
@@ -38,6 +40,7 @@ NOTE: 為了讓事情更容易理解，我們根據 AWS 中的部署建立了此
 
 
 
+[[2-steps-to-deploy-cloud-manager-and-cloud-volumes-ontap-in-aws]]
 === 2.在 AWS 中部署 Cloud Manager 和Cloud Volumes ONTAP 的步驟
 
 
@@ -292,6 +295,7 @@ image:cloud-central-replication-013.png["此圖顯示輸入/輸出對話框或�
 
 
 
+[[3-deploy-ec2-compute-instance-for-database-workload]]
 === 3.為資料庫工作負載部署 EC2 運算執行個體
 
 AWS 已為各種工作負載預先配置了 EC2 運算執行個體。實例類型的選擇決定了CPU核心數、記憶體容量、儲存類型和容量以及網路效能。對於用例，除了作業系統分區之外，運行資料庫工作負載的主儲存是從 CVO 或 FSx ONTAP儲存引擎分配的。因此，主要考慮的因素是CPU核心、記憶體和網路效能水準的選擇。典型的 AWS EC2 執行個體類型可以在這裡找到： https://us-east-2.console.aws.amazon.com/ec2/v2/home?region=us-east-2#InstanceTypes:["EC2 執行個體類型"] 。

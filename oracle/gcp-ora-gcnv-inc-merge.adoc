@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 使用 Oracle 復原管理器 (RMAN) 備份工具還原 Oracle 中的超大型資料庫 (VLDB) 可能是一項極具挑戰性的任務。發生故障時從備份媒體還原資料庫的過程可能非常耗時，從而延遲資料庫復原並可能嚴重影響您的服務等級協定 (SLA)。由於成本考慮，RMAN 備份通常串流傳輸到物件存儲，因此對於部署在雲端的 Oracle VLDB 來說，情況變得更加糟糕。因此，如果 SLA 必不可少，則恢復和恢復 VLDB 是不可行的。從 10g 版本開始，Oracle 引入了 RMAN 功能，允許使用者在資料庫伺服器主機上的附加磁碟儲存上建立 Oracle 資料庫資料檔案的分階段映像副本。這些影像副本可以使用 RMAN 依照使用者定義的間隔進行增量更新。如果發生故障，資料庫管理員 (DBA) 可以迅速將 Oracle 資料庫從故障媒體切換到映像副本，從而無需進行完整的資料庫媒體還原。儘管所需的資料庫儲存量增加了一倍，但其結果是 SLA 得到了極大改善。
@@ -35,6 +36,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -47,18 +49,21 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在Google Cloud NetApp Volumes儲存池和 Google Compute Engine VM 中執行的，這些儲存池和虛擬機器可能與最終部署環境不符。有關更多信息，請參閱<<部署考慮的關鍵因素>> 。
 
 
 
+[[architecture]]
 === 架構
 
 image:gcp-ora-gcnv-inc-merge-architecture.png["此圖提供了使用 GCNV 在 Google 雲端實現 Oracle VLDB 增量合併的詳細圖片。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -99,6 +104,7 @@ image:gcp-ora-gcnv-inc-merge-architecture.png["此圖提供了使用 GCNV 在 Go
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * *GCNV 儲存池服務等級。 * GCNV儲存池提供四種服務等級：Standard、Premium、Extreme和Flex。預設情況下，自動 QoS 適用於儲存池內建立的捲，它會根據磁碟區的大小和服務等級限製卷的吞吐量。唯一的例外是，從 Flex 儲存池指派的磁碟區共用儲存池可用的吞吐量。
@@ -111,12 +117,14 @@ image:gcp-ora-gcnv-inc-merge-architecture.png["此圖提供了使用 GCNV 在 Go
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 此解決方案假定 Oracle VLDB 已部署在 VPC 內的 Google Cloud 環境中。 Oracle VLDB 可以在 GCNV 儲存或 Google Cloud 生態系統內的任何其他儲存選項上運作。以下部分提供了設定 Oracle VLDB 映像備份並透過 RMAN 增量合併到從 GCNV 儲存池掛載的 NFS 檔案系統的逐步部署程序。  Oracle VLDB 的主儲存也託管在不同的 GCNV 儲存池中。
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -137,6 +145,7 @@ image:gcp-ora-gcnv-inc-merge-vol-002.png["此圖展示了 Google 雲端入口網
 ====
 
 
+[[mount-a-nfs-volume-from-gcnv-to-the-primary-oracle-vldb-server]]
 === 將 NFS 磁碟區從 GCNV 掛載到主 Oracle VLDB 伺服器
 
 [%collapsible%open]
@@ -175,6 +184,7 @@ sudo vi /etc/fstab
 ====
 
 
+[[setup-oracle-rman-incremental-merge-to-image-copy-on-gcnv-for-in-server-vldb-backup]]
 === 設定 Oracle RMAN 增量合併到 GCNV 上的映像副本，以進行伺服器內 VLDB 備份
 
 [%collapsible%open]
@@ -1202,6 +1212,7 @@ echo "End Oracle DB incremental backup/merge to copy at `date +"%Y-%m%d-%H%M%S"`
 ====
 
 
+[[oracle-vldb-quick-recovery-using-backup-image-copy]]
 === 使用備份映像副本快速還原 Oracle VLDB
 
 
@@ -4050,6 +4061,7 @@ NAME
 ====
 
 
+[[clone-a-oracle-vldb-for-other-use-cases-from-the-backup-image-copy]]
 === 從備份映像副本複製 Oracle VLDB 以供其他用例使用
 
 [%collapsible%open]
@@ -4068,6 +4080,7 @@ NOTE: 目前，只有具有 bitbucket 存取權限的NetApp內部使用者才能
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：

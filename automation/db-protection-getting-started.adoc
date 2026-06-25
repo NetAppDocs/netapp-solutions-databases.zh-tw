@@ -18,6 +18,7 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle 資料保護的自動
 
 
 
+[[awxtower]]
 == AWX/塔
 
 對於 AWX/Tower 環境，將引導您建立ONTAP叢集管理和 Oracle 伺服器（IP 和主機名稱）的清單、建立憑證、設定從NetApp Automation Github 中提取 Ansible 程式碼的專案以及啟動自動化的作業範本。
@@ -31,6 +32,7 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle 資料保護的自動
 
 
 
+[[requirements]]
 == 要求
 
 [role="tabbed-block"]
@@ -133,6 +135,7 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle 資料保護的自動
 ====
 
 
+[[automation-details]]
 == 自動化詳細信息
 
 [role="tabbed-block"]
@@ -266,12 +269,14 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle 資料保護的自動
 ====
 
 
+[[default-parameters]]
 == 預設參數
 
 為了簡化自動化，我們預設了許多必要的 Oracle 參數的預設值。對於大多數部署來說，通常不需要更改預設參數。更高級的用戶可以謹慎地更改預設參數。預設參數位於 defaults 目錄下的每個角色資料夾中。
 
 
 
+[[license]]
 == 執照
 
 您應該閱讀 Github 儲存庫中所述的許可證資訊。透過存取、下載、安裝或使用此儲存庫中的內容，您同意所列出的授權條款link:https://github.com/NetApp-Automation/na_oracle19c_deploy/blob/master/LICENSE.TXT["這裡"^]。

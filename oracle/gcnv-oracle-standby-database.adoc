@@ -15,6 +15,8 @@ summary: 使用 Google Cloud NetApp Volumes 儲存層複製、快照或複製建
 
 
 
+[[step-1-configure-listener-and-data-guard-parameters]]
+[[primary-sys-password-and-dg-params]]
 == 步驟 1：設定監聽器和 Data Guard 參數
 
 在兩個資料庫主機上設定監聽器以支援 Data Guard 連線，包括 `_DGMGRL`代理程式所需的服務。在主要資料庫上設定密碼檔案並設定歸檔日誌參數。
@@ -61,6 +63,8 @@ $GRID_HOME/bin/lsnrctl status
 
 
 
+[[step-2-prepare-standby-pfile-and-nomount]]
+[[standby-init-ora-and-nomount]]
 == 步驟 2：準備備用 pfile 和 NOMOUNT
 
 透過從主資料庫複製密碼檔案、建立包含 Data Guard 參數的最小 init.ora pfile 以及以 NOMOUNT 模式啟動執行個體來準備備用資料庫執行個體。
@@ -140,6 +144,8 @@ SQL
 
 
 
+[[step-3-initialize-standby-storage-with-gcnv]]
+[[gcnv-standby-initialization]]
 == 步驟 3：使用 GCNV 初始化待命儲存設備
 
 在 `oracle-pool-b`中初始化備用磁碟區，將其附加至 `oracdb2`，掛載 ASM 磁碟群組，並將備用執行個體最終設為 MOUNT 狀態。
@@ -148,6 +154,7 @@ SQL
 
 
 
+[[choose-the-seeding-path]]
 === 選擇植入路徑
 
 根據您的環境和復原要求選擇備用種子方法。
@@ -160,6 +167,8 @@ SQL
 
 
 
+[[check-prerequisites]]
+[[gcnv-seed-prereqs]]
 === 檢查先決條件
 
 在建立備用磁碟區之前，請確認以下先決條件。
@@ -190,6 +199,8 @@ gcloud netapp storage-pools create oracle-pool-b \
 
 
 
+[[create-and-sync-replications]]
+[[create-volume-replications]]
 === 建立和同步複寫
 
 建立從主磁碟區到備用磁碟區的複製關係，然後等待初始同步完成。
@@ -212,6 +223,8 @@ gcloud netapp volumes replications create repl-oracdb2-reco \
 
 
 
+[[cut-over-and-attach-standby-volumes]]
+[[cutover-quiesce-stop-repl-attach]]
 === 切換並連接待命磁碟區
 
 使主要主機靜默，在最後一次同步後停止複製，並將目標磁碟區附加到備用主機群組。
@@ -252,6 +265,8 @@ ALTER DATABASE END BACKUP;
 ----
 
 
+[[seed-from-snapshot]]
+[[snapshot-seed]]
 === 從快照建立種子
 
 當不需要持續複製時，請使用此路徑進行一次性實驗室植入。
@@ -260,6 +275,8 @@ ALTER DATABASE END BACKUP;
 
 
 
+[[mount-standby-asm-disk-groups]]
+[[standby-iscsi-and-asm-before-rman]]
 === 掛載備用 ASM 磁碟組
 
 在備用主機上，探索附加的儲存路徑，並在資料庫復原之前掛載 ASM 磁碟群組。
@@ -274,6 +291,8 @@ ALTER DISKGROUP FRA MOUNT FORCE;
 ----
 
 
+[[finalize-the-standby-instance]]
+[[oracle-finalize]]
 === 完成備用執行個體
 
 還原備用控制檔案，恢復至擷取的 SCN，轉換為實體備用，並開始受管理的恢復。
@@ -299,6 +318,8 @@ ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION;
 
 
 
+[[step-4-register-standby-with-oracle-restart]]
+[[register-standby-with-oracle-restart]]
 == 步驟 4：向 Oracle Restart 註冊備用資料庫
 
 將備用資料庫註冊到 Oracle Restart，以便重新啟動時自動復原 ASM 磁碟群組、掛載備用資料庫並重新啟動託管復原。同時，將應用程式服務新增至兩個資料庫資源。
@@ -379,6 +400,7 @@ srvctl status database -db orcls
 
 
 
+[[whats-next]]
 == 接下來呢？
 
 *特定等級：*

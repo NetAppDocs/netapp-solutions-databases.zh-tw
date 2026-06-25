@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 ASM（自動儲存管理）是一種受歡迎的 Oracle 儲存磁碟區管理器，在許多 Oracle 安裝中都有使用。它也是Oracle推薦的儲存管理解決方案。它為傳統的捲管理器和檔案系統提供了替代方案。自 Oracle 11g 版本以來，ASM 已與網格基礎架構（而非資料庫）打包在一起。因此，為了在沒有 RAC 的情況下利用 Oracle ASM 進行儲存管理，必須在獨立伺服器中安裝 Oracle 網格基礎架構（也稱為 Oracle Restart）。這樣做無疑會為原本簡單的 Oracle 資料庫部署增加更多的複雜度。但是，顧名思義，當 Oracle 以重新啟動模式部署時，任何失敗的 Oracle 服務都會在主機重新啟動後重新啟動，而無需使用者乾預，從而提供一定程度的高可用性或 HA 功能。
@@ -35,6 +36,7 @@ Oracle ASM 一般部署在 FC、iSCSI 儲存協定和 lun 作為原始儲存設�
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -47,18 +49,21 @@ Oracle ASM 一般部署在 FC、iSCSI 儲存協定和 lun 作為原始儲存設�
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在可能與最終部署環境不符的 AWS FSx 和 EC2 環境中進行的。有關更多信息，請參閱<<部署考慮的關鍵因素>> 。
 
 
 
+[[architecture]]
 === 架構
 
 image:aws-ora-fsx-ec2-nfs-asm-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 AWS 公有雲中的 Oracle 部署配置的詳細圖片。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -93,6 +98,7 @@ image:aws-ora-fsx-ec2-nfs-asm-architecture.png["此圖提供了具有 iSCSI 和 
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * EC2 運算執行個體。在這些測試和驗證中，我們使用 AWS EC2 t2.xlarge 執行個體類型作為 Oracle 資料庫運算執行個體。 NetApp建議在生產部署中使用 M5 類型的 EC2 執行個體作為 Oracle 的運算實例，因為它針對資料庫工作負載進行了最佳化。您需要根據實際工作負載需求，適當調整 EC2 執行個體的 vCPU 數量和 RAM 容量。
@@ -106,12 +112,14 @@ image:aws-ora-fsx-ec2-nfs-asm-architecture.png["此圖提供了具有 iSCSI 和 
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 以下部分提供了逐步部署流程。
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -134,6 +142,7 @@ NOTE: 確保您已在 EC2 執行個體根磁碟區中指派至少 50G，以便�
 ====
 
 
+[[ec2-instance-kernel-configuration]]
 === EC2 執行個體核心配置
 
 [%collapsible%open]
@@ -243,6 +252,7 @@ usermod -a -G asm oracle
 ====
 
 
+[[provision-and-export-nfs-volumes-to-be-mounted-to-ec2-instance-host]]
 === 配置並匯出要掛載到 EC2 執行個體主機的 NFS 卷
 
 [%collapsible%open]
@@ -295,6 +305,7 @@ svm_ora   svm_ora_root aggr1        online     RW          1GB    972.1MB    0%
 ====
 
 
+[[database-storage-configuration]]
 === 資料庫儲存配置
 
 [%collapsible%open]
@@ -404,6 +415,7 @@ chmod 640 /oralogs/asm/*
 ====
 
 
+[[oracle-grid-infrastructure-installation]]
 === Oracle 網格基礎架構安裝
 
 [%collapsible%open]
@@ -540,6 +552,7 @@ ora.evmd            ONLINE  ONLINE       ip-172-30-15-58          STABLE
 ====
 
 
+[[oracle-database-installation]]
 === Oracle資料庫安裝
 
 [%collapsible%open]
@@ -895,18 +908,21 @@ This completes Oracle 19c version 19.18 Restart deployment on an Amazon FSx ONTA
 ====
 
 
+[[automated-deployment-option]]
 === 自動部署選項
 
 NetApp將發布與 Ansible 配套的全自動解決方案部署工具包，以促進該解決方案的實施。請回來檢查工具包是否可用。發布後會在這裡發布連結。
 
 
 
+[[oracle-database-backup-restore-and-clone-with-snapcenter-service]]
 == 使用SnapCenter服務備份、復原和克隆 Oracle 資料庫
 
 目前，具有 NFS 和 ASM 儲存選項的 Oracle 資料庫僅受傳統SnapCenter Server UI 工具支持，請參閱link:../dbops/hybrid-dbops-snapcenter-usecases.html["採用SnapCenter的混合雲資料庫解決方案"^]有關使用NetApp SnapCenter UI 工具備份、還原和克隆 Oracle 資料庫的詳細資訊。
 
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：

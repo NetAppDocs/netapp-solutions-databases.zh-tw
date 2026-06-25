@@ -18,6 +18,7 @@ keywords: netapp, solutions, videos, demos
 
 
 
+[[deployment-and-automation]]
 == 部署和自動化
 
 .使用 NFS 在Azure NetApp Files上簡化和自動化 Oracle 部署
@@ -32,6 +33,7 @@ video::74062c18-b120-45b7-9bf9-b2db00f73675[panopto,width=360]
 video::VcQMJIRzhoY[youtube,width=360]
 
 
+[[backup-recovery-and-cloning]]
 == 備份、還原和克隆
 
 .使用SnapCenter在 ANF 上進行 Oracle 資料庫備份、復原和克隆
@@ -46,6 +48,7 @@ video::4b0fd212-7641-46b8-9e55-b01200f9383a[panopto,width=360]
 video::krzMWjrrMb0[youtube,width=360]
 
 
+[[modernization-and-migration]]
 == 現代化與遷移
 
 .第 1 部分 - 利用 AWS 和 FSx ONTAP中的混合雲實現 Oracle 現代化
@@ -56,6 +59,7 @@ video::bb088a3e-bbfb-4927-bf44-b01200f38b17[panopto,width=360]
 video::c0df32f8-d6d3-4b79-b0bd-b01200f3a2e8[panopto,width=360]
 
 
+[[high-availability-disaster-recovery-and-replication]]
 == 高可用性、災難復原和複製
 
 .第 3 部分 - 自動資料庫 HA/DR 複製設定、故障轉移、重新同步

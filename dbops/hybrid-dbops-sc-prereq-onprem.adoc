@@ -18,6 +18,7 @@ keywords: prerequisites, on prem, on premises, installation, security, automatio
 
 
 
+[[snapcenter-installation-and-configuration]]
 == SnapCenter安裝與配置
 
 NetApp SnapCenter工具是一個基於 Windows 的應用程序，通常在 Windows 網域環境中運行，但也可以進行工作組部署。它基於多層架構，包括集中管理伺服器（ SnapCenter伺服器）和資料庫伺服器主機上用於資料庫工作負載的SnapCenter插件。以下是混合雲部署的一些關鍵考慮因素。
@@ -34,6 +35,7 @@ NetApp SnapCenter工具是一個基於 Windows 的應用程序，通常在 Windo
 
 
 
+[[on-premises-database-server-storage-configuration]]
 == 本地資料庫伺服器儲存配置
 
 儲存效能對資料庫和應用程式的整體效能起著重要作用。精心設計的儲存佈局不僅可以提高資料庫效能，還可以方便管理資料庫備份和復原。定義儲存佈局時應考慮幾個因素，包括資料庫的大小、資料庫預期的資料變化率以及執行備份的頻率。
@@ -65,6 +67,7 @@ image:storage-layout-oracle-shared.png["此圖顯示輸入/輸出對話框或表
 
 
 
+[[licensing-requirements]]
 == 許可要求
 
 SnapCenter是NetApp授權的軟體。它通常包含在本地ONTAP許可證中。但是，對於混合雲部署，還需要SnapCenter的雲端授權才能將 CVO 新增至SnapCenter作為目標資料複製目的地。請查看以下連結以了解SnapCenter標準容量許可證的詳細資訊：
@@ -73,6 +76,7 @@ link:https://docs.netapp.com/us-en/snapcenter/install/concept_snapcenter_standar
 
 
 
+[[networking-and-security]]
 == 網路和安全
 
 在混合資料庫操作中，需要將本地生產資料庫突發傳輸到雲端以進行開發/測試和災難恢復，在設定環境並從本地資料中心連接到公有雲時，網路和安全是需要考慮的重要因素。
@@ -90,6 +94,7 @@ link:https://docs.netapp.com/us-en/snapcenter/install/concept_snapcenter_standar
 
 
 
+[[using-ansible-automation-to-sync-db-instances-between-on-premises-and-the-cloud-optional]]
 == 使用 Ansible 自動化在本地和雲端之間同步資料庫執行個體 - 可選
 
 為了簡化混合雲端資料庫環境的管理， NetApp強烈建議但不要求您部署 Ansible 控制器來自動執行某些管理任務，例如保持本機和雲端中的運算執行個體同步。這一點尤其重要，因為雲端中不同步的運算實例可能會因缺少核心包和其他問題而導致雲端中復原的資料庫容易出錯。

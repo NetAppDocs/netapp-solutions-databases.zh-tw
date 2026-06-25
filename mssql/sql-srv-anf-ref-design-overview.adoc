@@ -34,6 +34,7 @@ image:sql-srv-anf-006.png["此圖顯示輸入/輸出對話框或表示書面內�
 
 
 
+[[data-layout]]
 == 數據佈局
 
 使用者資料庫檔案 (.mdf) 和使用者資料庫事務日誌檔案 (.ldf) 以及 tempDB 儲存在同一磁碟區上。服務等級為超級。
@@ -54,6 +55,7 @@ image:sql-srv-anf-006.png["此圖顯示輸入/輸出對話框或表示書面內�
 
 
 
+[[migration]]
 === 遷移
 
 有多種方法可以將本機 SQL Server 使用者資料庫遷移到 Azure 虛擬機器中的 SQL Server。遷移可以是線上的，也可以是離線的。所選的選項取決於 SQL Server 版本、業務需求以及組織內定義的 SLA。為了最大限度地減少資料庫遷移過程中的停機時間， NetApp建議使用 AlwaysOn 選項或交易複製選項。如果無法使用這些方法，您可以手動遷移資料庫。
@@ -86,6 +88,7 @@ NOTE: 恢復 21 個資料庫大約需要九個小時。這種方法是針對這�
 
 
 
+[[backup-and-recovery]]
 === 備份和復原
 
 備份和還原是任何 SQL Server 部署的重要方面。必須擁有適當的安全網，以便與 AOAG 等高可用性解決方案結合，從各種資料故障和遺失情況中快速恢復。  SQL Server 資料庫靜默工具、Azure Backup（串流備份）或任何第三方備份工具（例如 Commvault）均可用於執行資料庫的應用程式一致性備份，
@@ -103,6 +106,7 @@ Azure NetApp Files Snapshot 技術可讓您輕鬆建立使用者資料庫的時�
 
 
 
+[[monitoring]]
 === 監控
 
 Azure NetApp Files與 Azure Monitor 整合以取得時間序列數據，並提供有關分配儲存、實際儲存使用情況、磁碟區 IOPS、吞吐量、磁碟讀取位元組數/秒、磁碟寫入位元組數/秒、磁碟讀取數/秒和磁碟寫入數/秒以及相關延遲的指標。這些資料可用於識別警報瓶頸並執行健康檢查以驗證您的 SQL Server 部署是否在最佳配置中執行。
@@ -113,6 +117,7 @@ image:sql-srv-anf-008.png["此圖顯示輸入/輸出對話框或表示書面內�
 
 
 
+[[devtest-using-thick-clones]]
 === 使用厚克隆的開發測試
 
 使用Azure NetApp Files，您可以建立資料庫的即時副本，以便在應用程式開發週期中測試應使用目前資料庫結構和內容實現的功能，在填充資料倉儲時使用資料提取和操作工具，甚至恢復被錯誤刪除或更改的資料。此過程不涉及從 Azure Blob 容器複製數據，因此非常有效率。卷恢復後，可用於讀取/寫入操作，從而大幅減少驗證和上市時間。這需要與 SCSQLAPI 結合使用以確保應用程式的一致性。這種方法提供了另一種持續成本最佳化技術，同時Azure NetApp Files利用了「還原到新磁碟區」選項。
@@ -125,6 +130,7 @@ image:sql-srv-anf-008.png["此圖顯示輸入/輸出對話框或表示書面內�
 
 
 
+[[hybrid-storage-options]]
 === 混合式儲存選項
 
 儘管NetApp建議對 SQL Server 可用性群組中的所有節點使用相同的存儲，但在某些情況下可以使用多個儲存選項。對於Azure NetApp Files來說，這種情況是可能的，其中 AOAG 中的一個節點與Azure NetApp Files SMB 檔案共享相連，而第二個節點與 Azure Premium 磁碟相連。在這些情況下，請確保Azure NetApp Files SMB 共用儲存使用者資料庫的主副本，並且進階磁碟用作輔助副本。
@@ -137,12 +143,14 @@ image:sql-srv-anf-008.png["此圖顯示輸入/輸出對話框或表示書面內�
 
 
 
+[[business-continuity]]
 === 永續經營
 
 在任何部署中，災難復原通常都是事後才考慮的事情。但是，必須在初始設計和部署階段解決災難復原問題，以避免對您的業務產生任何影響。透過Azure NetApp Files，可以使用跨區域複製 (CRR) 功能將區塊層級的磁碟區資料複製到配對區域，以處理任何意外的區域中斷。啟用 CRR 的目標磁碟區可用於讀取操作，這使其成為災難復原模擬的理想候選者。此外，可以為 CRR 目的地分配最低服務等級（例如標準），以降低整體 TCO。如果發生故障轉移，複製可能會中斷，導致對應的磁碟區無法進行讀取/寫入。此外，可以使用動態服務級別功能來變更磁碟區的服務級別，以顯著降低災難復原成本。這是Azure NetApp Files的另一個獨特功能，具有 Azure 內的區塊複製功能。
 
 
 
+[[long-term-snapshot-copy-archive]]
 === 長期 Snapshot 副本存檔
 
 許多組織必須執行資料庫文件中快照資料的長期保留，這是強制性合規要求。雖然此 HLD 中未使用此過程，但可以使用簡單的批次腳本輕鬆完成此過程 https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10["AzCopy"^]將快照目錄複製到 Azure Blob 容器。可以使用計劃任務根據特定的計劃觸發批次腳本。過程很簡單 - 它包括以下步驟：
@@ -196,6 +204,7 @@ Final Job Status: Completed
 
 
 
+[[cost-optimization]]
 === 成本最佳化
 
 透過對資料庫完全透明的磁碟區重塑和動態服務等級變化， Azure NetApp Files可以在 Azure 中持續優化成本。此功能在本 HLD 中廣泛使用，以避免過度配置額外的儲存空間來處理工作負載高峰。

@@ -18,10 +18,12 @@ summary: 本頁介紹了NetApp ONTAP儲存上的 Oracle19c 的自動資料保護
 
 
 
+[[awxtower-oracle-data-protection]]
 == AWX/Tower Oracle 資料保護
 
 
 
+[[create-the-inventory-group-hosts-and-credentials-for-your-environment]]
 === 為您的環境建立清單、群組、主機和憑證
 
 本節介紹 AWX/Ansible Tower 中的庫存、群組、主機和存取憑證的設置，為使用NetApp自動化解決方案準備環境。
@@ -217,6 +219,7 @@ extra_vars:
 ====
 
 
+[[create-a-project]]
 === 創建專案
 
 . 前往資源 → 項目，然後按一下新增。
@@ -232,6 +235,7 @@ extra_vars:
 
 
 
+[[configure-global-variables]]
 === 配置全域變數
 
 本節定義的變數適用於所有 Oracle 主機、資料庫和ONTAP叢集。
@@ -556,6 +560,7 @@ control_files:
 ====
 
 
+[[automation-playbooks]]
 === 自動化劇本
 
 有四個單獨的劇本需要運行。
@@ -687,6 +692,7 @@ NOTE: 直到您準備好在遠端站點恢復資料庫時，才會執行此劇�
 ====
 
 
+[[recovering-oracle-database]]
 === 復原 Oracle 資料庫
 
 . 本機生產 Oracle 資料庫資料磁碟區透過NetApp SnapMirror複製到二級資料中心的冗餘ONTAP叢集或公有雲中的 Cloud Volume ONTAP進行保護。在完全配置的災難復原環境中，輔助資料中心或公有雲中的復原運算執行個體處於待命狀態，並準備在發生災難時復原生產資料庫。透過對作業系統核心修補程式進行平行更新或同步升級，備用運算實例與本機實例保持同步。

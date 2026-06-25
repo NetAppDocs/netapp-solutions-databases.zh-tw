@@ -17,6 +17,8 @@ summary: 完成 Google Cloud NetApp Volumes 上 Data Guard 的備用資料庫配
 
 
 
+[[step-1-create-standby-redo-log-files]]
+[[standby-redo-log-files]]
 == 步驟 1：建立備用重做日誌檔案
 
 在兩個資料庫主機上建立備用重做日誌檔案，以支援 Fast-Start Failover。其大小必須大於或等於最大的主要線上重做日誌檔案，且數量應等於（每個執行緒的線上群組數）+ 1。完成 GCNV 種子部署後，刪除備用資料庫上的備用重做日誌檔案並重新建立，以修復複製路徑。
@@ -46,6 +48,8 @@ ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT
 
 
 
+[[step-2-enable-flashback-and-start-recovery]]
+[[enable-flashback-on-standby]]
 == 步驟 2：啟用回溯功能並啟動復原
 
 在備用資料庫上啟用 Flashback 資料庫，以支援容錯移轉後的自動恢復，然後以即時套用方式啟動受管理的恢復。必須在啟動受管理的恢復之前啟用 Flashback，因為在 MRP 執行期間無法啟用 Flashback。
@@ -85,6 +89,8 @@ SQL'
 
 
 
+[[step-3-enable-redo-shipping]]
+[[enable-redo-shipping-on-primary]]
 == 步驟 3：啟用重做傳送
 
 透過啟用 `LOG_ARCHIVE_DEST_STATE_2`來啟用從主要端到備用端的 redo 傳輸，這在備用端初始化程序的 xref:gcnv-oracle-standby-database.adoc#standby-init-ora-and-nomount[步驟 2] 中被刻意設定為 `DEFER`，以抑制在建立備用端期間的 `ORA-12154`錯誤。
@@ -121,6 +127,8 @@ SQL'
 
 
 
+[[step-4-verify-data-guard-state]]
+[[verify-target-dg-state]]
 == 步驟 4：驗證 Data Guard 狀態
 
 確認主資料庫處於 READ WRITE 模式，且備用資料庫已掛載並啟用託管恢復，套用重做日誌。
@@ -175,6 +183,7 @@ SQL'
 
 
 
+[[whats-next]]
 == 接下來呢？
 
 若要啟動自動角色管理和故障轉移保護，請繼續執行xref:gcnv-oracle-data-guard.adoc[設定 Oracle Data Guard Broker、Fast-Start Failover 和 Observer]。

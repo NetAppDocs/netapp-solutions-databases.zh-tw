@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 Oracle Data Guard 可確保主資料庫和備用資料庫複製配置中企業資料的高可用性、資料保護和災難復原。  Oracle Active Data Guard 使用戶能夠在從主資料庫到備用資料庫的資料複製處於作用中狀態時存取備用資料庫。 Data Guard 是 Oracle Database Enterprise Edition 的特性。它不需要單獨的許可。另一方面，Active Data Guard 是 Oracle Database Enterprise Edition Option，因此需要單獨的授權。在 Active Data Guard 設定中，多個備用資料庫可以從主資料庫接收資料複製。但是，每個額外的備用資料庫都需要 Active Data Guard 許可證和與主資料庫大小相同的額外儲存空間。營運成本迅速增加。
@@ -34,6 +35,7 @@ Oracle Data Guard 可確保主資料庫和備用資料庫複製配置中企業�
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -46,18 +48,21 @@ Oracle Data Guard 可確保主資料庫和備用資料庫複製配置中企業�
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在 AWS FSx ONTAP和 EC2 實驗室環境中進行的，該環境可能與最終部署環境不符。有關更多信息，請參閱<<部署考慮的關鍵因素>> 。
 
 
 
+[[architecture]]
 === 架構
 
 image:aws-ora-fsx-data-guard-architecture.png["此圖提供了使用 FSx ONTAP在 AWS 中實作 Oracle Data Guard 的詳細圖片。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -89,6 +94,7 @@ image:aws-ora-fsx-data-guard-architecture.png["此圖提供了使用 FSx ONTAP�
 |===
 
 
+[[oracle-data-guard-configuration-with-hypothetical-ny-to-la-dr-setup]]
 === 假設紐約到洛杉磯災難復原設定的 Oracle Data Guard 配置
 
 [cols="33%, 33%, 33%"]
@@ -108,6 +114,7 @@ image:aws-ora-fsx-data-guard-architecture.png["此圖提供了使用 FSx ONTAP�
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * *Oracle 備用資料庫FlexClone 的工作原理。 * AWS FSx ONTAP FlexClone提供可寫入的相同備用資料庫磁碟區的共用副本。卷的副本實際上是連結回原始資料塊的指針，直到在克隆上啟動新的寫入。然後， ONTAP為新的寫入指派新的儲存區塊。任何讀取 IO 均由主動複製下的原始資料區塊提供服務。因此，克隆的儲存效率非常高，可以用於許多其他用例，為新的寫入 IO 分配最少且增量的新儲存。透過大幅減少 Active Data Guard 儲存空間，可以節省大量的儲存成本。  NetApp建議在資料庫從主儲存切換到備用 FSx 儲存時盡量減少FlexClone活動，以保持 Oracle 效能處於高水準。
@@ -122,6 +129,7 @@ image:aws-ora-fsx-data-guard-architecture.png["此圖提供了使用 FSx ONTAP�
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 假設您已經在 VPC 內的 AWS EC2 環境中部署了主 Oracle 資料庫，作為設定 Data Guard 的起點。主資料庫使用 Oracle ASM 進行儲存管理部署。建立兩個 ASM 磁碟組 - +DATA 和 +LOGS，用於儲存 Oracle 資料檔案、日誌檔案、控制檔案等。有關在 AWS 中使用 ASM 部署 Oracle 的詳細信息，請參閱以下技術報告以取得協助。
@@ -135,6 +143,7 @@ image:aws-ora-fsx-data-guard-architecture.png["此圖提供了使用 FSx ONTAP�
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -158,6 +167,7 @@ NOTE: 確保您已在 EC2 執行個體根磁碟區中指派至少 50G，以便�
 ====
 
 
+[[prepare-the-primary-database-for-data-guard]]
 === 為 Data Guard 準備主資料庫
 
 [%collapsible%open]
@@ -402,6 +412,7 @@ srvctl start database -d db1
 ====
 
 
+[[prepare-standby-database-and-activate-data-guard]]
 === 準備備用資料庫並啟動 Data Guard
 
 [%collapsible%open]
@@ -702,6 +713,7 @@ SQL>
 ====
 
 
+[[setup-data-guard-broker]]
 === 設定 Data Guard Broker
 
 [%collapsible%open]
@@ -797,6 +809,7 @@ DGMGRL>
 ====
 
 
+[[clone-standby-database-for-other-use-cases]]
 === 克隆備用資料庫以供其他用例使用
 
 [%collapsible%open]
@@ -986,6 +999,7 @@ SQL>
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：

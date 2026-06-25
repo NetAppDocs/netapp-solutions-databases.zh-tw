@@ -18,6 +18,7 @@ summary: '該解決方案提供了使用 Microsoft Azure NetApp Files (ANF) 作�
 
 
 
+[[purpose]]
 == 目的
 
 Oracle Data Guard 可確保主資料庫和備用資料庫複製配置中企業資料的高可用性、資料保護和災難復原。  Oracle Active Data Guard 使用戶能夠在從主資料庫到備用資料庫的資料複製處於作用中狀態時存取備用資料庫。 Data Guard 是 Oracle Database Enterprise Edition 的特性。它不需要單獨的許可。另一方面，Active Data Guard 是 Oracle Database Enterprise Edition Option，因此需要單獨的授權。在 Active Data Guard 設定中，多個備用資料庫可以從主資料庫接收資料複製。但是，每個額外的備用資料庫都需要 Active Data Guard 許可證和與主資料庫大小相同的額外儲存空間。營運成本迅速增加。
@@ -33,6 +34,7 @@ Oracle Data Guard 可確保主資料庫和備用資料庫複製配置中企業�
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -45,18 +47,21 @@ Oracle Data Guard 可確保主資料庫和備用資料庫複製配置中企業�
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在 Azure 雲端實驗室設定中進行的，該設定可能與實際使用者部署環境不符。有關更多信息，請參閱<<部署考慮的關鍵因素>> 。
 
 
 
+[[architecture]]
 === 架構
 
 image:azure-ora-anf-data-guard-architecture.png["此圖提供了 ANF 上的 Azure 雲端中 Oracle Data Guard 實作的詳細圖片。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -91,6 +96,7 @@ image:azure-ora-anf-data-guard-architecture.png["此圖提供了 ANF 上的 Azur
 |===
 
 
+[[oracle-data-guard-configuration-with-hypothetical-ny-to-la-dr-setup]]
 === 假設紐約到洛杉磯災難復原設定的 Oracle Data Guard 配置
 
 [cols="33%, 33%, 33%"]
@@ -110,6 +116,7 @@ image:azure-ora-anf-data-guard-architecture.png["此圖提供了 ANF 上的 Azur
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * *備用資料庫克隆。 *從主資料庫接收和套用交易日誌時，可以複製實體備用資料庫並將其安裝在 DB VM 上，以支援其他工作負載，例如 DEV、TEST 或 Report。克隆可以是薄克隆或厚克隆。目前，ANF 僅支援厚克隆，即備用資料庫的完整副本。 ANF 薄克隆選項即將發布。對於資料庫卷的精簡克隆副本，它共享備用資料庫的相同 DB 卷，並利用寫入時複製技術來服務寫入 IO。因此，克隆的儲存效率非常高，可以用於許多其他用例，為新的寫入 IO 分配最少且增量的新儲存。透過大幅減少 Active Data Guard 儲存空間，可以節省大量的儲存成本。  NetApp建議在資料庫從主儲存切換到備用 ANF 儲存時盡量減少FlexClone活動，以保持 Oracle 效能處於高水準。
@@ -123,6 +130,7 @@ image:azure-ora-anf-data-guard-architecture.png["此圖提供了 ANF 上的 Azur
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 假設您已將主 Oracle 資料庫部署在 VNet 內的 Azure 雲端環境中，作為設定 Oracle Data Guard 的起點。理想情況下，主資料庫部署在具有 NFS 掛載的 ANF 儲存體上。為 Oracle 資料庫儲存建立了三個 NFS 掛載點：mount /u01 用於 Oracle 二進位文件，mount /u02 用於 Oracle 資料檔案和控製文件，mount /u03 用於 Oracle 目前和存檔日誌檔案以及冗餘控製文件。
@@ -131,6 +139,7 @@ image:azure-ora-anf-data-guard-architecture.png["此圖提供了 ANF 上的 Azur
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -170,6 +179,7 @@ Vnet網關連線狀態：image:azure-ora-anf-dg-vnet-003.png["顯示 Azure 環�
 ====
 
 
+[[prepare-the-primary-database-for-data-guard]]
 === 為 Data Guard 準備主資料庫
 
 [%collapsible%open]
@@ -480,6 +490,7 @@ log_archive_dest_21                  string
 ====
 
 
+[[prepare-standby-database-and-activate-data-guard]]
 === 準備備用資料庫並啟動 Data Guard
 
 [%collapsible%open]
@@ -842,6 +853,7 @@ SQL>
 ====
 
 
+[[setup-data-guard-broker]]
 === 設定 Data Guard Broker
 
 [%collapsible%open]
@@ -939,6 +951,7 @@ DGMGRL>
 ====
 
 
+[[clone-standby-database-for-other-use-cases]]
 === 克隆備用資料庫以供其他用例使用
 
 [%collapsible%open]
@@ -1139,6 +1152,7 @@ net
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：

@@ -18,10 +18,12 @@ NetApp SnapCenter工具使用基於角色的存取控制 (RBAC) 來管理使用�
 
 
 
+[[on-premises]]
 == 本地
 
 
 
+[[1-setup-database-admin-user-in-snapcenter]]
 === 1.在SnapCenter中設定資料庫管理員用戶
 
 為SnapCenter支援的每個資料庫平台設定專用的管理員使用者 ID 以進行資料庫備份、復原和/或災難復原是有意義的。您也可以使用單一 ID 來管理所有資料庫。在我們的測試案例和演示中，我們分別為 Oracle 和 SQL Server 建立了一個專用的管理員使用者。
@@ -39,6 +41,7 @@ image:snapctr-admin-users.png["此圖顯示輸入/輸出對話框或表示書面
 
 
 
+[[2-snapcenter-plugin-installation-prerequisites]]
 === 2.SnapCenter插件安裝前提條件
 
 SnapCenter使用在 DB 主機上執行的插件代理程式執行備份、復原、複製和其他功能。它透過在「設定和憑證」標籤下配置的憑證連接到資料庫主機和資料庫，以進行插件安裝和其他管理功能。根據目標主機類型（例如 Linux 或 Windows）以及資料庫類型，有特定的權限要求。
@@ -70,6 +73,7 @@ Oracle 的 Unix 主機：
 
 
 
+[[3-snapcenter-host-plugin-installation]]
 === 3.SnapCenter主機插件安裝
 
 
@@ -161,6 +165,7 @@ image:snapctr-add-linux-host-006.png["此圖顯示輸入/輸出對話框或表�
 
 
 
+[[4-database-resource-discovery]]
 === 4.資料庫資源發現
 
 插件安裝成功後，可以立即發現主機上的資料庫資源。點選左側選單中的“資源”標籤。根據資料庫平台的類型，有許多可用的視圖，例如資料庫、資源組等等。如果未發現並顯示主機上的資源，您可能需要按一下「刷新資源」標籤。
@@ -185,6 +190,7 @@ image:snapctr-add-windows-host-011.png["此圖顯示輸入/輸出對話框或表
 
 
 
+[[5-setup-storage-cluster-peering-and-db-volumes-replication]]
 === 5.設定儲存叢集對等和資料庫磁碟區複製
 
 為了使用公有雲作為目標來保護您的內部部署資料庫數據，內部部署ONTAP叢集資料庫磁碟區將使用NetApp SnapMirror技術複製到雲端 CVO。然後可以克隆複製的目標磁碟區以用於 DEV/OPS 或災難復原。以下進階步驟可讓您設定叢集對等和資料庫磁碟區複製。
@@ -226,6 +232,7 @@ image:snapctr-vol-snapmirror-003.png["此圖顯示輸入/輸出對話框或表�
 
 
 
+[[6-add-cvo-database-storage-svm-to-snapcenter]]
 === 6.將 CVO 資料庫儲存 SVM 新增至SnapCenter
 
 . 使用具有 SnapCenterAdmin 權限的使用者 ID 登入SnapCenter 。
@@ -245,6 +252,7 @@ image:snapctr-add-cvo-svm-003.png["此圖顯示輸入/輸出對話框或表示�
 
 
 
+[[7-setup-database-backup-policy-in-snapcenter]]
 === 7.在SnapCenter中設定資料庫備份策略
 
 以下步驟示範如何建立完整資料庫或日誌檔案備份策略。然後可以實施該策略來保護資料庫資源。復原點目標 (RPO) 或復原時間目標 (RTO) 決定了資料庫和/或日誌備份的頻率。
@@ -392,6 +400,7 @@ image:snapctr-sql-policy-log-006.png["此圖顯示輸入/輸出對話框或表�
 
 
 
+[[8-implement-backup-policy-to-protect-database]]
 === 8.實施備份策略來保護資料庫
 
 SnapCenter使用資源群組來備份資料庫資源邏輯分組中的資料庫，例如託管在伺服器上的多個資料庫、共用相同儲存磁碟區的資料庫、支援業務應用程式的多個資料庫等等。保護單一資料庫會建立自己的資源組。以下步驟示範如何實作第 7 節中建立的備份策略來保護 Oracle 和 SQL Server 資料庫。
@@ -542,6 +551,7 @@ image:snapctr-sql-rgroup-log-007.png["此圖顯示輸入/輸出對話框或表�
 
 
 
+[[9-validate-backup]]
 === 9.驗證備份
 
 建立資料庫備份資源組來保護資料庫資源後，備份作業將依照預先定義的計畫執行。在「監視」標籤下檢查作業執行狀態。

@@ -18,6 +18,7 @@ keywords: hybrid cloud, database, solutions, devtest, workflow
 
 
 
+[[clone-an-oracle-database-for-devtest-from-a-replicated-snapshot-backup]]
 == 從複製的快照備份複製 Oracle 資料庫以用於開發/測試
 
 . 使用 Oracle 的資料庫管理使用者 ID 登入SnapCenter 。導覽至「資源」標籤，其中顯示受SnapCenter保護的 Oracle 資料庫。
@@ -86,6 +87,7 @@ image:snapctr-ora-clone-015.png["此圖顯示輸入/輸出對話框或表示書�
 
 
 
+[[clone-a-sql-database-for-devtest-from-a-replicated-snapshot-backup]]
 == 從複製的快照備份複製用於開發/測試的 SQL 資料庫
 
 . 使用 SQL Server 的資料庫管理使用者 ID 登入SnapCenter 。導覽至「資源」標籤，該標籤顯示受SnapCenter保護的 SQL Sever 使用者資料庫和公有雲中的目標備用 SQL 執行個體。
@@ -135,6 +137,7 @@ image:snapctr-sql-clone-010.png["此圖顯示輸入/輸出對話框或表示書�
 
 
 
+[[post-clone-configuration]]
 == 克隆後配置
 
 . 本機的 Oracle 生產資料庫通常以日誌存檔模式運作。對於開發或測試資料庫來說，此模式不是必需的。若要關閉日誌存檔模式，請以 sysdba 登入 Oracle DB，執行日誌模式變更命令，然後啟動資料庫進行存取。
@@ -144,6 +147,7 @@ image:snapctr-sql-clone-010.png["此圖顯示輸入/輸出對話框或表示書�
 
 
 
+[[refresh-clone-database]]
 == 刷新克隆資料庫
 
 . 刪除克隆的資料庫並清理雲端資料庫伺服器環境。然後按照前面的步驟克隆一個包含新資料的新資料庫。克隆一個新資料庫只需要幾分鐘。
@@ -152,6 +156,7 @@ image:snapctr-sql-clone-010.png["此圖顯示輸入/輸出對話框或表示書�
 
 
 
+[[where-to-go-for-help]]
 == 去哪裡尋求協助？
 
 如果您需要有關此解決方案和用例的協助，請加入link:https://netapppub.slack.com/archives/C021R4WC0LC["NetApp解決方案自動化社群支援 Slack 頻道"]並尋找解決方案自動化管道來發布您的問題或詢問。

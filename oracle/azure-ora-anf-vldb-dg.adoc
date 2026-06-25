@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 高吞吐量和任務關鍵型 Oracle VLDB 對後端資料庫儲存提出了很高的要求。為了滿足服務等級協定 (SLA)，資料庫儲存必須提供所需的容量和每秒高輸入/輸出作業數 (IOPS)，同時保持亞毫秒延遲效能。在具有共享儲存資源環境的公有雲中部署此類資料庫工作負載時，這一點尤其具有挑戰性。並非所有儲存平台都是平等的。進階Azure NetApp Files儲存與 Azure 基礎架構結合，可滿足如此高要求的 Oracle 工作負載的需求。在經過驗證的性能基準測試中（link:https://learn.microsoft.com/en-us/azure/azure-netapp-files/performance-oracle-multiple-volumes["Azure NetApp Files多個磁碟區上的 Oracle 資料庫效能"^] )，ANF 透過 SLOB 工具在合成的 100% 隨機選擇工作負載中提供了 250 萬次讀取 IOPS，延遲為 700 微秒。對於標準 8k 區塊大小，這相當於大約 20 GiB/s 的吞吐量。
@@ -34,6 +35,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -46,18 +48,21 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在 Azure 雲端實驗室設定中進行的，該設定可能與實際使用者部署環境不符。有關更多信息，請參閱<<部署考慮的關鍵因素>> 。
 
 
 
+[[architecture]]
 === 架構
 
 image:azure-ora-anf-vldb-dg-architecture.png["此圖提供了 ANF 上的 Azure 雲端中 Oracle Data Guard 實作的詳細圖片。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -98,6 +103,7 @@ image:azure-ora-anf-vldb-dg-architecture.png["此圖提供了 ANF 上的 Azure �
 |===
 
 
+[[oracle-vldb-data-guard-configuration-with-a-simulated-ny-to-la-dr-setup]]
 === Oracle VLDB Data Guard 配置，模擬紐約到洛杉磯的災難復原設置
 
 [cols="33%, 33%, 33%"]
@@ -117,6 +123,7 @@ image:azure-ora-anf-vldb-dg-architecture.png["此圖提供了 ANF 上的 Azure �
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * Azure NetApp Files配置。 Azure NetApp Files在 Azure NetApp儲存帳戶中指派為 `Capacity Pools`。在這些測試和驗證中，我們部署了一個 2 TiB 容量池來託管東部區域的 Oracle 主資料庫，並部署了一個 4 TiB 容量池來託管西部 2 區域的備用資料庫和資料庫克隆。  ANF 容量池有三種服務等級：Standard、Premium 和 Ultra。 ANF容量池的IO容量取決於容量池的大小及其服務等級。在建立容量池時，可以將 QoS 設定為“自動”或“手動”，並將靜態資料加密設為“單次”或“兩次”。
@@ -129,12 +136,14 @@ image:azure-ora-anf-vldb-dg-architecture.png["此圖提供了 ANF 上的 Azure �
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 假設您已將主 Oracle 資料庫部署在 VNet 內的 Azure 雲端環境中，作為設定 Oracle Data Guard 的起點。理想情況下，主資料庫部署在具有 NFS 掛載的 ANF 儲存體上。您的主要 Oracle 資料庫也可以在NetApp ONTAP儲存或 Azure 生態系統或私有資料中心內的任何其他儲存體上執行。以下部分示範了在 Azure 中具有 ANF 儲存體的主 Oracle DB 與 Azure 中具有 ANF 儲存體的實體備用 Oracle DB 之間的 Oracle Data Guard 設定中 ANF 上的 Oracle VLDB 的配置。
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -175,6 +184,7 @@ Vnet網關連線狀態：image:azure-ora-anf-dg-vnet-003.png["顯示 Azure 環�
 ====
 
 
+[[primary-oracle-vldb-configuration-for-data-guard]]
 === Data Guard 的主要 Oracle VLDB 配置
 
 [%collapsible%open]
@@ -503,6 +513,7 @@ DIRNAME
 ====
 
 
+[[standby-oracle-vldb-configuration-for-data-guard]]
 === 針對 Data Guard 的備用 Oracle VLDB 配置
 
 [%collapsible%open]
@@ -823,6 +834,7 @@ DIRNAME
 ====
 
 
+[[setup-data-guard-broker]]
 === 設定 Data Guard Broker
 
 [%collapsible%open]
@@ -920,6 +932,7 @@ DGMGRL>
 ====
 
 
+[[clone-standby-database-for-other-use-cases-via-automation]]
 === 透過自動化克隆其他用例的備用資料庫
 
 [%collapsible%open]
@@ -936,6 +949,7 @@ NOTE: 目前，只有具有 bitbucket 存取權限的NetApp內部使用者才能
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：

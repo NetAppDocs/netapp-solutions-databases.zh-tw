@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 將現有的 Oracle 工作負載從一個平台移至另一個平台（例如從本地到公有雲），需要調整目標平台中的運算和儲存規模以滿足效能和服務等級要求。本文檔示範了一個實現該目標的簡單工具包。
@@ -34,6 +35,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -45,6 +47,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[license]]
 == 執照
 
 透過存取、下載、安裝或使用此工具包儲存庫中的內容，您同意link:https://netapp.sharepoint.com/sites/CIEBuilt-OnsTeam-DatabasesandApps/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FCIEBuilt%2DOnsTeam%2DDatabasesandApps%2FShared%20Documents%2FDatabases%20and%20Apps%2FDatabase%20Solutions%2FDB%20Sizing%20Toolkits%2FOracle%20Sizing%20Guidance%20for%20ANF%2FLICENSE%2ETXT&parent=%2Fsites%2FCIEBuilt%2DOnsTeam%2DDatabasesandApps%2FShared%20Documents%2FDatabases%20and%20Apps%2FDatabase%20Solutions%2FDB%20Sizing%20Toolkits%2FOracle%20Sizing%20Guidance%20for%20ANF["許可證文件"^]。
@@ -54,10 +57,12 @@ NOTE: 使用此工具包儲存庫中的內容製作和/或分享任何衍生作�
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -71,6 +76,7 @@ NOTE: 使用此工具包儲存庫中的內容製作和/或分享任何衍生作�
 ====
 
 
+[[download-the-toolkit]]
 === 下載工具包
 
 [%collapsible%open]
@@ -80,6 +86,7 @@ NOTE: 使用此工具包儲存庫中的內容製作和/或分享任何衍生作�
 ====
 
 
+[[how-to-use-the-toolkit]]
 === 如何使用工具包？
 
 [%collapsible%open]
@@ -95,6 +102,7 @@ NOTE: 使用此工具包儲存庫中的內容製作和/或分享任何衍生作�
 ====
 
 
+[[toolkit-usage-demonstration]]
 === 工具包使用演示
 
 [%collapsible%open]

@@ -20,6 +20,7 @@ NetApp解決方案工程團隊
 
 
 
+[[purpose]]
 == 目的
 
 此工具包可自動執行在 AWS 雲端中部署的 Oracle 資料庫的高可用性和災難復原 (HR/DR) 環境的設定和管理任務，該資料庫具有 FSx ONTAP儲存和 EC2 運算執行個體。
@@ -36,6 +37,7 @@ NetApp解決方案工程團隊
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -48,6 +50,7 @@ NetApp解決方案工程團隊
 
 
 
+[[license]]
 == 執照
 
 透過存取、下載、安裝或使用此 GitHub 儲存庫中的內容，您同意link:https://github.com/NetApp/na_ora_hadr_failover_resync/blob/master/LICENSE.TXT["許可證文件"^]。
@@ -57,10 +60,12 @@ NOTE: 製作和/或分享此 GitHub 儲存庫中內容的任何衍生作品都�
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -86,6 +91,7 @@ AWS EC2 Instance
 ====
 
 
+[[download-the-toolkit]]
 === 下載工具包
 
 [%collapsible%open]
@@ -97,6 +103,7 @@ git clone https://github.com/NetApp/na_ora_hadr_failover_resync.git
 ====
 
 
+[[global-variables-configuration]]
 === 全域變數配置
 
 [%collapsible%open]
@@ -127,6 +134,7 @@ Linux and DB specific global variables - keep it as is.
 ====
 
 
+[[host-variables-configuration]]
 === 主機變數配置
 
 [%collapsible%open]
@@ -151,6 +159,7 @@ Linux - define host specific variables at Linux level
 ====
 
 
+[[db-server-host-file-configuration]]
 === 資料庫伺服器主機檔案配置
 
 [%collapsible%open]
@@ -166,6 +175,7 @@ AWS EC2 執行個體預設使用 IP 位址進行主機命名。如果您在 Ansi
 ====
 
 
+[[playbook-execution-executed-in-sequence]]
 === Playbook 執行 - 依序執行
 
 [%collapsible%open]
@@ -222,6 +232,7 @@ ansible-playbook -i hosts ontap_ora_resync.yml -u ec2-user --private-key db2.pem
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關NetApp解決方案自動化的更多信息，請訪問以下網站link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]

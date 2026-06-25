@@ -18,6 +18,7 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法
 
 
 
+[[awxtower]]
 == AWX/塔
 
 對於 AWX/Tower 環境，將引導您建立ONTAP叢集管理和 Oracle 伺服器（IP 和主機名稱）的清單、建立憑證、設定從NetApp Automation Github 中提取 Ansible 程式碼的專案以及啟動自動化的作業範本。
@@ -29,6 +30,7 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法
 
 
 
+[[cli-via-the-ansible-control-host]]
 == 透過 Ansible 控制主機的 CLI
 
 . 設定 Linux 主機，以便將其用作 Ansible 控制主機link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/getting-started.html["按此處查看詳細說明"^]
@@ -41,6 +43,7 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法
 
 
 
+[[requirements]]
 == 要求
 
 [cols="3, 9"]
@@ -82,6 +85,7 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法
 |===
 
 
+[[automation-details]]
 == 自動化詳細信息
 
 此自動化部署採用由三個獨立角色組成的單一 Ansible 劇本設計。這些角色適用於ONTAP、Linux 和 Oracle 配置。下表描述了正在自動化的任務。
@@ -158,12 +162,14 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法
 |===
 
 
+[[default-parameters]]
 == 預設參數
 
 為了簡化自動化，我們預設了許多必要的 Oracle 部署參數的預設值。對於大多數部署來說，通常不需要更改預設參數。更高級的用戶可以謹慎地更改預設參數。預設參數位於 defaults 目錄下的每個角色資料夾中。
 
 
 
+[[deployment-instructions]]
 == 部署說明
 
 在開始之前，請下載以下 Oracle 安裝和修補程式文件，並將它們放在 `/tmp/archive`每個要部署的資料庫伺服器上的所有使用者均具有讀取、寫入和執行存取權限的目錄。自動化任務在該特定目錄中尋找指定的安裝檔案以進行 Oracle 安裝和設定。
@@ -176,6 +182,7 @@ p6880880_190000_Linux-x86-64.zip -- opatch version 12.2.0.1.23
 ----
 
 
+[[license]]
 == 執照
 
 您應該閱讀 Github 儲存庫中所述的許可證資訊。透過存取、下載、安裝或使用此儲存庫中的內容，您同意所列出的授權條款link:https://github.com/NetApp-Automation/na_oracle19c_deploy/blob/master/LICENSE.TXT["這裡"^]。

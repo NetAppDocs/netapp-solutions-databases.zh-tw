@@ -15,6 +15,7 @@ summary: 在部署 Oracle Database 26ai 高可用性之前，請先檢查 Google
 
 
 
+[[access-and-apis]]
 == 存取和 API
 
 在開始主機和儲存佈建之前，請使用此檢查清單驗證權限和平台整備狀態。
@@ -53,6 +54,7 @@ timedatectl
 |===
 
 
+[[whats-next]]
 == 接下來呢？
 
 若要為 Oracle 主機基礎架構佈建高可用性，請繼續執行 xref:gcnv-oracle-provision-compute.adoc[為 Oracle Database 26ai 佈建 Google Compute Engine 執行個體]。

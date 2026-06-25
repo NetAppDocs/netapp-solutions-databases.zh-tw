@@ -19,6 +19,8 @@ summary: 僅適用於生產高可用性 （HA） Data Guard 和快速啟動故�
 
 
 
+[[step-1-enable-data-guard-broker]]
+[[enable-broker-on-both-databases]]
 == 步驟 1：啟用 Data Guard Broker
 
 在兩個資料庫主機上啟用 Data Guard Broker，並建立將主資料庫和備用資料庫在統一管理下連結的 Broker 組態。
@@ -72,6 +74,8 @@ DGMGRL> SHOW CONFIGURATION VERBOSE;
 
 
 
+[[step-2-confirm-flashback-for-fsfo]]
+[[confirm-flashback-required-for-fsfo]]
 == 步驟 2：確認 FSFO 的 Flashback
 
 確認兩台主機上都已啟用閃回資料庫。閃回功能是 FSFO 自動恢復所必需的，可讓原主節點在容錯移轉後自動重新加入組態，成為備用節點。
@@ -102,6 +106,8 @@ SQL'
 
 
 
+[[step-3-configure-and-enable-fsfo]]
+[[configure-fsfo-properties-and-enable]]
 == 步驟 3：設定並啟用 FSFO
 
 設定 SYNC 重做傳輸，配置 MaxAvailability 保護模式，在每個資料庫上定義 FSFO 目標，並啟用 Fast-Start Failover。
@@ -138,6 +144,8 @@ DGMGRL> SHOW FAST_START FAILOVER;
 
 
 
+[[step-4-install-instant-client-on-observer]]
+[[install-instant-client-on-observer]]
 == 步驟 4：在 Observer 上安裝 Instant Client
 
 在專用的 Observer VM 上安裝 Oracle Instant Client (`oradg-obs`），建立專用的 `oracle` OS 使用者，並設定 Oracle Net 環境，使 Observer 能夠透過 TCP/1521 連線至兩個資料庫成員。
@@ -190,6 +198,8 @@ sudo chown oracle:oracle /etc/oracle/network/admin/tnsnames.ora
 
 
 
+[[step-5-run-observer-as-a-systemd-service]]
+[[start-observer-systemd]]
 == 步驟 5：將 Observer 作為 systemd 服務執行
 
 建立一個包含兩個資料庫成員憑證的自動登入錢包，然後將 Observer 設定並啟動為 systemd 服務，使其在重新開機後仍能持續運作並自動重新連線至設定。
@@ -302,6 +312,8 @@ DGMGRL> SHOW CONFIGURATION;       -- Configuration Status: SUCCESS, FSFO: ENABLE
 
 
 
+[[step-6-test-fsfo]]
+[[test-fsfo-switchover-and-failover]]
 == 步驟 6：測試 FSFO
 
 使用 `VALIDATE DATABASE`驗證 Data Guard 配置，然後執行計劃內切換，並在測試視窗中執行計劃外 VM 重設故障轉移，以確認 FSFO 端對端運作正常。
@@ -323,6 +335,7 @@ DGMGRL> SWITCHOVER TO 'orcl';        -- restore topology
 
 
 
+[[whats-next]]
 == 接下來呢？
 
 此部署的 Oracle Data Guard Broker、Fast-Start Failover 和 Observer 組態現已就緒。

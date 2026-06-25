@@ -18,12 +18,14 @@ keywords: AWS, Oracle, RDS, HA, DR, database
 
 
 
+[[deploy-an-azure-vm-with-anf-for-oracle-via-azure-portal-console]]
 == 透過 Azure 入口網站控制台部署具有 ANF for Oracle 的 Azure VM
 
 如果您是 Azure 新用戶，首先需要設定 Azure 帳戶環境。這包括註冊您的組織以使用 Azure Active Directory。以下部分是這些步驟的摘要。有關詳細信息，請參閱連結的 Azure 特定文件。
 
 
 
+[[create-and-consume-azure-resources]]
 === 建立和使用 Azure 資源
 
 設定 Azure 環境並建立帳戶並將其與訂閱關聯後，您可以使用該帳戶登入 Azure 入口網站來建立執行 Oracle 所需的資源。
@@ -118,18 +120,21 @@ image:db-ora-azure-anf-vols-005.png["檢視並建立磁碟區建立畫面的階�
 
 
 
+[[install-and-configure-oracle-on-azure-vm-with-anf]]
 == 使用 ANF 在 Azure VM 上安裝和設定 Oracle
 
 NetApp解決方案團隊創建了許多基於 Ansible 的自動化工具包，以協助您在 Azure 中順利部署 Oracle。請依照下列步驟在 Azure VM 上部署 Oracle。
 
 
 
+[[set-up-an-ansible-controller]]
 === 設定 Ansible 控制器
 
 如果您尚未設定 Ansible 控制器，請參閱link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]，其中有關於如何設定 Ansible 控制器的詳細說明。
 
 
 
+[[obtain-oracle-deployment-automation-toolkit]]
 === 取得 Oracle 部署自動化工具包
 
 使用您用於登入 Ansible 控制器的使用者 ID，在您的主目錄中複製 Oracle 部署工具包的副本。
@@ -140,6 +145,7 @@ git clone https://github.com/NetApp-Automation/na_oracle19c_deploy.git
 ----
 
 
+[[execute-the-toolkit-with-your-configuration]]
 === 使用您的設定執行工具包
 
 查看link:../automation/cli-automation.html#cli-deployment-oracle-19c-database["CLI 部署 Oracle 19c 資料庫"^]使用 CLI 執行劇本。當您從 Azure 控制台而不是 CLI 建立資料庫磁碟區時，可以忽略全域 VARS 檔案中變數配置的ONTAP部分。
@@ -149,12 +155,14 @@ NOTE: 此工具包預設部署帶有 RU 19.8 的 Oracle 19c。只需對預設配
 
 
 
+[[set-up-azacsnap-backup-tool-for-app-consistent-snapshots-for-oracle]]
 == 為 Oracle 的應用程式一致性快照設定 AzAcSnap 備份工具
 
 Azure 應用程式一致性快照工具 (AzAcSnap) 是一個命令列工具，它透過在拍攝儲存快照之前處理將第三方資料庫置於應用程式一致性狀態所需的所有業務流程來實現對第三方資料庫的資料保護。然後它將這些資料庫還原到可操作狀態。 NetApp建議在資料庫伺服器主機上安裝該工具。請參閱下面的安裝和設定程序。
 
 
 
+[[install-azacsnap-tool]]
 === 安裝 AzAcSnap 工具
 
 . 取得最新版本的link:https://aka.ms/azacsnapinstaller["AzArcSnap 安裝程式"^]。
@@ -169,6 +177,7 @@ Azure 應用程式一致性快照工具 (AzAcSnap) 是一個命令列工具，�
 
 
 
+[[configure-oracle-connectivity]]
 === 配置 Oracle 連接
 
 快照工具與 Oracle 資料庫通信，需要具有適當權限的資料庫使用者來啟用或停用備份模式。
@@ -296,6 +305,7 @@ SQL>
 
 
 
+[[configure-anf-connectivity]]
 === 配置 ANF 連接
 
 本節介紹如何啟用與Azure NetApp Files （使用 VM）的通訊。
@@ -345,6 +355,7 @@ NOTE: 確保 JSON 檔案的格式與上面描述的完全一致，尤其是用�
 
 
 
+[[complete-the-setup-of-azacsnap-tool]]
 === 完成 AzAcSnap 工具的設置
 
 請依照下列步驟配置和測試快照工具。測試成功後，即可執行第一次資料庫一致性儲存快照。

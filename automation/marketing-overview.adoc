@@ -18,6 +18,7 @@ summary: 本頁介紹在NetApp ONTAP儲存上部署 Oracle19c 的自動化方法
 
 
 
+[[automated-deployment-of-oracle19c-for-ontap-on-nfs]]
 == 在 NFS 上自動部署 Oracle19c for ONTAP
 
 組織正在實現其環境自動化，以提高效率、加速部署並減少人工工作量。 Ansible 等組態管理工具正被用來簡化企業資料庫操作。在此解決方案中，我們示範如何使用 Ansible 自動設定和設定具有NetApp ONTAP的 Oracle 19c。透過讓儲存管理員、系統管理員和 DBA 能夠一致、快速地部署新儲存、配置資料庫伺服器和安裝 Oracle 19c 軟體，您可以獲得以下好處：
@@ -39,6 +40,7 @@ NetApp為客戶提供經過驗證的 Ansible 模組和角色，以加速 Oracle 
 
 
 
+[[awxtower-deployments]]
 === AWX/塔式部署
 
 第 1 部分：入門、需求、自動化詳細資訊和初始 AWX/Tower 配置
@@ -51,6 +53,7 @@ video::d844a9c3-4eb3-4512-bf21-b01200f09f66[panopto]
 video::6da1b960-e1c9-4950-b750-b01200f0bdfa[panopto]
 
 
+[[cli-deployment]]
 === CLI部署
 
 第 1 部分：入門、需求、自動化詳細資訊和 Ansible 控制主機設置

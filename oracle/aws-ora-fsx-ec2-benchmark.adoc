@@ -24,10 +24,12 @@ keywords: HA, DR, database, Oracle, RDS, AWS, SnapCenter
 
 
 
+[[test-environment-setup]]
 == 測試環境設定
 
 
 
+[[compute]]
 === 運算
 
 我們部署了一個 EC2 M5 實例，它有 8vCPU、32G RAM 和 10Gps 的網路頻寬。
@@ -36,6 +38,7 @@ image:aws-ora-fsx-ec2-inst-010.png["此圖顯示輸入/輸出對話框或表示�
 
 
 
+[[fsx-storage]]
 === FSx 存儲
 
 我們建立了三個資料庫卷，並使用 NFS 將捲掛載到 EC2 執行個體上，如下所示：
@@ -53,6 +56,7 @@ FSx 檔案系統配置了 80,000 IOPS 容量和 2GiBps I/O 吞吐量。
 
 
 
+[[oracle-configuration]]
 === Oracle 配置
 
 我們安裝了帶有 RU 補丁 19.8 的 Oracle 版本 19c。伺服器上啟用了 dNFS。
@@ -63,6 +67,7 @@ image:aws-ora-fsx-ec2-inst-011.png["此圖顯示輸入/輸出對話框或表示�
 
 
 
+[[swingbench-configuration]]
 === Swingbench 配置
 
 我們在具有 8vCPU 和 32G RAM 的 Windows 主機上部署了 Swingbench 2.6（最新版本）。我們使用 SOE plsql 測試模組版本 2 作為基準。預設負載設定檔提供 80/20 的讀取/寫入比率來模擬現實世界的 OLTP 事務工作負載。
@@ -77,6 +82,7 @@ image:aws-ora-fsx-ec2-swin-001.png["此圖顯示輸入/輸出對話框或表示�
 
 
 
+[[test-results-analysis]]
 == 測試結果分析
 
 我們捕獲了每次測試運行的 Swingbench 結果並獲得了相應的 Oracle AWR 報告以進行效能分析。

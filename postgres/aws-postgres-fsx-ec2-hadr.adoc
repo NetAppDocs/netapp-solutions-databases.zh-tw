@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 PostgreSQL 是一個廣泛使用的開源資料庫，在十大最受歡迎資料庫引擎中排名第四。link:https://db-engines.com/en/ranking["資料庫引擎"^] 。一方面，PostgreSQL 因其免許可、開源模式而廣受歡迎，同時仍具有複雜的功能。另一方面，由於它是開源的，因此缺乏關於高可用性和災難復原（HA/DR）領域的生產級資料庫部署的詳細指導，尤其是在公有雲中。一般來說，建立一個具有熱備用、溫備用、流複製等功能的典型 PostgreSQL HA/DR 系統可能很困難。透過提升備用站點然後切換回主站點來測試 HA/DR 環境可能會對生產造成乾擾。當讀取工作負載部署在串流熱備用系統上時，主資料庫上有充分記錄的效能問題。
@@ -37,6 +38,7 @@ PostgreSQL 是一個廣泛使用的開源資料庫，在十大最受歡迎資料
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -49,18 +51,21 @@ PostgreSQL 是一個廣泛使用的開源資料庫，在十大最受歡迎資料
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在可能與最終部署環境不符的 AWS FSx 和 EC2 環境中進行的。有關更多信息，請參閱<<部署考慮的關鍵因素>> 。
 
 
 
+[[architecture]]
 === 架構
 
 image:aws-postgres-fsx-ec2-architecture.png["此圖提供了 PostgreSQL 混合雲解決方案的組織詳細圖片，包括本地端和 AWS 網站。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -95,6 +100,7 @@ image:aws-postgres-fsx-ec2-architecture.png["此圖提供了 PostgreSQL 混合�
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * *PostgreSQL 資料庫備份、還原和還原。 * PostgreSQL 資料庫支援多種備份方法，例如使用 pg_dump 進行邏輯備份、使用 pg_basebackup 或較低層級的 OS 備份命令進行實體線上備份以及儲存層級一致的快照。此解決方案使用NetApp一致性群組快照在備用站點對 PostgreSQL 資料庫資料和 WAL 磁碟區進行備份、還原和還原。  NetApp一致性群組磁碟區快照在將 I/O 寫入儲存時對其進行排序，並保護資料庫資料檔案的完整性。
@@ -108,6 +114,7 @@ image:aws-postgres-fsx-ec2-architecture.png["此圖提供了 PostgreSQL 混合�
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 按照下面概述的詳細說明，可以使用基於NetApp Ansible 的自動化工具包自動完成此解決方案的部署。
@@ -123,6 +130,7 @@ video::e479b91f-eacd-46bf-bfa1-b01200f0015a[panopto]
 
 
 
+[[prerequisites-for-automated-deployment]]
 === 自動部署的先決條件
 
 部署需要以下先決條件。
@@ -155,6 +163,7 @@ ansible-galaxy collection install -r collections/requirements.yml --force --forc
 
 
 
+[[configure-the-hosts-file]]
 === 設定 hosts 文件
 
 將主 FSx ONTAP叢集管理 IP 和 EC2 執行個體主機名稱輸入到 hosts 檔案中。
@@ -180,6 +189,7 @@ psql_01s ansible_ssh_private_key_file=psql_01s.pem
 ....
 
 
+[[configure-the-hostname-yml-file-in-the-hostvars-folder]]
 === 配置host_vars資料夾中的host_name.yml文件
 
 [source, shell]
@@ -204,6 +214,7 @@ client_address: "172.30.15.0/24"
 ----
 
 
+[[configure-the-global-fsxvars-yml-file-in-the-vars-folder]]
 === 配置vars資料夾中的全域fsx_vars.yml文件
 
 [source, shell]
@@ -291,6 +302,7 @@ redhat_sub_password: "xxxxx"
 ----
 
 
+[[postgresql-deployment-and-hadr-setup]]
 === PostgreSQL 部署和 HA/DR 設定
 
 以下任務在主 EC2 DB 伺服器主機上部署 PostgreSQL DB 伺服器服務並在主站點初始化資料庫。然後在備用站點設定備用主 EC2 DB 伺服器主機。最後，從主站點 FSx 叢集到備用站點 FSx 叢集建立 DB 磁碟區複製，以實現災難復原。
@@ -336,6 +348,7 @@ ansible-playbook -i hosts postgresql_standby_setup.yml -u ec2-user --private-key
 ----
 
 
+[[postgresql-database-snapshot-backup-and-replication-to-standby-site]]
 === PostgreSQL 資料庫快照備份並複製到備用站點
 
 PostgreSQL 資料庫快照備份和複製到備用網站可以在 Ansible 控制器上以使用者定義的間隔進行控制和執行。我們已經驗證間隔可以低至 5 分鐘。因此，當主站點發生故障時，如果故障發生在下一次計劃快照備份之前，則可能會有 5 分鐘的資料遺失。
@@ -346,6 +359,7 @@ PostgreSQL 資料庫快照備份和複製到備用網站可以在 Ansible 控制
 ----
 
 
+[[failover-to-standby-site-for-dr]]
 === 故障轉移到災難復原備用站點
 
 為了將 PostgreSQL HA/DR 系統作為 DR 練習進行測試，請透過執行下列劇本在備用網站上的主備用 EC2 DB 執行個體上執行故障轉移和 PostgreSQL 資料庫復原。在實際的 DR 場景中，對實際故障轉移到 DR 站點執行相同的操作。
@@ -356,6 +370,7 @@ ansible-playbook -i hosts postgresql_failover.yml -u ec2-user --private-key psql
 ----
 
 
+[[resync-replicated-db-volumes-after-failover-test]]
 === 故障轉移測試後重新同步複製的資料庫卷
 
 故障轉移測試後執行重新同步以重新建立資料庫磁碟區SnapMirror複製。
@@ -366,12 +381,14 @@ ansible-playbook -i hosts postgresql_standby_resync.yml -u ec2-user --private-ke
 ----
 
 
+[[failover-from-primary-ec2-db-server-to-standby-ec2-db-server-due-to-ec2-compute-instance-failure]]
 === 由於 EC2 計算執行個體故障，從主 EC2 資料庫伺服器故障轉移到備用 EC2 資料庫伺服器
 
 NetApp建議執行手動故障轉移或使用可能需要許可證的成熟 OS 叢集軟體。
 
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：

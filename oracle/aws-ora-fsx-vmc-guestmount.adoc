@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 幾十年來，企業一直在私人資料中心的 VMware 上運行 Oracle。  AWS 上的 VMware Cloud (VMC) 提供一鍵式解決方案，將 VMware 的企業級軟體定義資料中心 (SDDC) 軟體引入 AWS 雲端的專用、彈性、裸機基礎架構。 AWS FSx ONTAP為 VMC SDDC 提供優質儲存和資料結構，使客戶能夠在基於 vSphere 的私有雲、公有雲和混合雲環境中運行 Oracle 等業務關鍵型應用程序，並優化對 AWS 服務的存取。無論是現有或新的 Oracle 工作負載，AWS 上的 VMC 均可在 VMware 上提供熟悉、簡化且自我管理的 Oracle 環境，並具備 AWS 雲端的所有優勢，同時將所有平台管理和最佳化工作交給 VMware。
@@ -35,6 +36,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -47,18 +49,21 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在 AWS 上的 VMC 的實驗室環境中進行的，該環境可能與最終部署環境不符。有關更多信息，請參閱<<部署考慮的關鍵因素>> 。
 
 
 
+[[architecture]]
 === 架構
 
 image:aws-ora-fsx-vmc-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 AWS 公有雲中的 Oracle 部署配置的詳細圖片。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -105,6 +110,7 @@ image:aws-ora-fsx-vmc-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 
 |===
 
 
+[[oracle-database-configuration-in-vmc-on-aws]]
 === AWS 上的 VMC 中的 Oracle 資料庫配置
 
 [cols="33%, 33%, 33%"]
@@ -130,6 +136,7 @@ image:aws-ora-fsx-vmc-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * *FSx 到 VMC 的連接。 *當您在 VMware Cloud on AWS 上部署 SDDC 時，它會在 AWS 帳戶和專用於您的組織並由 VMware 管理的 VPC 中建立。您還必須將 SDDC 連接到屬於您的 AWS 帳戶（稱為客戶 AWS 帳戶）。此連線可讓您的 SDDC 存取屬於您的客戶帳戶的 AWS 服務。 FSx ONTAP是部署在您的客戶帳戶中的 AWS 服務。一旦 VMC SDDC 連接到您的客戶帳戶，FSx 儲存即可供 VMC SDDC 中的虛擬機器直接安裝。
@@ -143,12 +150,14 @@ image:aws-ora-fsx-vmc-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 以下部分提供了在 AWS 上的 VMC 中部署 Oracle 19c 的逐步過程，其中將 FSx ONTAP儲存直接安裝到單一節點中的 DB VM，使用 Oracle ASM 作為資料庫磁碟區管理器重新啟動配置。
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -176,6 +185,7 @@ NOTE: 請確定您已在 Oracle VM 根磁碟區中指派至少 50G，以便有�
 ====
 
 
+[[db-vm-kernel-configuration]]
 === DB VM 核心配置
 
 [%collapsible%open]
@@ -396,6 +406,7 @@ chmod 440 /etc/sudoers
 ====
 
 
+[[provision-and-map-fsx-ontap-luns-to-the-db-vm]]
 === 配置 FSx ONTAP LUN 並將其對應到 DB VM
 
 [%collapsible%open]
@@ -528,6 +539,7 @@ nim        /vol/ora_02_logs/ora_02_u03_02            ora_02        6  iscsi
 ====
 
 
+[[db-vm-storage-configuration]]
 === 資料庫虛擬機器儲存配置
 
 [%collapsible%open]
@@ -821,6 +833,7 @@ systemctl restart multipathd
 ====
 
 
+[[oracle-grid-infrastructure-installation]]
 === Oracle 網格基礎架構安裝
 
 [%collapsible%open]
@@ -1082,6 +1095,7 @@ CRS-4638: Oracle High Availability Services is online
 ====
 
 
+[[oracle-database-installation]]
 === Oracle資料庫安裝
 
 [%collapsible%open]
@@ -1469,6 +1483,7 @@ alter database open;
 ====
 
 
+[[oracle-backup-restore-and-clone-with-snapcenter]]
 === 使用SnapCenter進行 Oracle 備份、復原和克隆
 
 
@@ -1891,6 +1906,7 @@ SQL>
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：

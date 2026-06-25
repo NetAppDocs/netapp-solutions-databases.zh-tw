@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 NetApp SnapCenter software是一個易於使用的企業平台，可安全地協調和管理跨應用程式、資料庫和檔案系統的資料保護。它透過將這些任務轉移給應用程式擁有者來簡化備份、復原和複製生命週期管理，同時又不犧牲監督和管理儲存系統活動的能力。透過利用基於儲存的資料管理，它可以提高效能和可用性，並減少測試和開發時間。
@@ -34,6 +35,7 @@ NetApp SnapCenter software是一個易於使用的企業平台，可安全地協
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -46,18 +48,21 @@ NetApp SnapCenter software是一個易於使用的企業平台，可安全地協
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在實驗室環境中進行的，可能與最終部署環境不符。請參閱<<部署考慮的關鍵因素>>了解更多。
 
 
 
+[[architecture]]
 === 架構
 
 image:automation-ora-anf-nfs-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 AWS 公有雲中的 Oracle 部署配置的詳細圖片。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -104,6 +109,7 @@ image:automation-ora-anf-nfs-architecture.png["此圖提供了具有 iSCSI 和 A
 |===
 
 
+[[oracle-database-configuration-in-the-lab-environment]]
 === 實驗室環境中的 Oracle 資料庫配置
 
 [cols="33%, 33%, 33%"]
@@ -123,6 +129,7 @@ image:automation-ora-anf-nfs-architecture.png["此圖提供了具有 iSCSI 和 A
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * * SnapCenter部署。 * SnapCenter可以在 Windows 網域或工作群組環境中部署。對於基於網域的部署，網域使用者帳戶應該是網域管理員帳戶，或網域使用者屬於SnapCenter託管伺服器上的本機管理員群組。
@@ -134,12 +141,14 @@ image:automation-ora-anf-nfs-architecture.png["此圖提供了具有 iSCSI 和 A
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 以下部分提供了 Azure 雲端中Azure NetApp Files上的SnapCenter部署、配置以及 Oracle 資料庫備份、復原和複製的逐步流程。
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -194,6 +203,7 @@ video::960fb370-c6e0-4406-b6d5-b110014130e8[panopto,width=360]
 ====
 
 
+[[snapcenter-installation-and-setup]]
 === SnapCenter安裝與設定
 
 [%collapsible%open]
@@ -247,6 +257,7 @@ image:snapctr-ora-azure-anf-setup-005.png["此圖像提供SnapCenter伺服器的
 ====
 
 
+[[database-backup]]
 === 資料庫備份
 
 [%collapsible%open]
@@ -306,6 +317,7 @@ image:snapctr-ora-azure-anf-bkup-013.png["此映像為SnapCenter伺服器提供�
 ====
 
 
+[[database-recovery]]
 === 資料庫復原
 
 [%collapsible%open]
@@ -349,6 +361,7 @@ image:snapctr-ora-azure-anf-restore-008.png["此映像為SnapCenter伺服器提�
 ====
 
 
+[[database-clone]]
 === 資料庫克隆
 
 [%collapsible%open]
@@ -516,6 +529,7 @@ SQL> alter pluggable database all open;
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：

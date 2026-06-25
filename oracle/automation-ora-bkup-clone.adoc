@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 利用公有雲中的伺服器內資料庫映像備份副本為 Oracle VLDB 提供NetApp ONTAP磁碟區的快速複製（幾分鐘）功能可實現多種目的。它為報告、開發或 UAT 用例提供了近乎即時的全尺寸生產資料庫。它可以節省儲存成本，特別是當可以選擇對主資料庫備份磁碟區進行精簡複製時。這個基於 Ansible 的自動化工具包使用戶能夠按照使用者想要的時間表設定、複製和刷新克隆的 Oracle 資料庫，以簡化生命週期管理。此工具包適用於部署至 Google 公有雲的 Oracle VLDB 用例，並使用 GCNV 作為伺服器內資料庫備份儲存。
@@ -32,6 +33,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -43,6 +45,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[license]]
 == 執照
 
 透過存取、下載、安裝或使用此 GitHub 儲存庫中的內容，您同意link:https://github.com/NetApp/na_ora_hadr_failover_resync/blob/master/LICENSE.TXT["許可證文件"^]。
@@ -52,10 +55,12 @@ NOTE: 製作和/或分享此 GitHub 儲存庫中內容的任何衍生作品都�
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -83,6 +88,7 @@ NOTE: 為了簡化，複製目標 Oracle 伺服器的配置應與主 Oracle 伺�
 ====
 
 
+[[download-the-toolkit]]
 === 下載工具包
 
 [%collapsible%open]
@@ -97,6 +103,7 @@ NOTE: 目前，只有具有 bitbucket 存取權限的NetApp內部使用者才能
 ====
 
 
+[[ansible-source-and-target-hosts-file-configuration]]
 === Ansible 來源和目標 hosts 檔案配置
 
 [%collapsible%open]
@@ -119,6 +126,7 @@ localhost ansible_connection=local
 ====
 
 
+[[global-variables-configuration]]
 === 全域變數配置
 
 [%collapsible%open]
@@ -186,6 +194,7 @@ NOTE: 為了實現更安全的自動化部署，可以使用 Ansible vault 來�
 ====
 
 
+[[host-variables-configuration]]
 === 主機變數配置
 
 [%collapsible%open]
@@ -205,6 +214,7 @@ sga_size: 4096M
 ====
 
 
+[[additional-clone-target-oracle-server-configuration]]
 === 額外的克隆目標 Oracle 伺服器配置
 
 [%collapsible%open]
@@ -216,6 +226,7 @@ sga_size: 4096M
 ====
 
 
+[[playbook-execution]]
 === 劇本執行
 
 [%collapsible%open]
@@ -249,6 +260,7 @@ NOTE: 工具包的執行在各個階段都會暫停以允許特定任務完成�
 ====
 
 
+[[playbook-execution-details]]
 === Playbook 執行細節
 
 [%collapsible%open]
@@ -640,6 +652,7 @@ End Oracle DB clone or refresh at 2025-0627-084452
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關NetApp解決方案自動化的更多信息，請訪問以下網站link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]

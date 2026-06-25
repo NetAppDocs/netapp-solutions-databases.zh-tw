@@ -15,6 +15,8 @@ summary: 在 Google Compute Engine 上為 Oracle Database 26ai 高可用性佈�
 
 
 
+[[step-1-create-gcnv-iscsi-pools]]
+[[provision-gcnv-iscsi-volumes]]
 == 步驟 1：建立 GCNV iSCSI 集區
 
 建立兩個 Flex Unified 儲存池，每個資料庫區域各一個，為主要主機和備用主機提供 iSCSI 磁碟區。每個資料庫主機使用其本機區域儲存池中的磁碟區。
@@ -53,6 +55,8 @@ summary: 在 Google Compute Engine 上為 Oracle Database 26ai 高可用性佈�
 
 
 
+[[step-2-create-host-groups]]
+[[create-host-groups]]
 == 步驟 2：建立主機群組
 
 為每個資料庫主機建立一個主機群組，以便每個虛擬機器只能看到自己的磁碟區。主主機和備用主機不得共用 GCNV iSCSI 磁碟區，以維持儲存的獨立性。
@@ -76,6 +80,8 @@ summary: 在 Google Compute Engine 上為 Oracle Database 26ai 高可用性佈�
 
 
 
+[[step-3-create-gcnv-iscsi-volumes]]
+[[create-gcnv-iscsi-volumes]]
 == 步驟 3：建立 GCNV iSCSI 磁碟區
 
 為每個資料庫主機建立五個 GCNV iSCSI 磁碟區：一個用於 `/u01`，四個用於 ASM 後端設備。每個主機的磁碟區必須建立在其本機區域的儲存池中，並與其對應的主機群組關聯。
@@ -120,6 +126,8 @@ summary: 在 Google Compute Engine 上為 Oracle Database 26ai 高可用性佈�
 
 
 
+[[step-4-configure-iscsi-and-multipath]]
+[[configure-iscsi-and-multipath]]
 == 步驟 4：設定 iSCSI 和多路徑
 
 在每個資料庫主機上設定 iSCSI 和 device-mapper-multipath，以便透過兩個儲存入口網站 IP 存取 GCNV 磁碟區。在 `oracdb1`上使用主儲存池的入口網站 IP 執行這些步驟，然後在 `oracdb2`上使用備用儲存池的入口網站 IP 重複這些步驟。如果主機輸出受到限制，請允許每個資料庫 VM 透過 TCP/3260 存取其 GCNV iSCSI 入口網站 IP（此外還允許來自xref:gcnv-oracle-provision-compute.adoc#vpc-firewall-allow-1521[步驟 2：VPC 防火牆 — 在所有三個區域中允許 TCP/1521]的 VM 間 TCP/1521）。
@@ -206,6 +214,8 @@ ls -l /dev/mapper/ora_$(hostname -s)_*
 
 
 
+[[step-5-partition-asm-devices]]
+[[partition-asm-backing-devices]]
 == 步驟 5：分割 ASM 裝置
 
 將四個 ASM 後端裝置（不包括 `u01`）分別劃分為一個 GPT 分區，供 ASM 使用，然後設定 udev 規則以實現 grid 所有權。在每個資料庫主機上執行這些步驟。
@@ -248,6 +258,8 @@ ls -lL /dev/mapper/ora_${HOST}_*p1    # grid:asmadmin 0660
 
 
 
+[[step-6-format-and-mount-u01]]
+[[format-and-mount-u01]]
 == 步驟 6：格式化並掛載 `/u01`
 
 使用 XFS 格式化 `ora_<host>_u01` GCNV 磁碟區，並使用 UUID 將其持久掛載於 `/etc/fstab`。此 `/u01`檔案系統包含 Grid 主目錄、Oracle 主目錄和暫存檔案。
@@ -288,6 +300,7 @@ sudo chmod -R 775 /u01/app /u01/stage
 
 
 
+[[whats-next]]
 == 接下來呢？
 
 若要在已準備好的主機上安裝 Oracle Grid Infrastructure 和資料庫二進位檔案，請前往 xref:gcnv-oracle-install-software.adoc[安裝 Oracle Grid Infrastructure 和 Oracle 資料庫軟體]（兩台主機均需執行）。

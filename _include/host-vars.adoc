@@ -4,6 +4,7 @@
 
 
 
+[[host-vars-config]]
 === 主機 VARS 配置
 
 [source, shell]

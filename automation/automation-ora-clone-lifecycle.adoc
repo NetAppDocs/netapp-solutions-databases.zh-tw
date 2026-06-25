@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 客戶喜歡NetApp ONTAP儲存的FlexClone功能，因為如果在私有資料中心或公有雲中的特定儲存產品上啟用了精簡克隆功能，則可以快速（幾分鐘）複製大型資料庫並節省額外的儲存。此基於 Ansible 的工具包使用NetApp SnapCenter命令列公用程式自動按計劃設定、複製和刷新複製的 Oracle 資料庫，從而簡化生命週期管理。此工具包適用於部署至本機或公有雲（AWS 或 Azure） ONTAP儲存並由NetApp SnapCenter UI 工具管理的 Oracle 資料庫。
@@ -32,6 +33,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -43,6 +45,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[license]]
 == 執照
 
 透過存取、下載、安裝或使用此 GitHub 儲存庫中的內容，您同意link:https://github.com/NetApp/na_ora_hadr_failover_resync/blob/master/LICENSE.TXT["許可證文件"^]。
@@ -52,10 +55,12 @@ NOTE: 製作和/或分享此 GitHub 儲存庫中內容的任何衍生作品都�
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -89,6 +94,7 @@ NOTE: 為了簡化，複製目標 Oracle 伺服器的配置應與備用 Oracle �
 ====
 
 
+[[download-the-toolkit]]
 === 下載工具包
 
 [%collapsible%open]
@@ -103,6 +109,7 @@ NOTE: 目前，只有具有 bitbucket 存取權限的NetApp內部使用者才能
 ====
 
 
+[[ansible-target-hosts-file-configuration]]
 === Ansible 目標主機檔案配置
 
 [%collapsible%open]
@@ -120,6 +127,7 @@ ora_04.cie.netapp.com ansible_host=10.61.180.29 ansible_ssh_private_key_file=ora
 ====
 
 
+[[global-variables-configuration]]
 === 全域變數配置
 
 [%collapsible%open]
@@ -138,6 +146,7 @@ snapctr_pwd: 'xxxxxxxx'
 ====
 
 
+[[host-variables-configuration]]
 === 主機變數配置
 
 [%collapsible%open]
@@ -158,6 +167,7 @@ clone_db_sid: NTAP1DEV
 ====
 
 
+[[additional-clone-target-oracle-server-configuration]]
 === 額外的克隆目標 Oracle 伺服器配置
 
 [%collapsible%open]
@@ -179,6 +189,7 @@ export ORACLE_HOME=/u01/app/oracle/product/19.0.0/NTAP1
 ====
 
 
+[[playbook-execution]]
 === 劇本執行
 
 [%collapsible%open]
@@ -213,6 +224,7 @@ NOTE: 將使用者名稱變更為SnapCenter配置的 sudo 使用者。
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關NetApp解決方案自動化的更多信息，請訪問以下網站link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]

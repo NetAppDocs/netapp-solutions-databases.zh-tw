@@ -20,6 +20,7 @@ keywords: database, Oracle, Azure, Azure NetApp Files
 
 
 
+[[vm-type-and-sizing]]
 == VM 類型和大小
 
 選擇正確的虛擬機器類型和大小對於公有雲中關聯式資料庫的最佳效能非常重要。 Azure 虛擬機器提供了多種可用於託管 Oracle 資料庫工作負載的運算執行個體。請參閱 Microsoft 文檔link:https://docs.microsoft.com/en-us/azure/virtual-machines/sizes["Azure 中的虛擬機器大小"^]適用於不同類型的 Azure 虛擬機器及其大小。一般來說， NetApp建議使用通用 Azure 虛擬機器部署中小型 Oracle 資料庫。對於部署更大的 Oracle 資料庫，記憶體最佳化的 Azure VM 是合適的。有了更多可用的 RAM，就可以配置更大的 Oracle SGA 或智慧型快閃記憶體快取來減少實體 I/O，從而提高資料庫效能。
@@ -34,6 +35,7 @@ Azure NetApp Files會以連接到 Azure 虛擬機器的 NFS 掛載，可提供�
 
 
 
+[[azure-netapp-files-performance]]
 == Azure NetApp Files效能
 
 Azure NetApp Files磁碟區是從容量池中指派的，客戶必須在其Azure NetApp Files儲存帳戶中設定該容量池。每個容量池的分配如下：
@@ -46,6 +48,7 @@ Azure NetApp Files磁碟區是從容量池中指派的，客戶必須在其Azure
 
 
 
+[[1-service-levels-for-azure-netapp-files]]
 === 1.Azure NetApp Files的服務級別
 
 Azure NetApp Files支援三種服務等級：Ultra、Premium 和 Standard。
@@ -57,6 +60,7 @@ Azure NetApp Files支援三種服務等級：Ultra、Premium 和 Standard。
 
 
 
+[[2-capacity-pool-and-quality-of-service]]
 === 2.容量池和服務質量
 
 每個所需的服務等級都與配置容量的成本相關，並包括定義配置空間的整體最大吞吐量的服務品質 (QoS) 等級。
@@ -67,6 +71,7 @@ Azure NetApp Files支援三種服務等級：Ultra、Premium 和 Standard。
 
 
 
+[[3-calculate-the-service-level-at-a-database-volume]]
 === 3.計算資料庫卷的服務級別
 
 Oracle 資料庫磁碟區的吞吐量限制由下列因素組合決定：磁碟區所屬容量池的服務等級及指派給該磁碟區的配額。
@@ -83,6 +88,7 @@ image:db-ora-azure-anf-factors-001.png["此圖描述了應用於三個容量層�
 
 
 
+[[storage-layout-and-settings]]
 == 儲存佈局和設定
 
 NetApp建議採用以下儲存佈局：
@@ -99,6 +105,7 @@ image:db-ora-azure-anf-factors-003.png["該圖描繪了兩個資料庫，每個�
 
 
 
+[[nfs-configuration]]
 == NFS 配置
 
 Linux 是最常見的作業系統，包含原生 NFS 功能。  Oracle 提供了原生整合到 Oracle 中的直接 NFS (dNFS) 用戶端。  Oracle dNFS 可繞過作業系統快取並支援平行處理以提高資料庫效能。  Oracle 已支援 NFSv3 超過 20 年，Oracle 12.1.0.2 及更高版本支援 NFSv4。

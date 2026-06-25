@@ -18,6 +18,7 @@ keywords: prerequisites, aws, azure, gcp, cloud central, cloud volumes ontap
 
 
 
+[[cloud-manager-and-cloud-volumes-ontap-deployment-prerequisites-checklist]]
 == Cloud Manager 和Cloud Volumes ONTAP部署前提清單
 
 * NetApp Cloud Central 登入
@@ -31,10 +32,12 @@ keywords: prerequisites, aws, azure, gcp, cloud central, cloud volumes ontap
 
 
 
+[[considerations]]
 == 注意事項
 
 
 
+[[1-what-is-a-cloud-manager-connector]]
 === 1.什麼是 Cloud Manager 連接器？
 
 大多數情況下，Cloud Central 帳戶管理員必須在您的雲端或本機網路中部署連接器。此連接器使 Cloud Manager 能夠管理公有雲環境中的資源和流程。
@@ -43,6 +46,7 @@ keywords: prerequisites, aws, azure, gcp, cloud central, cloud volumes ontap
 
 
 
+[[2-cloud-volumes-ontap-sizing-and-architecture]]
 === 2.Cloud Volumes ONTAP 的大小與架構
 
 部署Cloud Volumes ONTAP時，您可以選擇預先定義套件或建立自己的設定。儘管其中的許多值可以在以後無中斷地進行更改，但在部署之前需要根據要在雲端中部署的工作負載做出一些關鍵決策。
@@ -60,6 +64,7 @@ keywords: prerequisites, aws, azure, gcp, cloud central, cloud volumes ontap
 
 
 
+[[3-single-node-or-high-availability]]
 === 3.單節點還是高可用性？
 
 在所有雲端中，都可以選擇在單一節點或具有兩個節點的叢集高可用性對中部署 CVO。根據使用情況，您可能想要部署單一節點以節省成本或部署 HA 對以提供進一步的可用性和冗餘。

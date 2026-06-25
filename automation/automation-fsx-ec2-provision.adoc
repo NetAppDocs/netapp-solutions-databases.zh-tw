@@ -20,6 +20,7 @@ NetApp解決方案工程團隊
 
 
 
+[[purpose]]
 == 目的
 
 此工具包可自動執行 AWS FSx ONTAP儲存叢集和 EC2 運算執行個體的設定任務，隨後可用於資料庫部署。
@@ -32,6 +33,7 @@ NetApp解決方案工程團隊
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -44,6 +46,7 @@ NetApp解決方案工程團隊
 
 
 
+[[license]]
 == 執照
 
 透過存取、下載、安裝或使用此 GitHub 儲存庫中的內容，您同意link:https://github.com/NetApp/na_ora_hadr_failover_resync/blob/master/LICENSE.TXT["許可證文件"^]。
@@ -53,10 +56,12 @@ NOTE: 製作和/或分享此 GitHub 儲存庫中內容的任何衍生作品都�
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -84,6 +89,7 @@ Network configuration
 ====
 
 
+[[download-the-toolkit]]
 === 下載工具包
 
 [%collapsible%open]
@@ -95,6 +101,7 @@ git clone https://github.com/NetApp/na_aws_fsx_ec2_deploy.git
 ====
 
 
+[[connectivity-and-authentication]]
 === 連線和身份驗證
 
 [%collapsible%open]
@@ -104,6 +111,7 @@ git clone https://github.com/NetApp/na_aws_fsx_ec2_deploy.git
 ====
 
 
+[[terraform-provider-tf-and-main-tf-files-configuration]]
 === Terraform provider.tf 和 main.tf 檔案配置
 
 [%collapsible%open]
@@ -141,6 +149,7 @@ main.tf:
 ====
 
 
+[[terraform-variables-tf-and-terraform-tfvars-configuration]]
 === Terraform Variables.tf 和 terraform.tfvars 配置
 
 [%collapsible%open]
@@ -180,6 +189,7 @@ root_volume_size        = 30
 ====
 
 
+[[step-by-step-procedures-executed-in-sequence]]
 === 逐步程序 - 按順序執行
 
 [%collapsible%open]
@@ -245,6 +255,7 @@ terraform destroy
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關NetApp解決方案自動化的更多信息，請訪問以下網站link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]

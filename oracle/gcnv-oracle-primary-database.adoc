@@ -13,6 +13,7 @@ summary: 使用 Oracle Database Configuration Assistant 在 Google Cloud NetApp 
 [role="lead"]
 使用 Oracle Database Configuration Assistant 以靜默模式在 Google Cloud NetApp Volumes iSCSI 儲存上建立 Oracle 主要資料庫。此程序涵蓋執行 `dbca`以在 GCNV 支援的 ASM 磁碟群組上建立容器資料庫和可插拔資料庫、設定歸檔日誌目的地，以及在啟用 Data Guard 後新增基於角色的應用程式服務以實現透明容錯移轉。
 
+[[create-primary-database]]
 .步驟
 在 `oracdb1`上建立 Oracle 容器資料庫和可插拔資料庫，以靜默模式使用 `dbca`，設定歸檔日誌目的地，驗證 Oracle Restart 註冊，並新增基於角色的應用程式服務以實現透明用戶端容錯移轉。
 
@@ -92,6 +93,7 @@ srvctl status service -db orcl -service orclapp
 
 
 
+[[whats-next]]
 == 接下來呢？
 
 若要建立備用保護和容錯移轉整備，請前往xref:gcnv-oracle-standby-database.adoc[建立 Oracle 備用資料庫]（位於 `oracdb2`）。

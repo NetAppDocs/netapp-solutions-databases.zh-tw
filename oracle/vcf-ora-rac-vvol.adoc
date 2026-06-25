@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 VMware vSphere 虛擬磁碟區 (vVols) 是一個 SAN/NAS 管理和整合框架，它將虛擬磁碟作為本機儲存物件公開，並在虛擬磁碟層級支援基於陣列的操作。換句話說， vVols使 SAN/NAS 設備能夠感知虛擬機，並能夠以虛擬機為中心的方式在單一虛擬磁碟的粒度上利用基於陣列的資料服務。 vVols使客戶能夠利用其當前儲存投資的獨特功能，並在不中斷的情況下過渡到針對跨所有儲存類型的虛擬環境優化的更簡單、更有效率的營運模式。
@@ -34,6 +35,7 @@ VMware vSphere 虛擬磁碟區 (vVols) 是一個 SAN/NAS 管理和整合框架�
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -46,18 +48,21 @@ VMware vSphere 虛擬磁碟區 (vVols) 是一個 SAN/NAS 管理和整合框架�
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在 VCF 的實驗室環境中進行的，其中vVols資料儲存在NetApp ONTAP AFF儲存上，可能與最終部署環境不符。有關更多信息，請參閱<<部署考慮的關鍵因素>> 。
 
 
 
+[[architecture]]
 === 架構
 
 image:vcf-orarac-vvol-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 AWS 公有雲中的 Oracle 部署配置的詳細圖片。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -107,6 +112,7 @@ image:vcf-orarac-vvol-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 
 |===
 
 
+[[oracle-rac-database-configuration-in-vcf]]
 === VCF中的Oracle RAC資料庫配置
 
 [cols="33%, 33%, 33%"]
@@ -126,6 +132,7 @@ image:vcf-orarac-vvol-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * * vVols到ONTAP集群連線的協定。 * NFS 或 iSCSI 都是不錯的選擇。性能水平相當。在此解決方案示範中，我們使用 iSCSI 作為vVols連接到下劃線ONTAP儲存叢集的儲存協定。如果 VCF 基礎架構支持， NetApp ONTAP上的vVols資料儲存也支援 FC/FCoE、NVMe/FC 協定。
@@ -138,12 +145,14 @@ image:vcf-orarac-vvol-architecture.png["此圖提供了具有 iSCSI 和 ASM 的 
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 以下部分提供了在 Oracle RAC 配置中的NetApp ONTAP儲存上使用vVols資料儲存在 VCF 中部署 Oracle 19c 資料庫的逐步程序。
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible%open]
@@ -163,6 +172,7 @@ NOTE: 請確定您已在 Oracle VM 根磁碟區中指派至少 50G，以便有�
 ====
 
 
+[[create-storage-capability-profile]]
 === 建立儲存能力設定檔
 
 [%collapsible%open]
@@ -202,6 +212,7 @@ image:vcf-ora-vvol-scp-007.png["顯示自訂儲存功能設定檔配置的螢幕
 ====
 
 
+[[create-and-configure-vvols-datastore]]
 === 建立並配置vVols資料存儲
 
 [%collapsible%open]
@@ -256,6 +267,7 @@ image:vcf-orarac-vvol-datastore-007.png["顯示vVols資料儲存配置的螢幕�
 ====
 
 
+[[create-vm-storage-policy-based-on-storage-capability-profile]]
 === 根據儲存能力設定檔建立虛擬機器儲存策略
 
 [%collapsible%open]
@@ -299,6 +311,7 @@ image:vcf-ora-vvol-vm-policy-007.png["顯示虛擬機器儲存策略配置的螢
 ====
 
 
+[[allocate-disks-to-rac-vms-from-vvols-datastores-and-configure-db-storage]]
 === 從vVols資料儲存體向 RAC VM 指派磁碟並配置 DB 存儲
 
 [%collapsible%open]
@@ -467,6 +480,7 @@ UUID=aff942c4-b224-4b62-807d-6a5c22f7b623 /boot                   xfs     defaul
 ====
 
 
+[[oracle-rac-deployment-in-vcf]]
 === VCF中的Oracle RAC部署
 
 [%collapsible%open]
@@ -626,6 +640,7 @@ ansible-playbook -i hosts 0-all_playbook.yml -u admin -e @vars/vars.yml
 ====
 
 
+[[oracle-rac-deployment-validation-in-vcf]]
 === VCF 中的 Oracle RAC 部署驗證
 
 [%collapsible%open]
@@ -939,6 +954,7 @@ image:vcf-orarac-vvol-em-001.png["顯示 Oracle EM Express 配置的螢幕截圖
 ====
 
 
+[[oracle-rac-database-backup-and-recovery-in-vcf-with-snapcenter]]
 === 使用SnapCenter在 VCF 中備份和還原 Oracle RAC 資料庫
 
 
@@ -1199,6 +1215,7 @@ Version 19.18.0.0.0
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：

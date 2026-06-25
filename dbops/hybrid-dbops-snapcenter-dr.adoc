@@ -18,6 +18,7 @@ keywords: 'netapp, solutions, database, SnapCenter, DR, "business continuity", "
 
 
 
+[[clone-an-on-premises-oracle-production-db-to-cloud-for-dr]]
 == 將本地 Oracle 生產資料庫複製到雲端以進行災難恢復
 
 . 為了驗證克隆恢復是否通過最後一個可用日誌運行，我們創建了一個小測試表並插入了一行。完全恢復到最後可用日誌後，測試資料將被恢復。
@@ -97,6 +98,7 @@ image:snapctr-ora-dr-016-a.png["此圖顯示輸入/輸出對話框或表示書�
 
 
 
+[[post-dr-clone-validation-and-configuration-for-oracle]]
 == Oracle 的災難復原後複製驗證與配置
 
 . 驗證已在雲端中的 DR 位置刷新、複製和復原的最後一個測試交易。
@@ -117,6 +119,7 @@ NOTE: 克隆分裂可能會導致臨時儲存空間利用率遠高於正常運�
 
 
 
+[[clone-an-on-premises-sql-production-db-to-cloud-for-dr]]
 == 將本機 SQL 生產資料庫複製到雲端以進行災難復原
 
 . 類似地，為了驗證 SQL 克隆復原是否運行了最後一個可用日誌，我們建立了一個小型測試表並插入了一行。完全恢復到最後一個可用日誌後，測試資料將被恢復。
@@ -162,6 +165,7 @@ image:snapctr-sql-dr-010.png["此圖顯示輸入/輸出對話框或表示書面�
 
 
 
+[[post-dr-clone-validation-and-configuration-for-sql]]
 == 災難復原後克隆 SQL 驗證和配置
 
 . 監視克隆作業狀態。
@@ -179,6 +183,7 @@ image:snapctr-sql-dr-012.png["此圖顯示輸入/輸出對話框或表示書面�
 
 
 
+[[where-to-go-for-help]]
 == 去哪裡尋求協助？
 
 如果您需要有關此解決方案和用例的協助，請加入link:https://netapppub.slack.com/archives/C021R4WC0LC["NetApp解決方案自動化社群支援 Slack 頻道"]並尋找解決方案自動化管道來發布您的問題或詢問。

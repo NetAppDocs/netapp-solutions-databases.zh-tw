@@ -20,6 +20,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[purpose]]
 == 目的
 
 在雲端運行對效能和延遲要求高的 Oracle 工作負載可能極具挑戰性。Google Cloud NetApp Volumes (GCNV) 讓企業業務線 (LOB) 和儲存專業人員能夠輕鬆遷移和執行高要求的 Oracle 工作負載，而無需更改程式碼。Google Cloud NetApp Volumes 被廣泛用作各種場景下的底層共用檔案儲存服務，例如將 Oracle 資料庫從本地遷移到 Google Cloud 的新部署或遷移（直接遷移）。
@@ -34,6 +35,7 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[audience]]
 == 對象
 
 此解決方案適用於以下人群：
@@ -46,18 +48,21 @@ Allen Cao、Niyaz Mohamed， NetApp
 
 
 
+[[solution-test-and-validation-environment]]
 == 解決方案測試和驗證環境
 
 此解決方案的測試和驗證是在實驗室環境中進行的，可能與最終部署環境不符。請參閱<<部署考慮的關鍵因素>>了解更多。
 
 
 
+[[architecture]]
 === 架構
 
 image:gcp-ora-gcnv-si-nfs-architecture.png["此圖詳細展示了在 Google Cloud 中使用 NFS 和 Google Cloud NetApp Volumes 部署 Oracle 的配置。"]
 
 
 
+[[hardware-and-software-components]]
 === 硬體和軟體組件
 
 [cols="33%, 33%, 33%"]
@@ -92,6 +97,7 @@ image:gcp-ora-gcnv-si-nfs-architecture.png["此圖詳細展示了在 Google Clou
 |===
 
 
+[[oracle-database-configuration-in-the-lab-environment]]
 === 實驗室環境中的 Oracle 資料庫配置
 
 [cols="33%, 33%, 33%"]
@@ -111,6 +117,7 @@ image:gcp-ora-gcnv-si-nfs-architecture.png["此圖詳細展示了在 Google Clou
 |===
 
 
+[[key-factors-for-deployment-consideration]]
 === 部署考慮的關鍵因素
 
 * *GCNV 儲存池服務等級和吞吐量。*GCNV 提供四種不同的服務等級：Standard、Premium、Extreme 和 Flex。對於 Standard、Premium、Extreme 服務等級，IO 吞吐量根據資料庫磁碟區的大小確定並固定。總 IO 吞吐量上限取決於儲存池的大小。對於 Flex 服務等級，IO 吞吐量不固定於資料庫磁碟區的大小，而是由所有資料庫磁碟區共用，並受限於儲存池的大小。這可以適應容量較小的資料庫，並應對偶爾出現的 IOPS 激增。作為參考，Standard、Premium、Extreme 服務等級分別提供每 GiB 16 KiB/s、每 GiB 64 KiB/s 和每 GiB 128 KiB/s 的吞吐量。另一方面，Flex 服務等級每個儲存池最高可提供 5 GiB/s 的吞吐量，並支援自訂效能設定。根據 Oracle 資料庫工作負載的預期 IO 吞吐量和 IOPS 要求，正確調整服務等級和儲存池的大小至關重要。
@@ -122,12 +129,14 @@ image:gcp-ora-gcnv-si-nfs-architecture.png["此圖詳細展示了在 Google Clou
 
 
 
+[[solution-deployment]]
 == 解決方案部署
 
 以下各節提供了在 Google Cloud NetApp Volumes 上自動部署 Oracle 21c 以及資料庫備份、復原、複製的逐步流程，其中資料庫磁碟區透過 NFS 直接掛載到 Google Cloud Compute Engine VM 作為資料庫伺服器。
 
 
 
+[[prerequisites-for-deployment]]
 === 部署先決條件
 
 [%collapsible]
@@ -170,6 +179,7 @@ installer_archives:
 ====
 
 
+[[google-cloud-netapp-volumes-configuration-for-oracle-database-storage]]
 === Google Cloud NetApp Volumes Oracle 資料庫儲存配置
 
 [%collapsible]
@@ -186,6 +196,7 @@ NOTE: 目前請勿在 Google Cloud NetApp Volumes 中啟用排程備份，因為
 ====
 
 
+[[automated-oracle-deployment-with-ansible-playbook]]
 === 使用 Ansible playbook 實現 Oracle 自動化部署
 
 
@@ -675,6 +686,7 @@ Jan 28 16:59:10 orap systemd[1]: Started Oracle Database Start/Stop Service.
 ====
 
 
+[[oracle-database-backup-with-google-cloud-netapp-volumes]]
 === 使用 Google Cloud NetApp Volumes 進行 Oracle 資料庫備份
 
 
@@ -1349,6 +1361,7 @@ NOTE: 如果快照的 Vault 備份已經存在，則會跳過針對相同快照�
 ====
 
 
+[[oracle-database-recovery-and-clone-with-google-cloud-netapp-volumes]]
 === 使用 Google Cloud NetApp Volumes 進行 Oracle 資料庫復原和克隆
 
 
@@ -1809,6 +1822,7 @@ NOTE: 如果您的資料庫配置中存在重複的 Oracle 控制文件副本。
 ====
 
 
+[[where-to-find-additional-information]]
 == 在哪裡可以找到更多信息
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：
