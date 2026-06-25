@@ -1,0 +1,293 @@
+---
+sidebar: sidebar 
+permalink: oracle/gcnv-oracle-provision-storage.html 
+keywords: oracle database, google cloud netapp volumes, gcnv, iscsi, multipath, asm, storage pool, host group, iSCSI initiator 
+summary: 在 Google Compute Engine 上為 Oracle Database 26ai 高可用性佈建 Google Cloud NetApp Volumes iSCSI 儲存。本流程涵蓋建立 Flex Unified 儲存池、定義主機群組、為每個資料庫主機建立 iSCSI 磁碟區、設定 Linux iSCSI 和多路徑、對 ASM 後端裝置進行分割以及掛載 /u01 檔案系統。 
+---
+= 為 Oracle Database 26ai 佈建 Google Cloud NetApp Volumes iSCSI 儲存設備
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+在 Google Compute Engine 上為 Oracle Database 26ai 高可用性佈建 Google Cloud NetApp Volumes iSCSI 區塊儲存。本流程涵蓋建立 GCNV Flex 統一儲存池、定義主機群組、為每個資料庫主機建立 iSCSI 磁碟區、設定 Linux iSCSI 和多路徑、對 ASM 後端裝置進行分割，以及掛載 `/u01`檔案系統。
+
+
+
+== 步驟 1：建立 GCNV iSCSI 集區
+
+建立兩個 Flex Unified 儲存池，每個資料庫區域各一個，為主要主機和備用主機提供 iSCSI 磁碟區。每個資料庫主機使用其本機區域儲存池中的磁碟區。
+
+. 使用 Cloud Console 建立兩個儲存池。使用下表中的規格，並對每個區域重複建立流程：
++
+[cols="1,1,2"]
+|===
+| 資源池名稱 | 區域 | 使用者 
+
+
+| `oracle-pool-a` | `us-west1-a` | `oracdb1`（主要） 
+
+
+| `oracle-pool-b` | `us-west1-b` | `oracdb2`（待命） 
+|===
++
+*NetApp Volumes → Storage pools → Create* 為每個池：
+
++
+** *服務等級：* Flex （非 Premium）
+** *類型：*統一
+** *Zone：*符合資料庫 VM 區域(`us-west1-a` / `us-west1-b`)
+** *PSA:* 已連接到 `oracle-vpc`
+** *容量：* 根據工作負載進行調整；當重做、備份或還原超出預設餘裕時，使用自訂佈建的處理量 / IOPS（每個集區最高可達 5120 MiB/s 或 160K IOPS，依產品限制而定）
+
+
+. 請等待兩個儲存池都達到 `READY`狀態後再繼續。根據資料庫規模調整儲存池大小（<<create-gcnv-iscsi-volumes,步驟 3：建立 GCNV iSCSI 磁碟區>>中的大小僅為範例）：
++
+[NOTE]
+====
+*預設模式（本指南）：* Flex Unified 資源池使用預設模式(`--mode=default`）。使用 Cloud Console 或 `gcloud netapp`建立資源池和 iSCSI 磁碟區。磁碟區複寫、快照和複本使用 Google Cloud API（xref:gcnv-oracle-standby-database.adoc#gcnv-standby-initialization[步驟 3：GCNV 待命初始化]）。
+
+====
+
+
+
+
+== 步驟 2：建立主機群組
+
+為每個資料庫主機建立一個主機群組，以便每個虛擬機器只能看到自己的磁碟區。主主機和備用主機不得共用 GCNV iSCSI 磁碟區，以維持儲存的獨立性。
+
+. 使用 Cloud Console 為 `oracdb1`建立主機群組：
++
+*NetApp 磁碟區 → 主機群組 → 建立*
+
++
+** *名稱：* `oracdb1-hg`
+** *地區：* `us-west1`
+** *類型：* iSCSI 啟動器
+** *OS 類型:* Linux
+** *主機：*從 `oracdb1`貼上 IQN（ `/etc/iscsi/initiatorname.iscsi`的值）
+** *描述：*"Oracle 主要主機 oracdb1"
+** *建立*
+
+
+. 針對  `oracdb2` 重複此程序，並使用名稱  `oracdb2-hg` 和 `oracdb2` 的 IQN。Observer 主機不需要任何 GCNV 資源。
+
+
+
+
+== 步驟 3：建立 GCNV iSCSI 磁碟區
+
+為每個資料庫主機建立五個 GCNV iSCSI 磁碟區：一個用於 `/u01`，四個用於 ASM 後端設備。每個主機的磁碟區必須建立在其本機區域的儲存池中，並與其對應的主機群組關聯。
+
+. 為  `oracdb1` 在  `oracle-pool-a` 中建立五個磁碟區，主機群組為  `oracdb1-hg`。請使用下表中的規格：
++
+[cols="2,1,3,2"]
+|===
+| GCNV iSCSI 磁碟區 | 大小 | 使用 | 多重路徑別名 
+
+
+| `ora_<host>_u01` | 100 GiB | `/u01` GCNV iSCSI 磁碟區 — Grid/Oracle 主目錄、暫存區 | `/dev/mapper/ora_<host>_u01` 
+
+
+| `ora_<host>_data_01` | 50 GiB | ASM `+DATA` | `/dev/mapper/ora_<host>_data_01` 
+
+
+| `ora_<host>_data_02` | 50 GiB | ASM `+DATA`（條紋） | `/dev/mapper/ora_<host>_data_02` 
+
+
+| `ora_<host>_arch_01` | 100 GiB | ASM `+RECO` | `/dev/mapper/ora_<host>_arch_01` 
+
+
+| `ora_<host>_fra_01` | 100 GiB | ASM `+FRA` | `/dev/mapper/ora_<host>_fra_01` 
+|===
++
+磁碟區名稱：僅使用字母、數字和底線（不使用連字號）。
+
++
+[NOTE]
+====
+*最小佈局（僅用於驗證）：* 每個主機兩個 LUN (`*_data`, `*_reco`）with `arch_01p1`→`+RECO` 和 `arch_01p2`→`+FRA` 對於實驗室來說是可以接受的；生產環境每個 <<create-gcnv-iscsi-volumes,步驟 3：建立 GCNV iSCSI 磁碟區>> 使用五個磁碟區。
+
+====
+. 使用相同的規格，在  `oracle-pool-b` 中為  `oracdb2` 建立五個磁碟區，並使用主機群組  `oracdb2-hg`。針對每個集區，使用 *NetApp Volumes → Volumes → Create* — iSCSI、正確的集區與主機群組、Linux。記錄以下資訊：
++
+** iSCSI 入口網站 IP 位址→ `<ISCSI_PORTAL_1>`, `<ISCSI_PORTAL_2>`（主池入口網站位於 `oracdb1`；備用池入口網站位於 `oracdb2`——它們可能不同）
+** 從雲端主控台取得磁碟區序號 — 與主機發現的 WWID 一起使用 <<configure-iscsi-and-multipath,步驟 4：為 GCNV iSCSI 磁碟區設定 Linux iSCSI 和多重路徑>>
+
+
+
+
+
+
+== 步驟 4：設定 iSCSI 和多路徑
+
+在每個資料庫主機上設定 iSCSI 和 device-mapper-multipath，以便透過兩個儲存入口網站 IP 存取 GCNV 磁碟區。在 `oracdb1`上使用主儲存池的入口網站 IP 執行這些步驟，然後在 `oracdb2`上使用備用儲存池的入口網站 IP 重複這些步驟。如果主機輸出受到限制，請允許每個資料庫 VM 透過 TCP/3260 存取其 GCNV iSCSI 入口網站 IP（此外還允許來自xref:gcnv-oracle-provision-compute.adoc#vpc-firewall-allow-1521[步驟 2：VPC 防火牆 — 在所有三個區域中允許 TCP/1521]的 VM 間 TCP/1521）。
+
+. 探索目標、登入並持續節點啟動：
++
+[source, bash]
+----
+sudo iscsiadm --mode discovery --op update --type sendtargets --portal <ISCSI_PORTAL_1>
+sudo iscsiadm --mode discovery --op update --type sendtargets --portal <ISCSI_PORTAL_2>
+sudo iscsiadm --mode node --op update --name node.startup --value automatic
+sudo iscsiadm --mode node -l all
+sudo systemctl enable --now iscsid iscsi multipathd
+sudo iscsiadm --mode session         # expect 10 sessions (5 GCNV iSCSI volumes × 2 portals)
+sudo lsblk -o NAME,SIZE,WWN,VENDOR,MODEL
+----
++
+重新開機後，請在啟動 Oracle 之前重新檢查：
+
++
+[source, bash]
+----
+sudo iscsiadm --mode session
+sudo multipath -ll
+----
+. Configure `device-mapper-multipath` 使用預設值和黑名單規則進行設定：
++
+[source, bash]
+----
+sudo tee /etc/multipath.conf >/dev/null <<'EOF'
+defaults {
+    find_multipaths     yes
+    user_friendly_names yes
+}
+blacklist {
+    devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
+    devnode "^hd[a-z]"
+    devnode "^cciss.*"
+}
+EOF
+
+sudo systemctl enable --now multipathd
+sudo multipath -ll
+----
+. 將主機發現的 WWID 別名加入 `/etc/multipath.conf`（不要猜測 — `multipath.conf` 不會展開 shell 變數）。發現 WWID：
++
+[source, bash]
+----
+sudo multipath -ll
+for dev in /dev/sd*; do
+  [ -b "$dev" ] || continue
+  printf '%s: ' "$dev"
+  sudo /usr/lib/udev/scsi_id --whitelisted --device="$dev" 2>/dev/null || true
+  echo
+done
+----
++
+將該主機的具體別名附加到 `/etc/multipath.conf`，然後 `sudo systemctl restart multipathd`。
+
++
+開啟 `oracdb1`，附加：
+
++
+[source]
+----
+multipaths {
+    multipath { wwid <host-discovered-wwid-for-u01>      alias ora_oracdb1_u01     }
+    multipath { wwid <host-discovered-wwid-for-data-01>  alias ora_oracdb1_data_01 }
+    multipath { wwid <host-discovered-wwid-for-data-02>  alias ora_oracdb1_data_02 }
+    multipath { wwid <host-discovered-wwid-for-arch-01>  alias ora_oracdb1_arch_01 }
+    multipath { wwid <host-discovered-wwid-for-fra-01>   alias ora_oracdb1_fra_01  }
+}
+----
++
+在 `oracdb2`上，使用相同的模式搭配 `ora_oracdb2_*`別名，然後：
+
++
+[source, bash]
+----
+sudo systemctl restart multipathd
+ls -l /dev/mapper/ora_$(hostname -s)_*
+----
+
+
+
+
+== 步驟 5：分割 ASM 裝置
+
+將四個 ASM 後端裝置（不包括 `u01`）分別劃分為一個 GPT 分區，供 ASM 使用，然後設定 udev 規則以實現 grid 所有權。在每個資料庫主機上執行這些步驟。
+
+. 使用 GPT 對四個 ASM 後端裝置進行分割，並驗證分割區：
++
+[source, bash]
+----
+HOST=$(hostname -s)        # oracdb1 on the primary, oracdb2 on the standby
+for dev in /dev/mapper/ora_${HOST}_data_01 \
+           /dev/mapper/ora_${HOST}_data_02 \
+           /dev/mapper/ora_${HOST}_arch_01 \
+           /dev/mapper/ora_${HOST}_fra_01; do
+  sudo parted -s "$dev" mklabel gpt
+  sudo parted -s "$dev" mkpart primary 0% 100%
+done
+sudo partprobe
+sudo systemctl reload multipathd
+ls /dev/mapper/ora_${HOST}_*p1     # expect 4 partitions
+----
+. 設定 udev 規則以指派網格所有權並觸發變更：
++
+[source, bash]
+----
+HOST=$(hostname -s)
+sudo tee /etc/udev/rules.d/99-oracle-asm.rules >/dev/null <<'EOF'
+KERNEL=="dm-*", ENV{DM_UUID}=="part?-mpath-*", ENV{DM_NAME}=="ora_oracdb*_*p?", \
+    OWNER="grid", GROUP="asmadmin", MODE="0660"
+EOF
+
+sudo udevadm control --reload-rules
+for part in /dev/mapper/ora_${HOST}_*p1; do
+  dm=$(readlink -f "$part" | xargs basename)
+  sudo udevadm trigger --action=change --name-match="/dev/${dm}"
+done
+sudo udevadm settle
+ls -lL /dev/mapper/ora_${HOST}_*p1    # grid:asmadmin 0660
+----
+
+
+
+
+== 步驟 6：格式化並掛載 `/u01`
+
+使用 XFS 格式化 `ora_<host>_u01` GCNV 磁碟區，並使用 UUID 將其持久掛載於 `/etc/fstab`。此 `/u01`檔案系統包含 Grid 主目錄、Oracle 主目錄和暫存檔案。
+
+. 使用 XFS 格式化多路徑裝置並取得其 UUID：
++
+[source, bash]
+----
+HOST=$(hostname -s)
+U01_DEV=/dev/mapper/ora_${HOST}_u01
+ls -l "$U01_DEV"
+
+sudo mkfs.xfs -f "$U01_DEV"
+U01_UUID=$(sudo blkid -s UUID -o value "$U01_DEV")
+----
+. 新增基於 UUID 的掛載條目至 `/etc/fstab`並掛載檔案系統：
++
+[source, bash]
+----
+sudo mkdir -p /u01
+echo "UUID=${U01_UUID} /u01 xfs defaults,_netdev,nofail,x-systemd.requires=iscsi.service,x-systemd.requires=multipathd.service,x-systemd.after=iscsi.service,x-systemd.after=multipathd.service 0 0" | sudo tee -a /etc/fstab
+sudo mount -a
+----
+. 為 Grid 和 Oracle 軟體建立具有正確所有權的目錄結構：
++
+[source, bash]
+----
+sudo mkdir -p /u01/app/oraInventory /u01/app/26ai/grid /u01/app/grid \
+  /u01/app/oracle/product/26ai/db_1 /u01/stage
+sudo chown -R grid:oinstall /u01/app/oraInventory /u01/app/26ai /u01/app/grid
+sudo chown -R oracle:oinstall /u01/app/oracle /u01/stage
+sudo chmod -R 775 /u01/app /u01/stage
+----
++
+重新開機一次並確認 `/u01` 掛載在xref:gcnv-oracle-install-software.adoc[安裝 Oracle 軟體] 之前。
+
+
+
+
+
+== 接下來呢？
+
+若要在已準備好的主機上安裝 Oracle Grid Infrastructure 和資料庫二進位檔案，請前往 xref:gcnv-oracle-install-software.adoc[安裝 Oracle Grid Infrastructure 和 Oracle 資料庫軟體]（兩台主機均需執行）。

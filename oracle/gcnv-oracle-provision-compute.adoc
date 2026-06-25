@@ -1,0 +1,212 @@
+---
+sidebar: sidebar 
+permalink: oracle/gcnv-oracle-provision-compute.html 
+keywords: oracle database, google cloud netapp volumes, gcnv, compute engine, iscsi, virtual machine, oracle linux, iqn 
+summary: 配置 Google Compute Engine 虛擬機，以在 Google Cloud NetApp Volumes iSCSI 儲存上託管 Oracle Database 26ai。此程序涵蓋建立主資料庫主機、備用資料庫主機和快速啟動故障轉移觀察器虛擬機器、配置 Oracle Net 的 VPC 防火牆規則、設定主機名稱解析、準備作業系統以及取得用於 GCNV 儲存配置的 iSCSI 發起程序名稱。 
+---
+= 為 Google Cloud NetApp Volumes 佈建 Google Compute Engine 執行個體
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+配置 Google Compute Engine 虛擬機，以在 Google Cloud NetApp Volumes iSCSI 儲存上託管 Oracle Database 26ai。此程序涵蓋建立主資料庫主機、備用資料庫主機和快速啟動故障轉移觀察器虛擬機器、配置 Oracle Net 的 VPC 防火牆規則、設定主機名稱解析、準備作業系統以及取得用於 GCNV 儲存配置的 iSCSI 發起程序名稱。
+
+
+
+== 步驟 1：建立 VM
+
+在同一區域的不同可用區域建立三個 Google Compute Engine VM，以實現區域故障隔離。使用 Cloud Console、 `gcloud`Terraform 或您常用的佈建工作流程。
+
+. 建立三個符合下表所示規格的虛擬機器。
++
+出於整體擁有成本和永續性的考慮，優先選擇碳排放量較低的地區，同時滿足延遲和合規性要求（例如 `us-west1` vs `us-central1`）：
+
++
+[cols="1,1,1,2,2,2"]
+|===
+| VM | 區域 | 機器類型 | 開機磁碟 | 網路 | 目的 
+
+
+| `oracdb1` | `us-west1-a` | `n4-highmem-8` （範例）或  `c4-standard-*` | OL 10、50 GB Hyperdisk Balanced（僅作業系統） | `oracle-vpc` / `oracle-subnet`、gVNIC | 主要資料庫 
+
+
+| `oracdb2` | `us-west1-b` | 與主要相同 | OL 10、50 GB Hyperdisk Balanced（僅作業系統） | 相同 | 備用資料庫 
+
+
+| `oradg-obs` | `us-west1-c` | `e2-medium` | OL 10、20 GB Hyperdisk Balanced | 相同 | FSFO Observer（僅限 Instant Client） 
+|===
++
+當延遲或輸出流量（>~200 GiB/月）至關重要時，請使用 Premium 網路層；在開發/測試環境中，為了降低 TCO，請使用 Standard 網路層。
+
+. 啟用受保護虛擬機器功能並驗證啟動磁碟配置：
++
+在所有三台虛擬機器上啟用 *Secure Boot*、*vTPM* 和 *Integrity Monitoring*。
+
++
+啟動磁碟僅包含作業系統 `/u01`，Grid/DB 主目錄、暫存環境和所有 ASM 資料都使用 GCNV iSCSI 磁碟區（請參閱 xref:gcnv-oracle-provision-storage.adoc#provision-gcnv-iscsi-volumes[配置 GCNV iSCSI 磁碟區]）
+
++
+請勿為 `/u01`單獨掛載 GCE 資料磁碟。
+
+
+
+
+
+== 步驟 2：設定 TCP 1521 連接埠的 VPC 防火牆
+
+建立 VPC 防火牆規則，允許所有三個虛擬機器之間透過 TCP/1521 連接埠進行 Oracle Net 重做傳輸和 Observer 連線。缺少規則會導致 Data Guard 複製中斷。
+
+. 建立一條 VPC 防火牆入站規則，允許所有三個 VM 內部 IP 位址之間的 TCP/1521 通訊。可以使用 VPC 防火牆規則或 Firewall Policies，並採用相同的允許清單：
++
+*Cloud Console：* VPC 網路 → 防火牆 → 建立規則 `allow-oracle-net-dbhosts` on `oracle-vpc` — Ingress、Allow、sources = 三個 `/32` IP、TCP 1521。如有需要，鏡像 egress。
+
+. 驗證每台虛擬機器的連線性，以確認防火牆規則已生效：
++
+[source, bash]
+----
+sudo dnf install -y nmap-ncat
+
+for tgt in <oracdb1-ip> <oracdb2-ip> <oradg-obs-ip>; do
+  nc -zv -w 5 "$tgt" 22
+  nc -zv -w 5 "$tgt" 1521
+done
+----
++
+[cols="1,1,3"]
+|===
+| 連接埠 | 預期 | 意義 
+
+
+| `22` | 已連接 | SSH 路徑有效 
+
+
+| `1521` | 連線被拒絕 | 防火牆已開啟；Grid 監聽器在以下期間啟動 xref:gcnv-oracle-install-software.adoc#install-grid-infrastructure[步驟 1：在每個資料庫主機上安裝 Oracle Grid Infrastructure（Oracle Restart）] 
+
+
+| 任一 | 逾時 | 修復防火牆或路由 
+|===
++
+從所有三個 VM 向每個對等 IP 位址執行命令。
+
+
+
+
+
+== 步驟 3：設定主機名稱、DNS 和 `/etc/hosts`
+
+在所有三個 VM 上設定主機名稱和 DNS 解析，使 Oracle Net、Data Guard Broker 和 Observer 能夠正常執行正向和反向名稱解析。
+
+. 設定主機名稱並在所有三台主機上新增  `/etc/hosts` 條目。替換 GCE 內部 IP 位址（可在「Compute Engine → VM 執行個體」清單的「內部 IP」欄位中檢視）：
++
+[source, bash]
+----
+# Run on each VM, substituting the local short name (oracdb1, oracdb2, oradg-obs)
+sudo hostnamectl set-hostname <this-host>.example.internal
+
+# Run on every VM (same content)
+sudo tee -a /etc/hosts >/dev/null <<EOF
+
+# Oracle DG peers + FSFO Observer
+<oracdb1-ip>    oracdb1.example.internal    oracdb1
+<oracdb2-ip>    oracdb2.example.internal    oracdb2
+<oradg-obs-ip>  oradg-obs.example.internal  oradg-obs
+EOF
+----
+. 驗證每個主機的名稱解析：
++
+[source, bash]
+----
+ping -c 1 oracdb1 && ping -c 1 oracdb2 && ping -c 1 oradg-obs
+----
+
+
+
+
+== 步驟 4：僅在資料庫主機上準備作業系統
+
+在 `oracdb1`和 `oracdb2`上為 Oracle Database 26ai 準備作業系統，包括安裝預先安裝套件、建立使用者和群組、安裝 iSCSI 和多路徑軟體套件，以及設定 iSCSI 發起程式。觀察者設定已在xref:gcnv-oracle-data-guard.adoc#install-instant-client-on-observer[步驟 4：在 Observer 主機上安裝 Oracle Instant Client]中說明。
+
+[NOTE]
+====
+*前提條件：* 出站 HTTPS 到 `yum.oracle.com`（Cloud NAT 或私有子網路上的內部鏡像）。
+
+====
+. 安裝 Oracle Database 預先安裝套件，建立 `grid`使用者和 ASM 群組，並將 `oracle`使用者新增至 ASM 群組：
++
+[source, bash]
+----
+# Oracle 26ai preinstall (package name varies by repo)
+sudo dnf install -y oracle-ai-database-preinstall-26ai \
+  || sudo dnf install -y oracle-database-preinstall-26ai \
+  || sudo dnf install -y oracle-database-preinstall-23ai
+
+# grid user + asm groups
+sudo groupadd -g 54327 asmadmin; sudo groupadd -g 54328 asmdba; sudo groupadd -g 54329 asmoper
+sudo useradd -u 54322 -g oinstall -G dba,oper,asmadmin,asmdba,asmoper grid
+sudo passwd -l grid; sudo passwd -l oracle
+sudo usermod -a -G asmdba,asmadmin oracle
+----
+. 安裝 iSCSI、多路徑和 JDK 套件，然後驗證 THP 和時間同步：
++
+[source, bash]
+----
+sudo dnf install -y iscsi-initiator-utils device-mapper-multipath sg3_utils \
+  java-21-openjdk-headless libxcrypt-compat
+
+# THP and time
+cat /sys/kernel/mm/transparent_hugepage/enabled   # expect [never]
+timedatectl
+chronyc tracking
+----
+. 設定 SELinux、防火牆和 iSCSI 啟動器設定，然後重新啟動：
++
+[NOTE]
+====
+*安全態勢 (OL 10)：* 下列指令將 SELinux 設定為寬容模式並停用 `firewalld`。這只是最低限度的實驗室態勢。如需強化的 SELinux 和防火牆組態，請參閱貴組織的安全基準。
+
+====
++
+[source, bash]
+----
+sudo setenforce 0
+sudo sed -i 's/^SELINUX=.*/SELINUX=permissive/' /etc/selinux/config
+sudo systemctl disable --now firewalld
+
+sudo cp -n /etc/iscsi/iscsid.conf /etc/iscsi/iscsid.conf.orig
+sudo sed -i '/^[#[:space:]]*node\.session\.timeo\.replacement_timeout/d' /etc/iscsi/iscsid.conf
+echo "node.session.timeo.replacement_timeout = 120" | sudo tee -a /etc/iscsi/iscsid.conf
+sudo systemctl enable --now iscsid
+
+sudo reboot
+----
+
+
+
+
+== 步驟 5：取得 iSCSI 發起程序名稱 IQN
+
+重新啟動後，從每個資料庫主機擷取 iSCSI 發起程式名稱 (IQN)。您將使用這些 IQN 在 xref:gcnv-oracle-provision-storage.adoc#create-host-groups[步驟 2：建立主機群組] 中建立 GCNV 主機群組。
+
+. 從 `oracdb1`擷取 IQN 並記錄：
++
+[source, bash]
+----
+sudo cat /etc/iscsi/initiatorname.iscsi
+# InitiatorName=iqn.1994-05.com.redhat:abc123def456
+----
+. 重複上述步驟 `oracdb2`並記錄其 IQN。每個主機使用一個主機群組，這樣單一主機的重新啟動或 IQN 重新產生就不會影響其他主機的 GCNV iSCSI 磁碟區可見性：
++
+[NOTE]
+====
+*複製虛擬機器：* 如果兩台主機共用同一個 IQN，則重新產生 `oracdb2`（停止 `iscsi`、清除 `/var/lib/iscsi/nodes/*`、新建 `InitiatorName` 在 `/etc/iscsi/initiatorname.iscsi`、重新啟動 `iscsid`）。
+
+====
+
+
+
+
+== 接下來呢？
+
+若要為 Oracle 二進位和 ASM 磁碟群組提供共用儲存，請前往 xref:gcnv-oracle-provision-storage.adoc[配置 Google Cloud NetApp Volumes iSCSI 集區、主機群組和磁碟區]。

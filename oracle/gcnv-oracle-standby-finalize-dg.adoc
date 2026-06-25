@@ -1,0 +1,180 @@
+---
+sidebar: sidebar 
+permalink: oracle/gcnv-oracle-standby-finalize-dg.html 
+keywords: oracle database, standby database, data guard, standby redo logs, flashback database, redo transport, managed recovery 
+summary: 完成 Google Cloud NetApp Volumes 上 Data Guard 的備用資料庫配置，包括建立備用重做日誌檔案、啟用閃回資料庫、啟動重做日誌傳輸以及驗證 Data Guard 狀態。此流程僅適用於生產高可用性 Data Guard 和 FSFO 層。 
+---
+= 完成 Google Cloud NetApp Volumes 上 Data Guard 的備用資料庫配置
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+透過建立備用重做日誌檔案、啟用閃回資料庫、啟動重做傳輸及驗證 Data Guard 狀態，完成 Google Cloud NetApp Volumes 上 Oracle Data Guard 的備用資料庫。
+
+*層級特定：*此程序僅適用於 *Prod HA (Data Guard + FSFO)* 層級。
+
+
+
+== 步驟 1：建立備用重做日誌檔案
+
+在兩個資料庫主機上建立備用重做日誌檔案，以支援 Fast-Start Failover。其大小必須大於或等於最大的主要線上重做日誌檔案，且數量應等於（每個執行緒的線上群組數）+ 1。完成 GCNV 種子部署後，刪除備用資料庫上的備用重做日誌檔案並重新建立，以修復複製路徑。
+
+. 在主資料庫上建立備用重做日誌檔案 (`orcl`）：
++
+[source]
+----
+ALTER SYSTEM SET db_create_file_dest='+DATA' SCOPE=BOTH;
+ALTER DATABASE ADD STANDBY LOGFILE THREAD 1 ('+DATA') SIZE 1024M;
+-- repeat (online log groups + 1) times
+----
+. 在 GCNV 種子部署後，刪除並重新建立備用資料庫上的備用重做日誌檔案 (`orcls`）。 `+DATA/ORCL/…` 下的複製路徑會導致  `ORA-19527` / `ORA-16086`，直到重建為止：
++
+[source]
+----
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+ALTER SYSTEM SET standby_file_management=MANUAL SCOPE=BOTH;
+-- DROP STANDBY LOGFILE GROUP for each group# in v$standby_log;
+ALTER SYSTEM SET db_create_file_dest='+DATA' SCOPE=BOTH;
+ALTER SYSTEM SET standby_file_management=AUTO SCOPE=BOTH;
+ALTER DATABASE ADD STANDBY LOGFILE THREAD 1 ('+DATA') SIZE 1024M;
+-- repeat (online groups + 1) times; one member per group
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+----
+
+
+
+
+== 步驟 2：啟用回溯功能並啟動復原
+
+在備用資料庫上啟用 Flashback 資料庫，以支援容錯移轉後的自動恢復，然後以即時套用方式啟動受管理的恢復。必須在啟動受管理的恢復之前啟用 Flashback，因為在 MRP 執行期間無法啟用 Flashback。
+
+. 關閉備用資料庫，以 MOUNT 模式重新啟動，並在 `oracdb2`上啟用閃回資料庫：
++
+[source, bash]
+----
+# On oracdb2
+sudo -u oracle bash -c '
+. ~/.bash_profile
+export ORACLE_SID=orcls
+sqlplus / as sysdba <<SQL
+SHUTDOWN IMMEDIATE;
+STARTUP MOUNT;
+ALTER SYSTEM SET db_flashback_retention_target=1440 SCOPE=BOTH;
+ALTER DATABASE FLASHBACK ON;
+EXIT
+SQL'
+----
+. 啟動具有即時套用功能的託管復原：
++
+[source, bash]
+----
+sudo -u oracle bash -c '
+. ~/.bash_profile
+export ORACLE_SID=orcls
+sqlplus / as sysdba <<SQL
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+EXIT
+SQL'
+----
++
+`USING CURRENT LOGFILE` 可實現即時套用（重做會在抵達 SRL 時套用）。
+
+
+
+
+
+== 步驟 3：啟用重做傳送
+
+透過啟用 `LOG_ARCHIVE_DEST_STATE_2`來啟用從主要端到備用端的 redo 傳輸，這在備用端初始化程序的 xref:gcnv-oracle-standby-database.adoc#standby-init-ora-and-nomount[步驟 2] 中被刻意設定為 `DEFER`，以抑制在建立備用端期間的 `ORA-12154`錯誤。
+
+. 切換 `LOG_ARCHIVE_DEST_STATE_2`到 `ENABLE`並強制執行日誌切換以啟動重做傳送：
++
+[source, bash]
+----
+sudo -u oracle bash -c '
+. ~/.bash_profile
+sqlplus / as sysdba <<SQL
+ALTER SYSTEM SET LOG_ARCHIVE_DEST_STATE_2=ENABLE SCOPE=BOTH;
+ALTER SYSTEM SWITCH LOGFILE;
+ALTER SYSTEM ARCHIVE LOG CURRENT;
+EXIT
+SQL'
+----
+. 驗證重做傳送是否正常運作：
++
+[source, bash]
+----
+sudo -u oracle bash -c '
+. ~/.bash_profile
+sqlplus / as sysdba <<SQL
+SELECT dest_id, status, error FROM v\$archive_dest_status WHERE dest_id IN (1,2);
+EXIT
+SQL'
+# Expected: dest_id=2, STATUS=VALID, ERROR null.
+----
++
+如果 `dest_2`顯示 `ORA-12154`，則重新啟動主伺服器。之後xref:gcnv-oracle-data-guard.adoc#enable-broker-on-both-databases[步驟 1：在兩個資料庫上啟用 broker]，透過 DGMGRL 管理傳輸。
+
+
+
+
+
+== 步驟 4：驗證 Data Guard 狀態
+
+確認主資料庫處於 READ WRITE 模式，且備用資料庫已掛載並啟用託管恢復，套用重做日誌。
+
+. 驗證主資料庫角色和開啟模式（位於 `oracdb1`）：
++
+[source, bash]
+----
+sudo -u oracle sqlplus -s / as sysdba \
+  <<<"SELECT database_role || ' | ' || open_mode FROM v\$database;"
+# Expected: PRIMARY | READ WRITE
+----
+. 驗證備用資料庫的角色、開放模式和託管復原狀態（位於 `oracdb2`）：
++
+[source, bash]
+----
+gcloud compute ssh oracdb2 --tunnel-through-iap --zone=us-west1-b
+
+sudo -u oracle bash <<'BASH'
+. ~/.bash_profile
+export ORACLE_SID=orcls
+
+sqlplus -s / as sysdba <<'SQL'
+SELECT database_role || ' | ' || open_mode
+FROM v$database;
+
+SELECT process, status, sequence#
+FROM v$managed_standby
+WHERE process IN ('MRP0','RFS');
+
+EXIT
+SQL
+BASH
+----
++
+待機預期： `PHYSICAL STANDBY | MOUNTED`； `MRP0` 帶有  `APPLYING_LOG`。
+
+. 如果備用復原進程報告 `MOUNTED`但 apply 未執行，請在 `oracdb2`上重新啟動託管復原：
++
+[source, bash]
+----
+sudo -u oracle bash -c '
+. ~/.bash_profile
+export ORACLE_SID=orcls
+sqlplus / as sysdba <<SQL
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+EXIT
+SQL'
+----
+
+
+
+
+== 接下來呢？
+
+若要啟動自動角色管理和故障轉移保護，請繼續執行xref:gcnv-oracle-data-guard.adoc[設定 Oracle Data Guard Broker、Fast-Start Failover 和 Observer]。

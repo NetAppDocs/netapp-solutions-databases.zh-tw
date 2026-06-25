@@ -1,10 +1,10 @@
 ---
 sidebar: sidebar 
 permalink: dbops/hybrid-dbops-snapcenter-devtest.html 
-summary: 公有雲的敏捷性、價值實現時間、成本節省都是企業採用公有雲進行資料庫應用程式開發和測試工作的有意義的價值主張。沒有比SnapCenter更好的工具可以快速實現這一目標。 SnapCenter不僅可以保護您的本機生產資料庫，還可以快速複製副本以用於公有雲中的應用程式開發或程式碼測試，同時僅消耗很少的額外儲存空間。以下是使用該工具的逐步過程的詳細資訊。 
-keywords: hybrid cloud, database, solutions, dev/test, workflow 
+summary: 公有雲的敏捷性、價值實現時間和成本節約，對於採用公有雲進行資料庫應用程式開發和測試的企業來說，都是意義重大的價值主張。 
+keywords: hybrid cloud, database, solutions, devtest, workflow 
 ---
-= 開發/測試爆發至雲端的工作流程
+= 開發測試突發到雲端的工作流程
 :hardbreaks:
 :allow-uri-read: 
 :nofooter: 

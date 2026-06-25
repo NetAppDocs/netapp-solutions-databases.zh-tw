@@ -1,0 +1,149 @@
+---
+sidebar: sidebar 
+permalink: oracle/gcnv-oracle-deployment-options.html 
+keywords: oracle database, google cloud netapp volumes, gcnv, deployment options, high availability, disaster recovery, data guard, fsfo 
+summary: Google Cloud NetApp Volumes 與 Oracle Database 26ai 的部署選項，從開發/測試層到生產高可用性層。 
+---
+= 了解適用於 Oracle Database 26ai 的 Google Cloud NetApp Volumes 部署選項
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Google Cloud NetApp Volumes 支援 Oracle Database 26ai，涵蓋從開發/測試環境到配備 Data Guard 和 Fast-Start Failover 的生產高可用性配置等多個部署層級。請查看部署需求、比較高可用性層級，並確定在 Google Cloud NetApp Volumes 上為所選架構制定的任務順序。
+
+
+
+== 部署需求
+
+在為 Oracle Database 26ai 高可用性佈建 Google Cloud NetApp Volumes 之前，請確保已準備好以下各項：
+
+* 一個擁有 Compute Engine、VPC 網路、防火牆組態、IAM 和 NetApp Volumes 權限的 Google Cloud 專案
++
+[cols="1,2"]
+|===
+| 任務 | 所需存取 
+
+
+| 建立 Compute Engine VM | 運算執行個體管理員（或同等職位） 
+
+
+| 防火牆 / 防火牆原則 | 網路管理員或委派的原則管理員 
+
+
+| 建立 GCNV 資源池和磁碟區 | NetApp Volumes 管理員 
+
+
+| 設定 PSA | 主機專案中的網路管理員 
+
+
+| 透過 IAP 進行 SSH | IAP 安全通道使用者 + OS Login（如果使用） 
+|===
+* 已啟用 NetApp Volumes API
+* 為目標區域設定的 VPC 和子網路
+* 為 Google Cloud NetApp Volumes 配置的專用服務存取（PSA）
+* 所有必要的虛擬機器均需使用 Oracle Linux 10
+* 已為資料庫主機和 Observer 主機設定 DNS 和主機名稱解析
+* 適用於 Oracle Database 26ai 和 Grid Infrastructure 的 Oracle 安裝媒體和修補程式檔案
+* 熟悉 Oracle Data Guard、Oracle Restart 和 iSCSI 儲存概念
+* 所有虛擬機器均已設定時間同步。
++
+您可以使用以下命令：
+
++
+[source, bash]
+----
+gcloud services enable netapp.googleapis.com
+chronyc tracking
+timedatectl
+----
+
+
+
+
+== 範例部署配置
+
+此解決方案採用以下部署配置：
+
+* 三台 Google Compute Engine 虛擬機器：
++
+** `oracdb1` 主要資料庫
+** `oracdb2` 適用於待命資料庫
+** `oradg-obs` 快速啟動容錯移轉觀察器
+
+
+* 每個資料庫區域一個 GCNV Flex Unified 儲存池
+* 每個資料庫主機五個 GCNV iSCSI 磁碟區
+* Oracle Data Guard Broker 與 Fast-Start Failover 實作自動故障轉移
+* 每個資料庫主機都擁有專用儲存空間；主主機和備用主機不共用 iSCSI 磁碟區
+
+
+將命令中的所有範例值替換為您環境中的值，包括主機名稱、IP 位址、區域、專案名稱、入口網站 IP、密碼和 Oracle 媒體檔案名稱。
+
+
+
+== 部署選項
+
+下表比較了 HA 和 DR 部署模式，並重點說明自動化在哪些方面能帶來最大的營運效益。
+
+[cols="1,1,1,1,1,1,1"]
+|===
+| 環境 | 要求 | 建議架構 | HA | 災難復原 | 自動化 | 主要優勢 
+
+
+| 開發 / 測試 | 最低成本 | 單一執行個體 | 否 | 是的 | 否 | Snapshot 複本 
+
+
+| Prod Basic（重新啟動） | 減少因當機造成的停機時間 | + Oracle Restart | 否 | 是的 | 僅限本機 | 自動重新啟動 
+
+
+| Prod HA（無 DG） | 可接受手動 DR | + Snapshot / RMAN | 部分 | 是的 | 部分 | GCNV 複製還原 
+
+
+| 生產 HA（DG + FSFO） | 真正的 HA（無需 DBA） | Data Guard ＋ FSFO | 是的 | 是的 | 完整 | 真正的 HA + 快速容錯移轉 
+|===
+.HA/DR/自動化
+* 是 = 達到層級目標
+* 否 = 不在範圍內
+* 部分 = 僅限儲存層級或手動步驟
+
+
+
+
+== 按高可用性層級劃分的部署任務
+
+該 xref:gcnv-oracle-deployment.html[部署工作流程] 為所有部署層級提供了一套編號的步驟序列。所有層級都需完成以下所示的基本部署任務，然後根據生產環境的高可用性需求新增特定層級的任務：
+
+*基礎部署（所有層級）：*
+
+. xref:gcnv-oracle-solution-architecture.html[檢閱解決方案架構]
+. 查看部署選項和要求（本頁）
+. xref:gcnv-oracle-access-and-apis.html[驗證存取和 API]
+. xref:gcnv-oracle-provision-compute.html[佈建 Google Compute Engine 執行個體]
+. xref:gcnv-oracle-provision-storage.html[佈建 GCNV iSCSI 儲存設備]
+. xref:gcnv-oracle-install-software.html[安裝 Oracle Grid Infrastructure 和 Oracle Database 26ai]
+. xref:gcnv-oracle-primary-database.html[建立主資料庫]
+. xref:gcnv-oracle-standby-database.html[建立備用資料庫]
+
+
+*特定層級任務（僅限 Prod HA）：*
+
+[cols="1,2"]
+|===
+| 層級 | 部署步驟 
+
+
+| Dev/Test 與 Prod 基本（重新啟動）層級 | 僅需完成基礎部署步驟 1 至步驟 7。無需備用資料庫。 
+
+
+| 生產 HA（無 Data Guard） | 完成基礎部署步驟 1 至步驟 8。 
+
+
+| 生產 HA（Data Guard + FSFO） | 完成所有基礎部署步驟後，新增：+ 步驟 9：xref:gcnv-oracle-standby-finalize-dg.html[完成 Data Guard 的備用資料庫配置] + 步驟 10：xref:gcnv-oracle-data-guard.html[設定 Data Guard Broker 和 Fast-Start Failover] 
+|===
+
+
+== 接下來呢？
+
+為準備部署環境，請繼續執行 xref:gcnv-oracle-access-and-apis.html[在 Google Cloud NetApp Volumes 上存取和使用 Oracle Database 26ai 的 API]。

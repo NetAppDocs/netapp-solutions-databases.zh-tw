@@ -1,0 +1,58 @@
+---
+sidebar: sidebar 
+permalink: oracle/gcnv-oracle-access-and-apis.html 
+keywords: oracle database, google cloud netapp volumes, gcnv, access, api, permissions, psa, iap, networking 
+summary: 在部署 Oracle Database 26ai 高可用性之前，請先檢查 Google Cloud NetApp Volumes 所需的存取、API 啟用、網路先決條件和時間同步。 
+---
+= 驗證 Google Cloud NetApp Volumes 對 Oracle Database 26ai 的存取和 API
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+在 Google Compute Engine 上為 Oracle Database 26ai 高可用性佈建 GCNV iSCSI 儲存之前，請先驗證 Google Cloud NetApp Volumes 存取、API 啟用、網路先決條件和時間同步。
+
+
+
+== 存取和 API
+
+在開始主機和儲存佈建之前，請使用此檢查清單驗證權限和平台整備狀態。
+
+* GCP 角色指派給 Compute Engine VM、VPC 防火牆（或防火牆原則）、NetApp Volumes 和 PSA 網路（包括共用 VPC 主機專案簽核，如果適用）。
+* *NetApp Volumes API* 已啟用（雲端控制台 -> API 和服務，或使用下列命令）。
+* VPC 和子網路配置了 GCNV 的 *PSA 範圍*： https://cloud.google.com/netapp/volumes/docs/get-started/configure-access/networking["設定 NetApp Volumes 的網路"]。
+* 三台虛擬機器上的時間已同步（指令如下）。
++
+[source, bash]
+----
+gcloud services enable netapp.googleapis.com
+chronyc tracking
+timedatectl
+----
+
+
+[cols="1,2"]
+|===
+| 任務 | 所需存取 
+
+
+| 建立 Compute Engine VM | 運算執行個體管理員（或同等職位） 
+
+
+| 防火牆 / 防火牆原則 | 網路管理員或委派的原則管理員 
+
+
+| 建立 GCNV 資源池和磁碟區 | NetApp Volumes 管理員 
+
+
+| 設定 PSA | 主機專案中的網路管理員 
+
+
+| 透過 IAP 進行 SSH | IAP 安全通道使用者 + OS Login（如果使用） 
+|===
+
+
+== 接下來呢？
+
+若要為 Oracle 主機基礎架構佈建高可用性，請繼續執行 xref:gcnv-oracle-provision-compute.adoc[為 Oracle Database 26ai 佈建 Google Compute Engine 執行個體]。

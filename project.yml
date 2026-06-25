@@ -100,9 +100,7 @@ sidebar:
       - title: 概述：Oracle 資料庫與Google Cloud NetApp Volumes
         pdf-filename: 概述：Oracle 資料庫與Google Cloud NetApp Volumes
         url: "/oracle/gcp-oracle-gcnv-overview.html"
-      - title: 使用 Google Cloud NetApp Volumes 部署 Oracle Database 26ai 高可用性
-        pdf-filename: 使用 Google Cloud NetApp Volumes 部署 Oracle Database 26ai 高可用性
-        url: "/oracle/gcnv-oracle-deployment.html"
+      - section: gcnv-oracle
     - title: 本地和混合雲
       entries:
       - title: 使用vVols在 VCF 中部署和保護 Oracle RAC
