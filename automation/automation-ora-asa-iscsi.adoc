@@ -526,7 +526,7 @@ image:automation-ora-asa-em-003.png["此映像提供了 Oracle Enterprise Manage
 
 * NETAPP ASA：全快閃 SAN 陣列
 +
-link:https://www.netapp.com/data-storage/all-flash-san-storage-array/["https://www.netapp.com/data-storage/all-flash-san-storage-array/"^]
+link:https://www.netapp.com/pdf.html?item=/media/85736-ds-4254-asa.pdf["https://www.netapp.com/pdf.html?item=/media/85736-ds-4254-asa.pdf"^]
 
 * 使用新資料庫安裝為獨立伺服器安裝 Oracle Grid Infrastructure
 +

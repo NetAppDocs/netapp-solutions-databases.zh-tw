@@ -310,8 +310,6 @@
   <block id="91935697a3dec69875fc666d39a8fef8" category="inline-link-macro">VMware Cloud on AWS 中簡化的自主管理 Oracle，附有用戶端安裝的 FSx ONTAP</block>
   <block id="d49572b6f320bb9c7fb90a4c4fc671fe" category="paragraph">參考 TR-4979<block ref="b3e18c7c22919dcba778748c61b50f2e" category="inline-link-macro-rx"></block>部分<block ref="d372b360dda93a1ed98b047b474a8d14" prefix=" " category="inline-code"></block>有關設定SnapCenter和執行資料庫備份、復原和複製工作流程的詳細資訊。</block>
   <block id="6a56c935b27efdd9e9fde9e036ca687b" category="list-text">NETAPP ASA：全快閃 SAN 陣列</block>
-  <block id="fa78b7e09f15ae55ea12cbcb34d44847" category="inline-link-macro"><block ref="fa78b7e09f15ae55ea12cbcb34d44847" category="inline-link-rx"></block></block>
-  <block id="1d2dc43013dd6328b22d33484061bd50" category="paragraph"><block ref="1d2dc43013dd6328b22d33484061bd50" category="inline-link-macro-rx"></block></block>
   <block id="5424ed1a1b4c4815e1d1676f23aa1da4" category="list-text">使用新資料庫安裝為獨立伺服器安裝 Oracle Grid Infrastructure</block>
   <block id="a7410994d191ba6c350f0f764df86934" category="inline-link-macro"><block ref="a7410994d191ba6c350f0f764df86934" category="inline-link-rx"></block></block>
   <block id="094328bca120efd3d6fba90d69b806f8" category="paragraph"><block ref="094328bca120efd3d6fba90d69b806f8" category="inline-link-macro-rx"></block></block>
@@ -431,7 +429,6 @@
   <block id="5803335e5bcae83badcbc5583ac2d60e" category="inline-link-macro">VMware Cloud on AWS 中簡化的自主管理 Oracle，附有用戶端安裝的 FSx ONTAP</block>
   <block id="7747db3e6614970aeeeeaef060f430c8" category="paragraph">NetApp建議使用SnapCenter UI 工具來管理部署在 C 系列中的 Oracle 資料庫。參考 TR-4979<block ref="353ca98728b30d2ae31625a468ea2722" category="inline-link-macro-rx"></block>部分<block ref="d372b360dda93a1ed98b047b474a8d14" prefix=" " category="inline-code"></block>有關設定SnapCenter和執行資料庫備份、復原和複製工作流程的詳細資訊。</block>
   <block id="0f48ba7e158160e65859ff8d64ceec40" category="inline-link-macro">NetApp AFF C 系列</block>
-  <block id="2f76b6fc093e529f4873d6981e8dfccb" category="list-text"><block ref="2f76b6fc093e529f4873d6981e8dfccb" category="inline-link-macro-rx"></block></block>
   <block id="f18e1c3f82c945878e4905241940fa6b" category="list-text"><block ref="f18e1c3f82c945878e4905241940fa6b" category="inline-link-macro-rx"></block></block>
   <block id="77848b259d26eb7f84ae5e2cbfc59ed1" category="summary">該解決方案提供了一個基於 Ansible 的自動化工具包，用於從託管在Azure NetApp Files儲存上的 Azure 雲端中的 Oracle Data Guard 實體備用資料庫設定、複製和刷新 Oracle 克隆資料庫，並配置 ASM。</block>
   <block id="93a5d2dc01885a305bad9a0a7f8be64b" category="doc">使用 ASM 在 ANF 上實現 Oracle 克隆生命週期自動化</block>
@@ -851,7 +848,6 @@
   <block id="593581e466784760a050bceaea5e0c48" category="admonition">部署 Cloud Manager 和Cloud Volumes ONTAP 的方法有很多；這個方法最簡單，但需要的權限最多。如果此方法不適合您的 AWS 環境，請諮詢<block ref="97a20614f8c0e53f461a9353634e5e51" category="inline-link-rx"></block>。</block>
   <block id="bb3e779fdf877143137572122cf424e3" category="section-title">部署 Cloud Manager 連接器</block>
   <block id="1273c8a63109161e6fd1f18d6998523f" category="inline-link">NetApp BlueXP</block>
-  <block id="1bb916142b871b5d3ca15de98567916e" category="list-text">導航至<block ref="830bc671a5f7a65e4c0ded8f63d397ba" category="inline-link-rx"></block>並登入或註冊。</block>
   <block id="e282a5afe40f9227d1f4acfdd3e5e741" category="paragraph"><block ref="e282a5afe40f9227d1f4acfdd3e5e741" category="inline-image-macro-rx" type="image"></block></block>
   <block id="2300b8579a8761e452d89a2af6636b7d" category="list-text">登入後，您將進入 Canvas。</block>
   <block id="7ac8c7bcb29721730eca3892f6e6f8c7" category="paragraph"><block ref="7ac8c7bcb29721730eca3892f6e6f8c7" category="inline-image-macro-rx" type="image"></block></block>
@@ -1481,7 +1477,6 @@
   <block id="68236fcee9bee8dbdc1c54b7b2d84b34" category="list-text">驗證最後一個交易是否已透過所有日誌檔案複製和復原進行複製和復原。</block>
   <block id="84796a21de5593c952d0ae1c4869387f" category="paragraph"><block ref="84796a21de5593c952d0ae1c4869387f" category="inline-image-macro-rx" type="image"></block></block>
   <block id="50159c53d6f87eb33c314abd9f0bd28f" category="list-text">在 DR 伺服器上設定新的SnapCenter日誌目錄以用於 SQL Server 日誌備份。</block>
-  <block id="50f8c30e062c542679b96127a844db6a" category="paragraph">如果您需要有關此解決方案和用例的協助，請加入<block ref="f9456f3b54a140d5d3858823c684363f" category="inline-link-macro-rx"></block>並尋找解決方案自動化管道來發布您的問題或詢問。</block>
   <block id="d89002d36151bd13d2bba69f3533ee5f" category="summary">該解決方案為NetApp現場和客戶提供使用基於NetApp SnapCenter GUI 的工具和公有雲中的NetApp儲存服務 CVO 配置、操作和遷移資料庫到混合雲環境的說明和指導。</block>
   <block id="8269707c3930f3cbcd49193be33bc125" category="doc">TR-4908：採用SnapCenter的混合雲資料庫解決方案概述</block>
   <block id="7c4d94e1b484fb577b0aeafbec788ea1" category="paragraph">曹艾倫、菲利克斯·梅里根、 NetApp</block>
@@ -2224,9 +2219,7 @@
   <block id="990f2c472997ae0e656e936d74d82472" category="paragraph"><block ref="990f2c472997ae0e656e936d74d82472" category="inline-image-macro-rx" type="image"></block></block>
   <block id="7d5b957cd473f6eaf5ad335a9c63c4ff" category="paragraph">要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：</block>
   <block id="425103b894468ffe6015f984f2683d74" category="inline-link">TR-4714：使用NetApp SnapCenter 的Microsoft SQL Server 最佳實務指南</block>
-  <block id="9c42feba6d2410200720e2ceda752e13" category="list-text"><block ref="9c42feba6d2410200720e2ceda752e13" category="inline-link-rx"></block></block>
   <block id="ee50ef71e7fa5dbc3292cb856c5f8ee5" category="inline-link"><block ref="ee50ef71e7fa5dbc3292cb856c5f8ee5" category="inline-link-rx"></block></block>
-  <block id="822d30d1b5bfcb219aa830739d5b89a0" category="paragraph"><block ref="822d30d1b5bfcb219aa830739d5b89a0" category="inline-link-rx"></block></block>
   <block id="818095849ac39056a1077a0f3a155684" category="inline-link">恢復資料庫的要求</block>
   <block id="0305a2a48c225d49081b5bccd776b23d" category="list-text"><block ref="0305a2a48c225d49081b5bccd776b23d" category="inline-link-rx"></block></block>
   <block id="9f413d2e154ecad28af03b6125df6837" category="inline-link"><block ref="9f413d2e154ecad28af03b6125df6837" category="inline-link-rx"></block></block>
@@ -2237,7 +2230,6 @@
   <block id="ebcadd0d5b1096e72d18133b1e0e3098" category="doc">TR-4467：Windows 上搭載 Microsoft SQL Server 的 SAP - 使用NetApp Clustered Data ONTAP和SnapCenter 的最佳實踐</block>
   <block id="611a4a6b98272a717f8e1f6bf5ba787b" category="paragraph">NetApp的 Marco Schoen</block>
   <block id="dbd408dfbba42c9529974244acc200aa" category="paragraph">TR-4467 為客戶和合作夥伴提供了部署叢集NetApp Data ONTAP的最佳實踐，以支援在 Windows 環境中的 Microsoft SQL Server 中執行的 SAP Business Suite 解決方案。</block>
-  <block id="d90b6dfa1c90883fc207f3309f98b1bf" category="paragraph"><block ref="d90b6dfa1c90883fc207f3309f98b1bf" category="inline-link-macro-rx"></block></block>
   <block id="0502e6755528910223db364699e71622" category="doc">TR-4590：採用ONTAP的 Microsoft SQL Server 最佳實務指南</block>
   <block id="7788b16f8e56867380c0e39b9e9a9b73" category="paragraph">Manohar Kulkarni 和 Pat Sinthusan， NetApp</block>
   <block id="cf2906d4a365d3dbf40f1f495ff7a0eb" category="paragraph">本文檔介紹了最佳實踐，並深入探討了在運行NetApp ONTAP軟體的NetApp儲存系統上部署 SQL Server 的設計注意事項，目的是實現有效、高效的儲存部署以及端到端資料保護和保留規劃。</block>
@@ -2246,7 +2238,6 @@
   <block id="046c9e52934c311f81497ca664d86a24" category="doc">TR-4764：Microsoft SQL Server 與NetApp EF 系列的最佳實踐</block>
   <block id="d9cd8ac988f5ea26e28a2da5f3485ff9" category="paragraph">米奇布萊克本、派特辛圖桑、 NetApp</block>
   <block id="9db08b91ae68a77b71af230b40b31325" category="paragraph">本最佳實務指南旨在協助儲存管理員和資料庫管理員在NetApp EF 系列儲存上成功部署 Microsoft SQL Server。</block>
-  <block id="730874cec0e792d7ebad5a796a90b3be" category="paragraph"><block ref="730874cec0e792d7ebad5a796a90b3be" category="inline-link-macro-rx"></block></block>
   <block id="d79b12332bd4254f1e9cd6c23201a104" category="doc">TR-4722： NetApp ONTAP上的 MySQL 資料庫最佳實踐</block>
   <block id="ecb384a7266ef6f8f011aa654a810c39" category="paragraph">Anup Bharti、Manohar Kulkarni、Jeffrey Steiner NetApp</block>
   <block id="ccf4f5e223b1332c8f679f6a75664cae" category="paragraph">MySQL 及其變體（包括 MariaDB 和 Percona）廣泛用於許多企業應用程式。這些應用程式包括全球社交網站、大型電子商務系統以及包含數千個資料庫執行個體的 SMB 託管系統。本文檔介紹了配置要求，並提供了在NetApp ONTAP資料管理軟體上部署 MySQL 的調整和儲存配置指導。若要確定本報告中指定的環境、配置和版本是否支援您的環境，請查閱互通性矩陣工具 (IMT)。</block>
@@ -3858,8 +3849,6 @@
   <block id="d61fd641d504e6b15572a5b645d11d7d" category="paragraph">從儲存庫中檢索工具包<block ref="9d80dd73d3a7a092e6605ac547074b0f" category="inline-link-macro-rx"></block></block>
   <block id="ef67c85019e8ac817ecbbb2983bd0153" category="section-title">如何使用工具包？</block>
   <block id="e0849abccea244e0fba40c3aa575d398" category="paragraph">該工具包由一個基於 Web 的 HTML 解析器和兩個用於收集 Oracle 資料庫資訊的 SQL 腳本組成。然後將輸出輸入到 Excel 範本中，以產生 Oracle 資料庫伺服器的運算和儲存大小指導。</block>
-  <block id="f5db9a220f11d7b08f96f33f94122f33" category="inline-link-macro">HTML解析器</block>
-  <block id="e82f0c37b6bd3400eddaf0d48fac4a76" category="list-text">使用<block ref="735c7742f70fe756ee1537fe41775ee0" category="inline-link-macro-rx"></block>AWR 模組從 AWR 報表中檢索目前 Oracle 資料庫的大小資訊。</block>
   <block id="c000aa7f2c0d2b7df671b9d059b39d9a" category="list-text">以 DBA 身分執行 ora_db_data_szie.sql 以從資料庫中檢索實體 Oracle 資料檔案大小。</block>
   <block id="7e56648a80a16947fe5208c82f20d2f8" category="list-text">以 DBA 身分執行 ora_db_logs_size.sql 來檢索 Oracle 存檔日誌大小以及所需的存檔日誌保留視窗（天）。</block>
   <block id="d4cc69ca96964b53d4dc4a8c8e70fa45" category="list-text">將上面獲得的尺寸資訊輸入到 excel 範本檔案 oracle_db_sizing_template_anf.xlsx 中，以建立有關 Oracle DB 伺服器的運算和儲存的尺寸指南。</block>
@@ -4583,7 +4572,6 @@
   <block id="6e170e4c0b9eb50546a09aafc90dc157" category="doc">TR-4794： NetApp EF 系列上的 Oracle 資料庫</block>
   <block id="9b6fc59469e9f5ee36cb85b08daacec3" category="paragraph">Mitch Blackburn、Ebin Kadavy、 NetApp</block>
   <block id="fa8b4902d0c1e464dcf9256a434920ba" category="paragraph">TR-4794 旨在協助儲存管理員和資料庫管理員在NetApp EF 系列儲存上成功部署 Oracle。</block>
-  <block id="c6f1106d361e6595d08ff6340c004516" category="paragraph"><block ref="c6f1106d361e6595d08ff6340c004516" category="inline-link-macro-rx"></block></block>
   <block id="fe9155886965f88b4bb029103061156b" category="summary">此解決方案概述並詳細介紹了 VMware Cloud Foundation (VCF) 中的 Oracle 部署和保護，其中 vSphere Virtual Volumes (vVols) 作為主資料庫存儲，Oracle 資料庫採用 Real Application Clusters (RAC) 配置。</block>
   <block id="d04e05cc6f5337608b6ccfaae12a4905" category="doc">TR-4997：使用vVols在 VCF 中部署和保護 Oracle RAC</block>
   <block id="ac91541ff82c6ee76b58150eca1250c7" category="paragraph">VMware vSphere 虛擬磁碟區 (vVols) 是一個 SAN/NAS 管理和整合框架，它將虛擬磁碟作為本機儲存物件公開，並在虛擬磁碟層級支援基於陣列的操作。換句話說， vVols使 SAN/NAS 設備能夠感知虛擬機，並能夠以虛擬機為中心的方式在單一虛擬磁碟的粒度上利用基於陣列的資料服務。 vVols使客戶能夠利用其當前儲存投資的獨特功能，並在不中斷的情況下過渡到針對跨所有儲存類型的虛擬環境優化的更簡單、更有效率的營運模式。</block>
@@ -5471,7 +5459,6 @@
   <block id="8e9e0674f514401c315626d105eebbcd" category="list-text">在兩台伺服器上執行下列檢查點，以允許 SQL Server 和叢集透過防火牆進行通訊。</block>
   <block id="e3e7cd0f4a7ef7b2159e33cd0495d21b" category="paragraph">如果您有自訂配置，請調整連接埠號碼。</block>
   <block id="06880fa41019c1cec71a1f1d0dee33b1" category="inline-link-macro">Windows Server 服務和網路連接埠需求</block>
-  <block id="ea1bfb4e0199bc61655220a3e7ae9a8f" category="paragraph">有關詳細的防火牆要求、請參閱 <block ref="7d6297f1cd817785a1254289ad7b65fa" category="inline-link-macro-rx"></block>。</block>
   <block id="1eeb53e050d9b4e4e35834f4b471cba7" category="list-text">在建立叢集之前，請對兩個節點執行驗證檢查：</block>
   <block id="4572920938cf8d7680040c800198b6b8" category="section-title">建立容錯移轉叢集</block>
   <block id="0ffad8e207b70ed5bd0af63d94e2b285" category="paragraph">建立一個包含兩個 SQL Server 節點的 Windows Server Failover Cluster，以實現高可用性和自動故障轉移功能。</block>
@@ -6243,4 +6230,17 @@
   <block id="c43a14b15d77a2ca0858f8c596a9f3ff" category="sidebar">了解適用於 Oracle HA 的 Google Cloud NetApp Volumes</block>
   <block id="a2627b9fc881a72aff56f8dd68b20ea1" category="sidebar">使用 Oracle HA 部署 Google Cloud NetApp Volumes</block>
   <block id="1b3c2813631c4b890b70d7b8abe4c245" category="sidebar">配置 Compute Engine 執行個體</block>
+  <block id="d609d95c74f58af0677b17d65554005e" category="inline-link-macro"><block ref="d609d95c74f58af0677b17d65554005e" category="inline-link-rx"></block></block>
+  <block id="59aaa217ee0cb94ce796b376789a5f5f" category="paragraph"><block ref="59aaa217ee0cb94ce796b376789a5f5f" category="inline-link-macro-rx"></block></block>
+  <block id="1d9c6b8d8daec693aaf6605491f3b203" category="list-text"><block ref="1d9c6b8d8daec693aaf6605491f3b203" category="inline-link-macro-rx"></block></block>
+  <block id="06f70bdc0632629a375dc5c072f431f5" category="list-text">造訪<block ref="bd65f9bfe577af0daae332de597fcfc1" category="inline-link-rx"></block>並登入或註冊。</block>
+  <block id="dd490b81914dd945601e442a41cb4222" category="inline-link-macro">NetApp 社群</block>
+  <block id="8e201ca2438da0190f1d4fee8db9f98d" category="paragraph">如果您在使用工具套件時需要協助，請造訪<block ref="a6159e77c91be3ab1d481e4c7c939636" category="inline-link-macro-rx"></block>並發布您的問題。</block>
+  <block id="bf8fb7dd8b2627d1d3eacf1fabdecec0" category="paragraph">有關詳細的防火牆要求、請參閱 <block ref="348f1f08867f112c105b3a78ffb586df" category="inline-link-macro-rx"></block>。</block>
+  <block id="5247fab54f9e8bcfd8158ac966c09566" category="list-text"><block ref="5247fab54f9e8bcfd8158ac966c09566" category="inline-link-rx"></block></block>
+  <block id="98ec22f1e633b44d85c251abe3d76431" category="paragraph"><block ref="98ec22f1e633b44d85c251abe3d76431" category="inline-link-rx"></block></block>
+  <block id="4df8ff916c96ff6c46fc2671c04b77e0" category="paragraph"><block ref="4df8ff916c96ff6c46fc2671c04b77e0" category="inline-link-macro-rx"></block></block>
+  <block id="b06c01ad278ddcf98874b5b5267765b6" category="paragraph"><block ref="b06c01ad278ddcf98874b5b5267765b6" category="inline-link-macro-rx"></block></block>
+  <block id="052b909238ebf4917da28464c5adb557" category="list-text">使用 HTML 解析器 AWR 模組從 AWR 報告中擷取目前 Oracle 資料庫的規模資訊。</block>
+  <block id="a6a77e0f909108a38e794073d621e60b" category="paragraph"><block ref="a6a77e0f909108a38e794073d621e60b" category="inline-link-macro-rx"></block></block>
 </blocks>

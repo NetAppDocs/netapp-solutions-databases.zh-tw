@@ -93,7 +93,7 @@ NOTE: 使用此工具包儲存庫中的內容製作和/或分享任何衍生作�
 ====
 該工具包由一個基於 Web 的 HTML 解析器和兩個用於收集 Oracle 資料庫資訊的 SQL 腳本組成。然後將輸出輸入到 Excel 範本中，以產生 Oracle 資料庫伺服器的運算和儲存大小指導。
 
-* 使用link:https://app.atroposs.com/#/awr-module["HTML解析器"^]AWR 模組從 AWR 報表中檢索目前 Oracle 資料庫的大小資訊。
+* 使用 HTML 解析器 AWR 模組從 AWR 報告中擷取目前 Oracle 資料庫的規模資訊。
 * 以 DBA 身分執行 ora_db_data_szie.sql 以從資料庫中檢索實體 Oracle 資料檔案大小。
 * 以 DBA 身分執行 ora_db_logs_size.sql 來檢索 Oracle 存檔日誌大小以及所需的存檔日誌保留視窗（天）。
 * 將上面獲得的尺寸資訊輸入到 excel 範本檔案 oracle_db_sizing_template_anf.xlsx 中，以建立有關 Oracle DB 伺服器的運算和儲存的尺寸指南。

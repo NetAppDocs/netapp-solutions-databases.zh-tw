@@ -591,7 +591,7 @@ netsh advfirewall firewall add rule name="Allow SQL Server" dir=in action=allow 
 netsh advfirewall firewall add rule name="Allow SQL Server replication" dir=in action=allow protocol=TCP localport=5022
 ----
 +
-有關詳細的防火牆要求、請參閱 link:https://learn.microsoft.com/en-us/troubleshoot/windows-server/high-availability/service-overview-and-network-port-requirements["Windows Server 服務和網路連接埠需求"^]。
+有關詳細的防火牆要求、請參閱 link:https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements["Windows Server 服務和網路連接埠需求"^]。
 
 . 在建立叢集之前，請對兩個節點執行驗證檢查：
 +

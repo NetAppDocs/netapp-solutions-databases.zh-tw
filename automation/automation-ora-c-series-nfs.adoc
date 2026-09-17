@@ -693,6 +693,6 @@ NetApp建議使用SnapCenter UI 工具來管理部署在 C 系列中的 Oracle �
 
 要了解有關本文檔中描述的信息的更多信息，請查看以下文檔和/或網站：
 
-* link:https://www.netapp.com/pdf.html?item=/media/81583-da-4240-aff-c-series.pdf["NetApp AFF C 系列"^]
+* link:https://www.netapp.com/pdf.html?item=/media/81583-ds-4240-aff-c-series.pdf["NetApp AFF C 系列"^]
 * link:https://docs.oracle.com/en/database/oracle/oracle-database/19/ladbi/deploying-dnfs.html#GUID-D06079DB-8C71-4F68-A1E3-A75D7D96DCE2["部署 Oracle Direct NFS"^]
 

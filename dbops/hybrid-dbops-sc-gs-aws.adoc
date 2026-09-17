@@ -50,7 +50,7 @@ NOTE: 部署 Cloud Manager 和Cloud Volumes ONTAP 的方法有很多；這個方
 
 ==== 部署 Cloud Manager 連接器
 
-. 導航至 https://www.netapp.com/bluexp/?utm_campaign=b2d-port-all-na-amer-digi-wepp-brand-amer-1745924643379&utm_source=google&utm_medium=paidsearch&utm_content=nativead&gad_source=1&gad_campaignid=21281798861&gclid=EAIaIQobChMIv_GU0KDJjQMVEXRHAR2A2hJzEAAYASAAEgKAZ_D_BwE["NetApp BlueXP"^]並登入或註冊。
+. 造訪 https://bluexp.netapp.com/["NetApp BlueXP"^]並登入或註冊。
 +
 image:cloud-central-login-page.png["此圖顯示輸入/輸出對話框或表示書面內容"]
 

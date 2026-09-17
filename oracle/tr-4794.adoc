@@ -18,4 +18,4 @@ Mitch Blackburn、Ebin Kadavy、 NetApp
 [role="lead"]
 TR-4794 旨在協助儲存管理員和資料庫管理員在NetApp EF 系列儲存上成功部署 Oracle。
 
-link:https://www.netapp.com/pdf.html?item=/media/17248-tr4794pdf.pdf["TR-4794： NetApp EF 系列上的 Oracle 資料庫"^]
+link:https://www.netapp.com/pdf.html?item=/media/17248-tr4794.pdf["TR-4794： NetApp EF 系列上的 Oracle 資料庫"^]

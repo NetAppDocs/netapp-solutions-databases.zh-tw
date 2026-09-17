@@ -61,13 +61,13 @@ indexpage:
     - title: 將本機 SQL 工作負載遷移至 FSx ONTAP
       url: "/mssql/customer-usecase-mssql-fsx1.html"
     - title: 在 Windows 上使用叢集資料ONTAP 的SAP 與 Microsoft SQL Server
-      url: https://www.netapp.com/pdf.html?item=/media/16865-tr-4467pdf.pdf
+      url: https://www.netapp.com/pdf.html?item=/media/16865-tr-4467.pdf
     - title: 現代化 Microsoft SQL Server
       url: https://www.netapp.com/pdf.html?item=/media/15613-na-446.pdf
     - title: 採用ONTAP的 Microsoft SQL Server 的最佳實踐
       url: https://www.netapp.com/pdf.html?item=/media/8585-tr4590.pdf
     - title: EF 系列 Microsoft SQL Server 的最佳實踐
-      url: https://www.netapp.com/pdf.html?item=/media/17086-tr4764pdf.pdf
+      url: https://www.netapp.com/pdf.html?item=/media/17086-tr4764.pdf
   - title: 混合雲資料庫解決方案
     links:
     - title: 使用 VCF 中的vVols部署和保護 Oracle RAC
@@ -81,7 +81,7 @@ indexpage:
     - title: 透過自動化在ONTAP上部署 Oracle19c
       url: "/automation/db-protection-overview.html"
     - title: 在NetApp EF 系列上執行 Oracle 資料庫
-      url: https://www.netapp.com/pdf.html?item=/media/17248-tr4794pdf.pdf
+      url: https://www.netapp.com/pdf.html?item=/media/17248-tr4794.pdf
   - title: 開源資料庫
     links:
     - title: 在 AWS FSx/EC2 中部署 PostgreSQL 資料庫並設定災難復原
