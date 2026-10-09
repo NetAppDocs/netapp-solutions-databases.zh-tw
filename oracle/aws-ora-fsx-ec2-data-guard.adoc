@@ -118,7 +118,7 @@ image:aws-ora-fsx-data-guard-architecture.png["此圖提供了使用 FSx ONTAP�
 === 部署考慮的關鍵因素
 
 * *Oracle 備用資料庫FlexClone 的工作原理。 * AWS FSx ONTAP FlexClone提供可寫入的相同備用資料庫磁碟區的共用副本。卷的副本實際上是連結回原始資料塊的指針，直到在克隆上啟動新的寫入。然後， ONTAP為新的寫入指派新的儲存區塊。任何讀取 IO 均由主動複製下的原始資料區塊提供服務。因此，克隆的儲存效率非常高，可以用於許多其他用例，為新的寫入 IO 分配最少且增量的新儲存。透過大幅減少 Active Data Guard 儲存空間，可以節省大量的儲存成本。  NetApp建議在資料庫從主儲存切換到備用 FSx 儲存時盡量減少FlexClone活動，以保持 Oracle 效能處於高水準。
-* *Oracle 軟體需求。 *一般而言，實體備用資料庫必須具有與主資料庫相同的資料庫主版本，包括補丁集異常 (PSE)、關鍵修補程式更新 (CPU) 和修補程式集更新 (PSU)，除非正在進行 Oracle Data Guard 備用優先補丁應用程式（如 My Oracle Support 說明 1265700.1 所述，網址為link:https://support.oracle.com.["support.oracle.com"^]
+* *Oracle 軟體需求。*一般而言，實體備用資料庫必須與主資料庫具有相同的 Database Home 版本，包括 Patch Set Exceptions（PSEs）、Critical Patch Updates（CPUs）和 Patch Set Updates（PSUs），除非 Oracle Data Guard Standby-First Patch Apply 程序正在進行中（如 My Oracle Support 附註 1265700.1 於 link:https://support.oracle.com["support.oracle.com"^] 所述
 * *備用資料庫目錄結構注意事項。 *如果可能，主系統和備用系統上的資料檔案、日誌檔案和控制檔案應該具有相同的名稱和路徑名，並使用最佳靈活架構 (OFA) 命名約定。備用資料庫上的存檔目錄在網站之間也應該相同，包括大小和結構。此策略允許其他操作（例如備份、切換和故障轉移）執行同一組步驟，從而降低維護複雜性。
 * *強制記錄模式。 *為了防止主資料庫中未記錄的直接寫入無法傳播到備用資料庫，請在執行資料檔案備份以建立備用資料庫之前在主資料庫上開啟 FORCE LOGGING。
 * 資料庫儲存管理。為了簡化操作，Oracle 建議在 Oracle Data Guard 配置中設定 Oracle 自動儲存管理 (Oracle ASM) 和 Oracle 管理檔案 (OMF) 時在主資料庫和備用資料庫上對稱設定它。

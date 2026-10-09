@@ -86,8 +86,6 @@
   <block id="83669449150d17df292a91b9fdab8c54" category="paragraph">這證實 dNFS 運作正常。</block>
   <block id="b178089f1eac81c2c81eba2c223e2740" category="list-text">使用下列命令透過監聽器連接到資料庫來檢查 Oracle 監聽器配置。變更為適當的監聽連接埠和資料庫服務名稱。</block>
   <block id="9f4dc1f81d694d1c48953880d5be0ea7" category="paragraph">這證實 Oracle 監聽器正常運作。</block>
-  <block id="1b6a5f8b328d3175066895d7ff5ea576" category="inline-link-macro">NetApp解決方案自動化社群支援 Slack 頻道</block>
-  <block id="12f178498803c606c23e7166dcefb0cb" category="paragraph">如果您需要工具包的協助，請加入<block ref="f1bb21e2ce6888d898ae31a2098245a1" category="inline-link-macro-rx"></block>並尋找解決方案自動化管道來發布您的問題或詢問。</block>
   <block id="4bea7b97045c9b0e4ce9c8011fb9152f" category="summary">此解決方案提供了基於 Terraform 的自動化工具包，用於配置 FSx ONTAP叢集和 EC2 運算實例</block>
   <block id="40fe82be1dcddf04fa06215186892fca" category="doc">AWS FSx ONTAP叢集和 EC2 執行個體配置</block>
   <block id="1e7007fdca2061f9d6a2ce2a055e96ef" category="paragraph">NetApp解決方案工程團隊</block>
@@ -1403,8 +1401,6 @@
   <block id="d84550ba9a340ebf4fa6698dff5ba344" category="list-text">刪除克隆的資料庫並清理雲端資料庫伺服器環境。然後按照前面的步驟克隆一個包含新資料的新資料庫。克隆一個新資料庫只需要幾分鐘。</block>
   <block id="1170d6f09309cb8dc382034a34680937" category="inline-link-macro">刷新克隆</block>
   <block id="fef062eeb7771b01e620bb2460b1bf9a" category="list-text">關閉克隆資料庫，使用 CLI 執行克隆刷新指令。有關詳細信息，請參閱以下SnapCenter文件：<block ref="1e4035dee07650c706f8f0714c384872" category="inline-link-macro-rx"></block> 。</block>
-  <block id="2d6962c20ba37b34437afc30e6838e0d" category="inline-link-macro">NetApp解決方案自動化社群支援 Slack 頻道</block>
-  <block id="7b88d7d11804db6b079e226a6f043ea7" category="paragraph">如果您需要有關此解決方案和用例的協助，請加入<block ref="f9456f3b54a140d5d3858823c684363f" category="inline-link-macro-rx"></block>並尋找解決方案自動化管道來發布您的問題或詢問。</block>
   <block id="ff9d8653752bd48bb6b73cf97f207af1" category="summary">採用SnapCenter DR 工作流程的混合雲資料庫解決方案</block>
   <block id="ac2e8778240cb518ee14b1defbf55765" category="doc">災難復原工作流程</block>
   <block id="8e84608bd62584b2f262d60fd734714f" category="paragraph">企業已經將公有雲作為可行的資源和災難復原目的地。 SnapCenter使這個過程盡可能無縫。此災難復原工作流程與複製工作流程非常相似，但資料庫復原透過複製到雲端的最後一個可用日誌來還原所有可能的業務交易。但是，還有針對災難復原的額外預先配置和後配置步驟。</block>
@@ -2336,7 +2332,6 @@
   <block id="12eea44985687889a715748b159aacb5" category="cell">db1_LA.demo.netapp.com</block>
   <block id="96686b873db5b24893df16faa4703808" category="list-text">*Oracle 備用資料庫FlexClone 的工作原理。 * AWS FSx ONTAP FlexClone提供可寫入的相同備用資料庫磁碟區的共用副本。卷的副本實際上是連結回原始資料塊的指針，直到在克隆上啟動新的寫入。然後， ONTAP為新的寫入指派新的儲存區塊。任何讀取 IO 均由主動複製下的原始資料區塊提供服務。因此，克隆的儲存效率非常高，可以用於許多其他用例，為新的寫入 IO 分配最少且增量的新儲存。透過大幅減少 Active Data Guard 儲存空間，可以節省大量的儲存成本。  NetApp建議在資料庫從主儲存切換到備用 FSx 儲存時盡量減少FlexClone活動，以保持 Oracle 效能處於高水準。</block>
   <block id="714b6519d8509d6b6dd2df24196f06e4" category="inline-link-macro">support.oracle.com</block>
-  <block id="dde8156b287d10e91a53b11990c2d067" category="list-text">*Oracle 軟體需求。 *一般而言，實體備用資料庫必須具有與主資料庫相同的資料庫主版本，包括補丁集異常 (PSE)、關鍵修補程式更新 (CPU) 和修補程式集更新 (PSU)，除非正在進行 Oracle Data Guard 備用優先補丁應用程式（如 My Oracle Support 說明 1265700.1 所述，網址為<block ref="65806ca1a4e44d7565055b2160a952fb" category="inline-link-macro-rx"></block></block>
   <block id="9a74dfee83f901bbb995e7d4d9f21057" category="list-text">*備用資料庫目錄結構注意事項。 *如果可能，主系統和備用系統上的資料檔案、日誌檔案和控制檔案應該具有相同的名稱和路徑名，並使用最佳靈活架構 (OFA) 命名約定。備用資料庫上的存檔目錄在網站之間也應該相同，包括大小和結構。此策略允許其他操作（例如備份、切換和故障轉移）執行同一組步驟，從而降低維護複雜性。</block>
   <block id="76d62bcf48e1a8f37c916496440df6b5" category="list-text">*強制記錄模式。 *為了防止主資料庫中未記錄的直接寫入無法傳播到備用資料庫，請在執行資料檔案備份以建立備用資料庫之前在主資料庫上開啟 FORCE LOGGING。</block>
   <block id="6aab76a9832cdc4aedf822409a67b715" category="list-text">資料庫儲存管理。為了簡化操作，Oracle 建議在 Oracle Data Guard 配置中設定 Oracle 自動儲存管理 (Oracle ASM) 和 Oracle 管理檔案 (OMF) 時在主資料庫和備用資料庫上對稱設定它。</block>
@@ -6243,4 +6238,5 @@
   <block id="b06c01ad278ddcf98874b5b5267765b6" category="paragraph"><block ref="b06c01ad278ddcf98874b5b5267765b6" category="inline-link-macro-rx"></block></block>
   <block id="052b909238ebf4917da28464c5adb557" category="list-text">使用 HTML 解析器 AWR 模組從 AWR 報告中擷取目前 Oracle 資料庫的規模資訊。</block>
   <block id="a6a77e0f909108a38e794073d621e60b" category="paragraph"><block ref="a6a77e0f909108a38e794073d621e60b" category="inline-link-macro-rx"></block></block>
+  <block id="e9b486ce2311e4e8df41ca775bcfeb34" category="list-text">*Oracle 軟體需求。*一般而言，實體備用資料庫必須與主資料庫具有相同的 Database Home 版本，包括 Patch Set Exceptions（PSEs）、Critical Patch Updates（CPUs）和 Patch Set Updates（PSUs），除非 Oracle Data Guard Standby-First Patch Apply 程序正在進行中（如 My Oracle Support 附註 1265700.1 於 <block ref="0ab5bd35a1fa5e1394476ebbb9c4d982" category="inline-link-macro-rx"></block> 所述</block>
 </blocks>
