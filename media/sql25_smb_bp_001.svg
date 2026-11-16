@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2E8540"/>
+    </marker>
+    <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7B8C"/>
+    </marker>
+  </defs>
+  <style>
+    .title { font-size: 24px; font-weight: 700; fill: #003366; }
+    .sub { font-size: 14px; fill: #4A5A6A; }
+    .hdr { font-size: 15px; font-weight: 700; fill: #FFFFFF; }
+    .t { font-size: 13px; fill: #1F2D3D; }
+    .tb { font-size: 13px; font-weight: 700; fill: #1F2D3D; }
+    .ts { font-size: 11.5px; fill: #4A5A6A; }
+    .tw { font-size: 13px; font-weight: 700; fill: #FFFFFF; }
+    .lbl { font-size: 12px; fill: #2E8540; font-weight: 700; }
+    .lblg { font-size: 12px; fill: #6B7B8C; font-style: italic; }
+  </style>
+
+  <rect width="1200" height="800" fill="#FFFFFF"/>
+  <text x="40" y="40" class="title">Solution architecture: SQL Server 2025 on SMB 3 CA shares with NetApp AFF</text>
+  <text x="40" y="64" class="sub">Windows Server 2025 host, Active Directory, SVM a50-sql on an AFF A50 HA pair, optional data protection</text>
+
+  <!-- Active Directory -->
+  <rect x="40" y="110" width="280" height="160" rx="8" fill="#F2F4F7" stroke="#6B7B8C" stroke-width="1.5"/>
+  <rect x="40" y="110" width="280" height="32" rx="8" fill="#6B7B8C"/>
+  <rect x="40" y="130" width="280" height="12" fill="#6B7B8C"/>
+  <text x="56" y="132" class="hdr">Active Directory / DNS</text>
+  <text x="56" y="166" class="tb">sapcc.stl.netapp.com</text>
+  <text x="56" y="190" class="t">Kerberos authentication</text>
+  <text x="56" y="212" class="t">Computer account A50-SQL</text>
+  <text x="56" y="234" class="t">Service account SAPCC\sql1admin</text>
+  <text x="56" y="256" class="t">DNS + NTP for host and SVM</text>
+
+  <!-- SQL host -->
+  <rect x="380" y="90" width="440" height="230" rx="8" fill="#EAF3FC" stroke="#0067C5" stroke-width="2"/>
+  <rect x="380" y="90" width="440" height="34" rx="8" fill="#0067C5"/>
+  <rect x="380" y="110" width="440" height="14" fill="#0067C5"/>
+  <text x="600" y="113" class="hdr" text-anchor="middle">Windows Server 2025 · sql-1</text>
+  <rect x="400" y="136" width="400" height="44" rx="5" fill="#0067C5"/>
+  <text x="600" y="155" class="tw" text-anchor="middle">SQL Server 2025 Enterprise</text>
+  <text x="600" y="172" class="tw" text-anchor="middle" style="font-weight:400">default instance MSSQLSERVER</text>
+  <rect x="400" y="188" width="400" height="32" rx="5" fill="#FFFFFF" stroke="#9DB9D8"/>
+  <text x="600" y="209" class="t" text-anchor="middle">Binaries and system databases on local disk C:\</text>
+  <rect x="400" y="228" width="400" height="32" rx="5" fill="#FFFFFF" stroke="#9DB9D8"/>
+  <text x="600" y="249" class="t" text-anchor="middle">SMB 3.1.1 client · UNC paths \\a50-sql\sql1_*</text>
+  <rect x="430" y="276" width="120" height="30" rx="4" fill="#003366"/>
+  <text x="490" y="296" class="tw" text-anchor="middle">NIC 1</text>
+  <rect x="650" y="276" width="120" height="30" rx="4" fill="#003366"/>
+  <text x="710" y="296" class="tw" text-anchor="middle">NIC 2</text>
+
+  <!-- Data protection -->
+  <rect x="880" y="110" width="280" height="160" rx="8" fill="#EEF7F0" stroke="#2E8540" stroke-width="1.5"/>
+  <rect x="880" y="110" width="280" height="32" rx="8" fill="#2E8540"/>
+  <rect x="880" y="130" width="280" height="12" fill="#2E8540"/>
+  <text x="896" y="132" class="hdr">Data protection (optional)</text>
+  <text x="896" y="166" class="tb">NetApp SnapCenter</text>
+  <text x="896" y="188" class="t">Plug-ins for SQL Server</text>
+  <text x="896" y="208" class="t">and Windows on sql-1</text>
+  <text x="896" y="234" class="t">App-consistent snapshots,</text>
+  <text x="896" y="254" class="t">restore, clone, replication</text>
+
+  <!-- AD / mgmt connectors -->
+  <line x1="320" y1="190" x2="378" y2="190" stroke="#6B7B8C" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrg)" marker-start="url(#arrg)"/>
+  <line x1="880" y1="190" x2="822" y2="190" stroke="#6B7B8C" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrg)" marker-start="url(#arrg)"/>
+  <text x="851" y="182" class="lblg" text-anchor="middle">plug-in</text>
+  <line x1="1020" y1="270" x2="1020" y2="438" stroke="#6B7B8C" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrg)"/>
+  <text x="1030" y="360" class="lblg">ONTAP REST API</text>
+  <line x1="180" y1="270" x2="180" y2="438" stroke="#6B7B8C" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrg)" marker-start="url(#arrg)"/>
+  <text x="190" y="360" class="lblg">AD join, Kerberos</text>
+
+  <!-- SMB paths -->
+  <line x1="490" y1="306" x2="490" y2="522" stroke="#2E8540" stroke-width="4" marker-end="url(#arr)" marker-start="url(#arr)"/>
+  <line x1="710" y1="306" x2="710" y2="522" stroke="#2E8540" stroke-width="4" marker-end="url(#arr)" marker-start="url(#arr)"/>
+  <text x="478" y="380" class="lbl" text-anchor="end">Path 1</text>
+  <text x="478" y="396" class="ts" text-anchor="end">25/100 GbE</text>
+  <text x="722" y="380" class="lbl">Path 2</text>
+  <text x="722" y="396" class="ts">25/100 GbE</text>
+  <rect x="512" y="346" width="176" height="64" rx="6" fill="#FFFFFF" stroke="#2E8540" stroke-width="1.5"/>
+  <text x="600" y="366" class="lbl" text-anchor="middle">SMB 3.1.1</text>
+  <text x="600" y="383" class="ts" text-anchor="middle">multichannel</text>
+  <text x="600" y="400" class="ts" text-anchor="middle">continuously available</text>
+
+  <!-- AFF cluster -->
+  <rect x="40" y="440" width="1120" height="345" rx="10" fill="#F7F9FB" stroke="#003366" stroke-width="2"/>
+  <rect x="40" y="440" width="1120" height="34" rx="10" fill="#003366"/>
+  <rect x="40" y="460" width="1120" height="14" fill="#003366"/>
+  <text x="56" y="463" class="hdr">NetApp AFF A50 HA pair · cluster SAPCC-A50-01-02 · ONTAP 9.19.1</text>
+  <text x="1144" y="463" class="hdr" text-anchor="end" style="font-weight:400">HA takeover / giveback</text>
+
+  <!-- nodes -->
+  <rect x="60" y="486" width="530" height="286" rx="8" fill="#E6EBF1" stroke="#8796A8"/>
+  <rect x="610" y="486" width="530" height="286" rx="8" fill="#E6EBF1" stroke="#8796A8"/>
+  <text x="76" y="764" class="tb">Node 1 (controller A)</text>
+  <text x="1124" y="764" class="tb" text-anchor="end">Node 2 (controller B)</text>
+  <line x1="590" y1="760" x2="610" y2="760" stroke="#003366" stroke-width="3"/>
+
+  <!-- SVM overlay -->
+  <rect x="76" y="500" width="1048" height="190" rx="8" fill="#FFFFFF" fill-opacity="0.85" stroke="#0067C5" stroke-width="2" stroke-dasharray="8 5"/>
+  <text x="92" y="520" class="tb" fill="#0067C5">SVM a50-sql · CIFS server A50-SQL · NTFS</text>
+
+  <rect x="400" y="526" width="180" height="48" rx="5" fill="#2E8540"/>
+  <text x="490" y="546" class="tw" text-anchor="middle">LIF smb_n1</text>
+  <rect x="620" y="526" width="180" height="48" rx="5" fill="#2E8540"/>
+  <text x="710" y="546" class="tw" text-anchor="middle">LIF smb_n2</text>
+  
+  <!-- volumes / CA shares -->
+  <g>
+    <rect x="110" y="598" width="200" height="74" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+    <text x="210" y="620" class="tb" text-anchor="middle">sql1_data</text>
+    <text x="210" y="640" class="ts" text-anchor="middle">1 TiB · .mdf / .ndf</text>
+    <text x="210" y="660" class="ts" text-anchor="middle">CA share</text>
+    <rect x="330" y="598" width="200" height="74" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+    <text x="430" y="620" class="tb" text-anchor="middle">sql1_backups</text>
+    <text x="430" y="640" class="ts" text-anchor="middle">2000 GiB · .bak / .trn</text>
+    <text x="430" y="660" class="ts" text-anchor="middle">CA share</text>
+    <rect x="670" y="598" width="200" height="74" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+    <text x="770" y="620" class="tb" text-anchor="middle">sql1_log</text>
+    <text x="770" y="640" class="ts" text-anchor="middle">512 GiB · .ldf</text>
+    <text x="770" y="660" class="ts" text-anchor="middle">CA share</text>
+    <rect x="890" y="598" width="200" height="74" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+    <text x="990" y="620" class="tb" text-anchor="middle">sql1_tempdb</text>
+    <text x="990" y="640" class="ts" text-anchor="middle">500 GiB · TempDB</text>
+    <text x="990" y="660" class="ts" text-anchor="middle">CA share</text>
+  </g>
+
+  <!-- aggregates -->
+  <rect x="110" y="702" width="420" height="40" rx="6" fill="#003366"/>
+  <text x="320" y="727" class="tw" text-anchor="middle">aggr_node1 · NVMe SSD</text>
+  <rect x="670" y="702" width="420" height="40" rx="6" fill="#003366"/>
+  <text x="880" y="727" class="tw" text-anchor="middle">aggr_node2 · NVMe SSD</text>
+</svg>

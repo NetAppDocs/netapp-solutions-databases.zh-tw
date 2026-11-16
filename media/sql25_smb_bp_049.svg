@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="1200" height="660" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0067C5"/>
+    </marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2E8540"/>
+    </marker>
+    <marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7A3E9D"/>
+    </marker>
+  </defs>
+  <style>
+    .title { font-size: 24px; font-weight: 700; fill: #003366; }
+    .sub { font-size: 14px; fill: #4A5A6A; }
+    .hdr { font-size: 15px; font-weight: 700; fill: #FFFFFF; }
+    .tb { font-size: 13.5px; font-weight: 700; fill: #1F2D3D; }
+    .t { font-size: 13px; fill: #1F2D3D; }
+    .ts { font-size: 11.5px; fill: #4A5A6A; }
+    .tw { font-size: 13px; font-weight: 700; fill: #FFFFFF; }
+    .lb { font-size: 12px; font-weight: 700; fill: #0067C5; }
+    .lg { font-size: 12px; font-weight: 700; fill: #2E8540; }
+    .lp { font-size: 12px; font-weight: 700; fill: #7A3E9D; }
+  </style>
+  <rect width="1200" height="660" fill="#FFFFFF"/>
+  <text x="40" y="40" class="title">NetApp SnapCenter for SQL Server on SMB 3 shares</text>
+  <text x="40" y="64" class="sub">Application-consistent ONTAP snapshot backups, restore and clone, managed centrally</text>
+
+  <!-- SnapCenter Server -->
+  <rect x="40" y="90" width="330" height="200" rx="8" fill="#EEF7F0" stroke="#2E8540" stroke-width="2"/>
+  <rect x="40" y="90" width="330" height="34" rx="8" fill="#2E8540"/>
+  <rect x="40" y="110" width="330" height="14" fill="#2E8540"/>
+  <text x="205" y="113" class="hdr" text-anchor="middle">SnapCenter Server (Windows)</text>
+  <text x="58" y="152" class="t">• Web UI, REST API, PowerShell</text>
+  <text x="58" y="178" class="t">• Policies, schedules, retention</text>
+  <text x="58" y="204" class="t">• RBAC, reporting, notifications</text>
+  <text x="58" y="230" class="t">• Repository and backup catalog</text>
+  <text x="58" y="256" class="t">• Restore, clone and verification jobs</text>
+
+  <!-- SQL host -->
+  <rect x="440" y="90" width="360" height="200" rx="8" fill="#EAF3FC" stroke="#0067C5" stroke-width="2"/>
+  <rect x="440" y="90" width="360" height="34" rx="8" fill="#0067C5"/>
+  <rect x="440" y="110" width="360" height="14" fill="#0067C5"/>
+  <text x="620" y="113" class="hdr" text-anchor="middle">Windows Server 2025 · sql-1</text>
+  <rect x="460" y="136" width="320" height="40" rx="5" fill="#0067C5"/>
+  <text x="620" y="161" class="tw" text-anchor="middle">SQL Server 2025 · MSSQLSERVER</text>
+  <rect x="460" y="186" width="320" height="38" rx="5" fill="#FFFFFF" stroke="#2E8540" stroke-width="1.5"/>
+  <text x="620" y="210" class="tb" text-anchor="middle" fill="#2E8540">SnapCenter Plug-in for SQL Server</text>
+  <rect x="460" y="232" width="320" height="38" rx="5" fill="#FFFFFF" stroke="#2E8540" stroke-width="1.5"/>
+  <text x="620" y="256" class="tb" text-anchor="middle" fill="#2E8540">SnapCenter Plug-in for Windows</text>
+
+  <!-- Clone target -->
+  <rect x="870" y="90" width="290" height="200" rx="8" fill="#F5EEF9" stroke="#7A3E9D" stroke-width="2"/>
+  <rect x="870" y="90" width="290" height="34" rx="8" fill="#7A3E9D"/>
+  <rect x="870" y="110" width="290" height="14" fill="#7A3E9D"/>
+  <text x="1015" y="113" class="hdr" text-anchor="middle">Dev / test / reporting host</text>
+  <text x="888" y="152" class="t">• Attaches FlexClone copies of</text>
+  <text x="888" y="172" class="t">  production databases</text>
+  <text x="888" y="198" class="t">• Created in seconds, no extra</text>
+  <text x="888" y="218" class="t">  capacity until data changes</text>
+  <text x="888" y="244" class="t">• DBCC CHECKDB verification</text>
+  <text x="888" y="264" class="t">  without load on production</text>
+
+  <!-- Primary ONTAP -->
+  <rect x="40" y="370" width="600" height="250" rx="10" fill="#F7F9FB" stroke="#003366" stroke-width="2"/>
+  <rect x="40" y="370" width="600" height="34" rx="10" fill="#003366"/>
+  <rect x="40" y="390" width="600" height="14" fill="#003366"/>
+  <text x="340" y="393" class="hdr" text-anchor="middle">Primary: AFF A50 · SVM a50-sql</text>
+  <rect x="64" y="420" width="172" height="62" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="150" y="446" class="tb" text-anchor="middle">sql1_data</text>
+  <text x="150" y="466" class="ts" text-anchor="middle">.mdf / .ndf</text>
+  <rect x="254" y="420" width="172" height="62" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="340" y="446" class="tb" text-anchor="middle">sql1_log</text>
+  <text x="340" y="466" class="ts" text-anchor="middle">.ldf</text>
+  <rect x="444" y="420" width="172" height="62" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="530" y="446" class="tb" text-anchor="middle">sql1_backups</text>
+  <text x="530" y="466" class="ts" text-anchor="middle">log backups (.trn)</text>
+  <!-- snapshot strip -->
+  <text x="64" y="508" class="ts">Application-consistent snapshots</text>
+  <g fill="#2E8540">
+    <rect x="64" y="518" width="80" height="28" rx="4"/><rect x="154" y="518" width="80" height="28" rx="4"/>
+    <rect x="244" y="518" width="80" height="28" rx="4"/><rect x="334" y="518" width="80" height="28" rx="4"/>
+  </g>
+  <g class="tw" text-anchor="middle" font-size="12">
+    <text x="104" y="537">08:00</text><text x="194" y="537">09:00</text><text x="284" y="537">10:00</text><text x="374" y="537">11:00</text>
+  </g>
+  <rect x="444" y="518" width="172" height="28" rx="4" fill="#FFFFFF" stroke="#2E8540"/>
+  <text x="530" y="537" class="ts" text-anchor="middle" fill="#2E8540">+ log every 15 min</text>
+  <text x="64" y="574" class="t">Snapshots take seconds, independent of database size.</text>
+  <text x="64" y="596" class="t">SnapRestore reverts volumes or single files in minutes.</text>
+
+  <!-- Secondary -->
+  <rect x="760" y="370" width="400" height="250" rx="10" fill="#F7F9FB" stroke="#00857C" stroke-width="2"/>
+  <rect x="760" y="370" width="400" height="34" rx="10" fill="#00857C"/>
+  <rect x="760" y="390" width="400" height="14" fill="#00857C"/>
+  <text x="960" y="393" class="hdr" text-anchor="middle">Secondary ONTAP or cloud</text>
+  <rect x="784" y="420" width="352" height="50" rx="6" fill="#FFFFFF" stroke="#00857C"/>
+  <text x="960" y="441" class="tb" text-anchor="middle">SnapMirror</text>
+  <text x="960" y="460" class="ts" text-anchor="middle">disaster recovery copy</text>
+  <rect x="784" y="482" width="352" height="50" rx="6" fill="#FFFFFF" stroke="#00857C"/>
+  <text x="960" y="503" class="tb" text-anchor="middle">SnapVault</text>
+  <text x="960" y="522" class="ts" text-anchor="middle">long-term retention, separate backup site</text>
+  <rect x="784" y="544" width="352" height="50" rx="6" fill="#FFFFFF" stroke="#00857C"/>
+  <text x="960" y="565" class="tb" text-anchor="middle">Cloud Volumes ONTAP / FSx for ONTAP</text>
+  <text x="960" y="584" class="ts" text-anchor="middle">hybrid cloud copy</text>
+
+  <!-- Connectors -->
+  <line x1="372" y1="190" x2="438" y2="190" stroke="#2E8540" stroke-width="3" marker-end="url(#ag)" marker-start="url(#ag)"/>
+  <text x="405" y="174" class="lg" text-anchor="middle">HTTPS</text>
+  <text x="405" y="210" class="ts" text-anchor="middle">8145</text>
+
+  <line x1="205" y1="290" x2="205" y2="366" stroke="#2E8540" stroke-width="3" marker-end="url(#ag)"/>
+  <text x="215" y="320" class="lg">ONTAP REST API:</text>
+  <text x="215" y="336" class="ts">snapshot · SnapRestore · FlexClone</text>
+
+  <line x1="620" y1="290" x2="620" y2="366" stroke="#0067C5" stroke-width="4" marker-end="url(#ab)" marker-start="url(#ab)"/>
+  <text x="630" y="326" class="lb">SMB 3 (CA)</text>
+  <text x="630" y="342" class="ts">data path</text>
+
+  <line x1="640" y1="495" x2="756" y2="495" stroke="#00857C" stroke-width="3" marker-end="url(#ag)"/>
+  <text x="698" y="485" class="lg" text-anchor="middle" fill="#00857C">replicate</text>
+
+  <line x1="640" y1="380" x2="900" y2="294" stroke="#7A3E9D" stroke-width="3" stroke-dasharray="8 5" marker-end="url(#ap)"/>
+  <text x="790" y="318" class="lp">FlexClone</text>
+</svg>

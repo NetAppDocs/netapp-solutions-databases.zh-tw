@@ -6239,4 +6239,342 @@
   <block id="052b909238ebf4917da28464c5adb557" category="list-text">使用 HTML 解析器 AWR 模組從 AWR 報告中擷取目前 Oracle 資料庫的規模資訊。</block>
   <block id="a6a77e0f909108a38e794073d621e60b" category="paragraph"><block ref="a6a77e0f909108a38e794073d621e60b" category="inline-link-macro-rx"></block></block>
   <block id="e9b486ce2311e4e8df41ca775bcfeb34" category="list-text">*Oracle 軟體需求。*一般而言，實體備用資料庫必須與主資料庫具有相同的 Database Home 版本，包括 Patch Set Exceptions（PSEs）、Critical Patch Updates（CPUs）和 Patch Set Updates（PSUs），除非 Oracle Data Guard Standby-First Patch Apply 程序正在進行中（如 My Oracle Support 附註 1265700.1 於 <block ref="0ab5bd35a1fa5e1394476ebbb9c4d982" category="inline-link-macro-rx"></block> 所述</block>
+  <block id="4b22b6713bb327245f453cb82c306f34" category="section-title">GitHub 儲存庫連結：</block>
+  <block id="1860e795946d4510c5099a85dbd81e87" category="inline-link">自動化 Oracle 複製生命週期儲存庫</block>
+  <block id="8ffba5bb004be7f3569aa4602f05a582" category="paragraph">如需了解詳細資訊並存取儲存庫，請造訪：<block ref="b50d6e61ec5dc972af820c451e37af25" category="inline-link-rx"></block></block>
+  <block id="9a5f03516beadf98e613ee0c64314729" category="summary">SQL Server 2025 可以將資料庫儲存在執行 ONTAP 的 NetApp AFF 系統上的 SMB 3 持續可用的共享中。了解優勢、解決方案元件、設計原則，以及持續可用度如何在控制器容錯移轉期間保持資料庫線上。</block>
+  <block id="e5e780b2bd6b887822c1f388ad7b850d" category="doc">了解 NetApp AFF 上的 SQL Server 2025 搭配 SMB 3 持續可用度</block>
+  <block id="d9d14c7de78ce4c3f8a34d01c516ed2c" category="paragraph">SQL Server 2025 可以將資料庫儲存在執行 ONTAP 的 NetApp AFF 系統上的 SMB 3 持續可用（CA）共享中。了解此組態的優勢、解決方案元件和設計原則，以及持續可用度如何在控制器容錯移轉期間保持資料庫線上。</block>
+  <block id="0b01ab2accee4e5bafd862d0209a4b38" category="paragraph">自 SQL Server 2012 起，Microsoft SQL Server 就支援將資料庫檔案放置在 SMB 檔案共享上。借助 SMB 3 持續可用（CA）共享，檔案共享成為 SQL Server 資料庫支援的儲存設備選項，也是區塊儲存設備（iSCSI 或 FCP LUN）的替代方案。</block>
+  <block id="89737037979968a25959f2fe669b7d1a" category="paragraph">AFF All Flash 系統上的 ONTAP 原生實作 SMB 3。結合 SQL Server 2025 和 Windows Server 2025，這提供了與 NetApp 資料保護整合的容錯儲存架構。</block>
+  <block id="a3a5b907c8c58b796b958b85cdfed68d" category="inline-link-macro">使用 SMB 3 持續可用的共享在 NetApp AFF 上部署 SQL Server 2025</block>
+  <block id="cd8a021f67336adbc723f5a9fc31355f" category="paragraph">若要部署此組態，請參閱<block ref="fc7276a57dd2b28893b3b90e3b5d3961" category="inline-link-macro-rx"></block>。</block>
+  <block id="ac054c35a6d0287b19b3751ee11f099d" category="section-title">SQL Server on SMB 3 搭配 NetApp ONTAP 的優勢</block>
+  <block id="d0b37cb641df70f32a642387802f2cee" category="cell">益處</block>
+  <block id="18895318a93afa4f6fba5259b68ea39e" category="cell">簡單配置</block>
+  <block id="265d023c69c5bd2102cd8d259c0e6806" category="cell">無需管理 LUN、igroup、MPIO、磁碟初始化或磁碟機代號。資料庫檔案位置只是一個 UNC 路徑，例如<block ref="149d64d77682ce5c0d9d11032ef638a1" prefix=" " category="inline-code"></block>。</block>
+  <block id="551046a95f0679cbc1f95351ef52e4e0" category="cell">線上容量管理</block>
+  <block id="b80b19da72fc2cf19378bc255f001e58" category="cell">在 ONTAP 中，您可以線上擴充（或縮減）Volume，SQL Server 會立即偵測到新增容量。無需進行任何 Windows 磁碟或分割區操作，自動擴充功能可以自動完成此操作。</block>
+  <block id="6cf72c001b2e1894f097105e8bb48949" category="cell">不中斷營運</block>
+  <block id="6ba1736697b01c423adbdc1e2533008d" category="cell">CA 共享可在 ONTAP 接管/歸還、不中斷營運的升級 (NDU)、LIF 遷移和 Volume 移動期間保持 SQL Server 運作。</block>
+  <block id="391dc675ec3d853200129b799ed5923e" category="cell">效能與韌性</block>
+  <block id="da4d48c2d75d376f6752c154de11353b" category="cell">SMB 多通道將 I/O 分散到多個網路路徑和網路卡上，即使單一路徑遺失也能正常運作。SMB 共享也支援 SQL Server 容錯移轉叢集執行個體（FCI）。</block>
+  <block id="fd18465573ec21a6218982055981f6b1" category="cell">儲存效率</block>
+  <block id="e90342eadcdbbde63477faa85e7759f3" category="cell">線上重複資料刪除、壓縮和資料精簡，以及資源隨需配置，可以減少資料庫和備份使用的實體容量。</block>
+  <block id="e9552b607b183029e792a5ae3c72820f" category="cell">整合資料保護</block>
+  <block id="72bf6e4cd7f88ed4ad150bfa8e586930" category="cell">ONTAP 快照、SnapRestore、FlexClone 與 SnapMirror，由 NetApp SnapCenter 協調，可在數秒內提供備份、在數分鐘內提供還原，以及即時的資料庫複製。</block>
+  <block id="44cc246b0c3bc5602ca81ab19e6a364f" category="cell">靈活性</block>
+  <block id="35558d3f65b3d3fc51d1c7623d42c263" category="cell">資料庫只需附加到另一台伺服器上，即可在主機之間移動，而無需重新對應儲存設備。同一個 SVM 還可以為主目錄、檔案服務或其他應用程式提供服務。</block>
+  <block id="7e897f23ed71aef1c0a8acf1ae54e9e4" category="section-title">解決方案元件</block>
+  <block id="49d99fd717c96e57811b6b6c56491963" category="paragraph">此解決方案包含下列元件：</block>
+  <block id="3a816644acd03ba2f8a79845d5ad8bd5" category="cell">Windows Server 2025 主機 <block ref="a510313d4617c90ad449cc16a56aeb37" prefix="(" category="inline-code"></block>）</block>
+  <block id="313cc080144b10caa2deed5f73e71c75" category="cell">執行 SQL Server 2025。SQL Server 二進位檔案和系統資料庫位於本機磁碟上；所有使用者資料庫、記錄、TempDB 和備份均透過 SMB 3 存取。</block>
+  <block id="3fba0171e458258e875a2f8013e395b8" category="cell">SQL Server 2025</block>
+  <block id="b56bc596be97ab2da6a23b22670902e0" category="cell">資料庫引擎，在可存取 SMB 共享的網域服務帳戶 <block ref="68a05d2ca4eec9996eca00ec84658ccc" prefix="(" category="inline-code"></block>）下執行。</block>
+  <block id="b77bcd4c1297bbaed9c783abcd7b3d8e" category="cell">Active Directory 和 DNS</block>
+  <block id="ef0457e528e7716f7ebc67e88dee79d3" category="cell">對 SQL Server 服務帳戶和 CIFS 伺服器（Kerberos）進行驗證，並提供名稱解析和時間同步。</block>
+  <block id="4e42c2b62d361a47904ba59846a2b60e" category="cell">NetApp AFF A50 HA 配對</block>
+  <block id="0073b694950f90ca339aa2b85e5cf7bc" category="cell">具有共享 NVMe 儲存設備的兩個控制器。如果其中一個控制器發生故障或升級，合作夥伴將接管其儲存設備與網路介面。</block>
+  <block id="5f78e17bf5deb8db6337c337cf08be69" category="cell">SVM<block ref="0f9995c41e025956b46b86899a2f358e" prefix=" " category="inline-code"></block></block>
+  <block id="2d5e9fc1b4ea3c97952407175bcdb159" category="cell">專用的、已加入 Active Directory 的 CIFS 伺服器，每個節點都有一個 SMB 資料 LIF，託管四個具有 CA 共享的 Volume。</block>
+  <block id="336e80272fe94c05dbc190113fce29de" category="image-alt">解決方案架構：搭配 NetApp AFF 的 SMB 3 CA 共享上的 SQL Server 2025</block>
+  <block id="af8e7c7ff2867c484ab84dabd6c092a6" category="section-title">設計原則</block>
+  <block id="932a15a54f761577687e450f88417913" category="paragraph">此設計遵循 NetApp 透過 SMB 傳輸 SQL Server 的最佳實務：</block>
+  <block id="a40be14e756eec9252e3b8a60dbed28f" category="list-text">*每種檔案類型使用分隔的 Volume。*資料、交易記錄、TempDB 和備份會放置在分隔的 FlexVol Volume 和共享中。每個 Volume 都可以有自己的大小、QoS、效率、快照和複寫設定。TempDB 不包含在備份中。</block>
+  <block id="3980b06e4590c5b9667d0c270afc6995" category="list-text">*Volume 分散在兩個節點上。*資料和備份 Volume 位於節點 1 上，日誌和 TempDB Volume 位於節點 2 上，以便兩個控制器都能執行有用的工作。</block>
+  <block id="53fabca85a65e640b6dddf289f841439" category="list-text">*每個節點一個 SMB 資料 LIF。*主機總是有一條直接路徑到達擁有 Volume 的節點，SMB 多通道可以使用這兩條路徑。</block>
+  <block id="49b3d7900ce1d0dd66d25f200fd80432" category="list-text">*NTFS 安全樣式與 CA 共享。*這些對於 ONTAP 上透過 SMB 執行的 SQL Server 來說是必要的。</block>
+  <block id="d0fc83f64785f82356e6e4749cb84b2d" category="list-text">*資料庫 Volume 上沒有排程的 ONTAP 快照。*備份必須具備應用程式一致性；它們是由 SnapCenter 所建立。</block>
+  <block id="5dcc66366da879bad801ba4a027f06d2" category="image-alt">儲存佈局：SQL Server 檔案到 SMB 共享</block>
+  <block id="1d981891cdbcff4fa149b90303b02f8b" category="section-title">持續可用度如何運作</block>
+  <block id="a0b539c0ef7a8f8540d1f81601e6279a" category="paragraph">使用標準的 SMB 共享時，控制器容錯移轉會關閉開啟的檔案控制代碼。然後，SQL Server 會將受影響的資料庫標記為可疑，且必須手動還原。</block>
+  <block id="9a9611a2fc2b0e3111b95798abee853b" category="paragraph">透過 CA 共享，ONTAP 會將開啟檔案（持續控制代碼）的狀態鏡射至 HA 合作夥伴。在接管期間，故障節點的 SMB LIF 會移轉至合作夥伴。SQL Server 主機上的 SMB 3 用戶端會自動重新連線並回收其控制代碼。SQL Server 只會經歷幾秒鐘的短暫 I/O 暫停；資料庫保持線上，且不會遺失任何交易。這同樣適用於 ONTAP 升級、歸還、LIF 移轉和 Volume 移動等計畫性事件。</block>
+  <block id="68a7fec81dacdbb2eb199d187d47c01d" category="image-alt">SMB 3 持續可用度如何保護 SQL Server</block>
+  <block id="b1bdda888100157c9145c80c4415c635" category="summary">在 Windows Server 2025 上部署 SQL Server 2025，並將使用者資料庫、交易記錄、TempDB 和備份放置於 NetApp AFF 系統上的 SMB 3 持續可用度共享中。此程序包括設定 ONTAP SVM、Volume 和共享，安裝 SQL Server，以及使用 SnapCenter 保護資料庫。</block>
+  <block id="5d113f2038d289f391614c39043629e8" category="section-title">範圍</block>
+  <block id="ef8f344fc12b771b420c627513b85bab" category="paragraph">此程序在單一 Windows Server 2025 主機上部署一個獨立式的 SQL Server 2025 執行個體，使用者資料庫、交易日誌、TempDB 和備份都位於 SMB 3 持續可用（CA）共享上。相同的儲存設備設計也適用於 SQL Server 容錯移轉叢集執行個體（FCI）和 Always On 可用度群組，但不涵蓋其叢集特定的組態。SQL Server 效能調校和規模也不在範圍內。有關優勢、解決方案元件、設計原則以及持續可用度運作方式的說明，請參閱 <block ref="7c0cf893e1efe2282bb825673eeea746" category="inline-link-macro-rx"></block>。</block>
+  <block id="8d241ce2b8937cc22e15c547dc425518" category="paragraph">此程序適用於：</block>
+  <block id="5e47e0a7a5cfbcef84a2777fe2d80790" category="list-text">*儲存管理員*，負責設定 ONTAP 叢集、SVM、Volume 和 SMB 共享。</block>
+  <block id="7faed7098c1fcd94f33df1603c74e805" category="list-text">*Windows 和 Active Directory 管理員*，負責準備 Windows Server 2025 主機、服務帳戶和網路。</block>
+  <block id="ef474691dd870b1632abdede79b51cf4" category="list-text">*資料庫管理員*，負責安裝和設定 SQL Server 2025 並設定備份與還原。</block>
+  <block id="6b1bc64bf98d1bba3f5c5fdaa97f95f4" category="paragraph">假定具備 ONTAP System Manager、Windows Server 和 SQL Server 管理的基本知識。</block>
+  <block id="5826faa3df11940cfda107bad27a7e9f" category="section-title">實驗室環境</block>
+  <block id="20104e865bc28cf00af9dce757890dfe" category="paragraph">本程序中的螢幕截圖是在下列實驗室環境中擷取的。請將這些值替換為您環境的值。</block>
+  <block id="da64350834b32699a6df3ee588233a2e" category="cell">實驗室中使用的數值</block>
+  <block id="f31303ddb8ada38aed08c2bb8f9d8e6c" category="cell">儲存系統</block>
+  <block id="6d3ac96178be08197d970d844e47514f" category="cell">NetApp AFF A50 HA 配對，叢集<block ref="61763985ee975379cf39f9e8e90af6ef" prefix=" " category="inline-code"></block>，ONTAP 9.19.1</block>
+  <block id="0b7e67b6cdcf0432b624d53588d520fb" category="cell">SVM</block>
+  <block id="d836e17a3a5f0fa376456f5fb98e46fa" category="cell"><block ref="0f9995c41e025956b46b86899a2f358e" prefix="" category="inline-code"></block>（CIFS 伺服器名稱<block ref="0bb9c007677adbe4eb12485d8fb23fd3" prefix=" " category="inline-code"></block>）</block>
+  <block id="2ca07bcf8bea9e1850eded715d3d9716" category="cell">SMB 資料 LIF</block>
+  <block id="31a6bdc2aa4914bcd75e8ea4123831ea" category="cell">192.168.175.138（節點 1），192.168.175.139（節點 2）</block>
+  <block id="3deb1ebd9067e67bcf490b1a279d0679" category="cell">Active Directory 網域</block>
+  <block id="cc21aa49d8c3196d0345da14abd9f2dd" category="cell"><block ref="c189a9486546635ae44be80d16fbc48a" prefix="" category="inline-code"></block> <block ref="904d63a2d91fdd05d4f9e9540698a03a" prefix="(" category="inline-code"></block>）</block>
+  <block id="d1395d300c3eb2d6389098837ce303ae" category="cell">SQL Server 主機</block>
+  <block id="63aec1c121b5ba11b8e9778e3b960263" category="cell"><block ref="c1432b9a6e4c474447e47c933fe60a4b" prefix="" category="inline-code"></block>、Windows Server 2025 Datacenter （Desktop Experience）</block>
+  <block id="a71f76c3256e4c206a4841d8eb0fed35" category="cell">SQL 伺服器</block>
+  <block id="c8234c70f3676e94bd712d989dd4b854" category="cell">SQL Server 2025 Enterprise Edition （17.0.1000.7），預設執行個體<block ref="1170cb78c9cb5739ad3aa617ce7bb623" prefix=" " category="inline-code"></block></block>
+  <block id="a32bbc83ddc50a2e32cc3fd8dc55de6b" category="cell">SQL Server 服務帳戶</block>
+  <block id="297b7ccb68f65743fb302ed19bfafa99" category="cell"><block ref="68a05d2ca4eec9996eca00ec84658ccc" prefix="" category="inline-code"></block> （網域帳戶）</block>
+  <block id="751d1b8e2bac264b0f00d895bae3e7c2" category="cell">Volume / 共享</block>
+  <block id="20b8de33e0786d066905c97ba57538b5" category="cell">UNC 路徑</block>
+  <block id="f15c1cae7882448b3fb0404682e17e61" category="cell">內容</block>
+  <block id="80b2d62488fe4f6404dfe743ccc3ef25" category="cell"><block ref="1db0e2a92e9428ed5a57e01255595054" prefix="" category="inline-code"></block></block>
+  <block id="a4d507be1fa6eb57912137f10a4d585f" category="cell">1024 GiB</block>
+  <block id="99c5ac0bc281c51248ba95d85d43fcfb" category="cell"><block ref="149d64d77682ce5c0d9d11032ef638a1" prefix="" category="inline-code"></block></block>
+  <block id="af594d5a403d53eca8b7563fe96df950" category="cell">使用者資料庫資料檔案 <block ref="937f38432beb92fdba3d47780720bdf7" prefix="(" category="inline-code"></block>，<block ref="4442d437b1e8cc735e4bd36be19ff09e" prefix=" " category="inline-code"></block>）</block>
+  <block id="55bf3b1f00f8b9ec0f03d5bcb49d57c4" category="cell"><block ref="3149f7cfc8b673bf880af3bdebe8f7f5" prefix="" category="inline-code"></block></block>
+  <block id="29cc74b59b2010a3083f619aeef4bbbe" category="cell">512 GiB</block>
+  <block id="a57863f16dc58f2f3e72858ca3084ba3" category="cell"><block ref="f87bd90246cc2d4816d4ea7f54705a8b" prefix="" category="inline-code"></block></block>
+  <block id="8410627bc41cc6be8848fc422d4788dd" category="cell">使用者資料庫交易日誌檔案 <block ref="cb15b9539ae0d984ff8740c68b52561c" prefix="(" category="inline-code"></block>）</block>
+  <block id="d12e969b8ad71665e393393f6e802652" category="cell"><block ref="ecd1cf5febfdccaf7a3f8d1731f7f412" prefix="" category="inline-code"></block></block>
+  <block id="5930fa6915753c61e8ef266f7efef7f6" category="cell">500 GiB</block>
+  <block id="18245c4cd990c77f6f65b856caa7a69a" category="cell"><block ref="7f78c2478ed19c69cf2993e5c9543490" prefix="" category="inline-code"></block></block>
+  <block id="0810c2f9d0eb5f0a4bb0fd9f7f612eca" category="cell">TempDB 資料和日誌檔案</block>
+  <block id="26d4564cdd30133a3f1ae7852fe74ba7" category="cell"><block ref="dff642c9077793457a5a71aa6310a28e" prefix="" category="inline-code"></block></block>
+  <block id="8c2bef1020b23f0ad4f95df14d04d267" category="cell">2000 GiB</block>
+  <block id="1384ad80b9792cb2d51be13ba1c56d1f" category="cell"><block ref="e55df7df1a05baf82c865c1c433afbf4" prefix="" category="inline-code"></block></block>
+  <block id="59a7b5ffbe4af3ed1cfe4a3e81cd4e49" category="cell">原生 SQL Server 備份檔案 <block ref="5030a024be59c18a2cddf887ae389093" prefix="(" category="inline-code"></block>，<block ref="d19cf29da96e6d78382d934869ac10da" prefix=" " category="inline-code"></block>）</block>
+  <block id="3ef59b14417b68a4cf157d89af34ba58" category="admonition">使用分隔的 Volume 來存放資料、日誌、TempDB 和備份。這樣可以為每個 Volume 套用不同的 QoS、快照、效率和複寫設定。此外，它還能將不斷變化的 TempDB 排除在使用者資料庫的快照之外。</block>
+  <block id="b5e8ccee5a825ede8bda8facb6a5dfce" category="paragraph">在開始之前，請確保滿足以下要求：</block>
+  <block id="7b02ea300aef2e0bff0d7f6111053284" category="list-title">NetApp ONTAP</block>
+  <block id="627e40d81aad3243f5904493e5ba94bf" category="list-text">AFF HA 配對已安裝，叢集已設定完成且運作正常。</block>
+  <block id="a342fd77ba981c355c6ee54fac7058eb" category="list-text">CIFS（SMB）授權已安裝。它包含在 ONTAP One 中。</block>
+  <block id="244133f234b917d24efa3b2531520755" category="list-text">每個節點上至少存在一個資料 Aggregate（本地分層）。</block>
+  <block id="5854ddbf7c26defb93a843f6534af72d" category="list-text">叢集和 Active Directory 之間的時間透過 NTP 進行同步。Kerberos 允許的最大時鐘偏差為 5 分鐘。</block>
+  <block id="707ea9d9ed45b657a9cb516ad4462880" category="list-text">SMB LIF 的資料網路連接埠、廣播網域和（選用）VLAN 已設定。</block>
+  <block id="3d658e33d64b512b08cbb66bcfb5db1a" category="list-text">有可用的 Active Directory 網域，且可從 SVM 資料 LIF 存取 DNS 伺服器。</block>
+  <block id="e644a7b2dfd25ec95f8f84be9de456df" category="list-text">您擁有一個帳戶，具有在目標 OU 中為 CIFS 伺服器建立電腦物件的權限。</block>
+  <block id="068c0a7128a470025af0784228561505" category="list-text">SQL Server Database Engine 和 SQL Server Agent 服務可使用專用的網域使用者帳戶作為服務帳戶。</block>
+  <block id="f1e7bb099e6f65501776a2f351b2418e" category="admonition">當 SQL Server 的檔案位於 SMB 共享上時，必須在 *網域帳戶* 下執行。內建虛擬帳戶 <block ref="a452a9912d72fd3e307deb581b4c20b8" prefix="(" category="inline-code"></block>）與本機帳戶無法被授予遠端檔案共享的存取權限。</block>
+  <block id="5c7326ad4d7ecd77c19e67acea1928f1" category="list-text">Windows Server 2025（桌面體驗）已安裝、修補並加入網域。</block>
+  <block id="afeeb60b151d0ba7e2f7d4cefce81923" category="list-text">SQL Server 2025 安裝媒體（ISO）和有效的產品金鑰（或免費版本）皆可取得。</block>
+  <block id="315cdd78aef95d9ddd6c4a5ab768ad8f" category="list-title">ONTAP 上 SQL Server 的 SMB 需求與限制</block>
+  <block id="16b88d015499e2456045a862adbfe5fb" category="list-text">SVM 上必須啟用 SMB 3.0 或更高版本。</block>
+  <block id="7589e290f105ce3231ad18c1c4af4ae6" category="list-text">所有裝載 CA 共享的 Volume 都必須使用 *NTFS* 安全樣式，且必須從一開始就是 NTFS。</block>
+  <block id="b9d26e1991dc731d52425dbc11853be6" category="list-text">不支援 SMB Direct （RDMA）。</block>
+  <block id="9850630cac7280a58b6e5304c00c3519" category="list-text">不支援 ReFS。ONTAP（WAFL）為共享提供檔案系統。</block>
+  <block id="4948b5e6210b0191c89fdc71942759a8" category="section-title">步驟 1：準備 ONTAP 叢集</block>
+  <block id="94863856140064fa5abe15b25a8a0d4b" category="paragraph">連接至 ONTAP System Manager，並確保叢集時間與 Active Directory 同步。如果時鐘偏差超過 5 分鐘，SMB 共享的 Kerberos 驗證將會失敗。</block>
+  <block id="65aa69526d96b1872209be2d3a2f1e46" category="list-text">開啟網頁瀏覽器並連線到 ONTAP System Manager <block ref="84444c635ea3dde5d6105192639767f8" prefix=" " category="inline-code"></block>。使用叢集管理員帳戶登入。</block>
+  <block id="6015ee0c3c4dbc37f534783a65239e72" category="example-title">顯示範例</block>
+  <block id="f1c6dde9997293839a61f615ce7f7bfb" category="inline-image-macro">ONTAP System Manager 登入</block>
+  <block id="bbf89722f66b235b42009d72f7658eea" category="paragraph"><block ref="bbf89722f66b235b42009d72f7658eea" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="6c94c298918cd36985f5c3b67f0db2eb" category="list-text">*儀表板* 是 System Manager 中進一步組態的入口點。</block>
+  <block id="cded4e4cf669674474c088dcb56821ef" category="inline-image-macro">System Manager 儀表板</block>
+  <block id="160db2acc304623c3a14e52afea708cf" category="paragraph"><block ref="160db2acc304623c3a14e52afea708cf" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="aaf1fe9a71dbe92bd6acfcd4d17cd17b" category="list-text">如果 NTP 尚未設定，請使用 CLI（透過 SSH 連線至叢集管理 LIF）新增您的網域控制站或企業 NTP 伺服器：</block>
+  <block id="7e8376531e9c87e2b9f075d85b37dea9" category="section-title">步驟 2：建立和設定儲存設備虛擬機器（SVM）</block>
+  <block id="cfbdc9acb744a212a3cc5b53301d3013" category="paragraph">使用專用的 SQL Server SVM。該 SVM 會以 CIFS 伺服器加入 Active Directory，並在 HA 配對的每個節點上提供一個 SMB 資料 LIF。</block>
+  <block id="5171043e35bc60ef2f54ce82259cc7e3" category="list-text">使用 System Manager 或 CLI 建立 SVM：</block>
+  <block id="26ed02718973e705cd69ee6e109400e0" category="open-title">System Manager</block>
+  <block id="3313ef0aaad8486923b1c53c879820a0" category="list-text">在 System Manager 中，前往 menu:叢集[儲存 VM]，然後按一下 *+ 新增*。</block>
+  <block id="64c00d986acaa21ec67860f957175d8c" category="inline-image-macro">叢集 &amp;gt; 儲存 VM &amp;gt; 新增</block>
+  <block id="04d079067d040ee2cd619805c136f79f" category="paragraph"><block ref="bdcd5b7d8faf0576c9df0bab6eaab207" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="aeef53ceb6c4667b68bf7fab99455c5a" category="list-text">輸入 *儲存 VM 名稱*<block ref="33e5c7c8ea835e97413729f5fd65e1fe" prefix=" " category="inline-code"></block>。在 *存取協定* 中，選取 *SMB/CIFS、NFS、S3* 索引標籤，然後選取 *啟用 SMB/CIFS*。</block>
+  <block id="c41ce183e71fcd563ab9ec04d0dcf5db" category="inline-image-macro">新增儲存設備 VM - 名稱與通訊協定</block>
+  <block id="e61b31a520943f7b9341698dffdaf452" category="paragraph"><block ref="e61b31a520943f7b9341698dffdaf452" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="702be0585cb536ce2216013d0d25afb5" category="admonition">Storage VM 名稱是 CIFS 伺服器的 SMB 名稱。</block>
+  <block id="20134bbb7612fe6b503b380d8bae40c8" category="list-text">輸入 Active Directory 資訊（網域、系統管理員名稱和密碼以及 OU）和 DNS 資訊（DNS 網域和名稱伺服器）。</block>
+  <block id="15fb97d81ad13039a5aabdb742a3a3a9" category="list-text">在 *網路介面* 下，在 *每個* 節點上設定一個資料 LIF。</block>
+  <block id="2610087a23934e1a1d3d28994413b61d" category="admonition">每個節點配備一個 LIF 可為 SQL Server 提供通往每個節點的直接（本機）路徑，這是 SMB 多通道和不中斷營運的容錯移轉的先決條件。請使用 25 GbE 或更快的連接埠，並確保端點對端點的 MTU 相同。</block>
+  <block id="68fea58560e0d9f013a0e2340634ed22" category="inline-link">將 SMB 伺服器對應到 DNS 伺服器</block>
+  <block id="f80453b762c1f113d773a6d79f2dd53b" category="admonition">您必須在 DNS 伺服器中註冊這些網路介面。如需詳細資訊，請參閱<block ref="144d71c862444f6add3319b6cc614a9a" category="inline-link-rx"></block>。</block>
+  <block id="870388a2bbcf4f86c6587b838d6a6ace" category="list-text">點選 *儲存*。System Manager 將建立 SVM、根 Volume、LIF 和 DNS 組態，並將 CIFS 伺服器加入網域。</block>
+  <block id="f8d13b6f175b2260a51cafe536870105" category="list-text">在實驗室中驗證 SVM 根 Volume <block ref="9d591eedb67e390a4ec3d89d1cda8c2a" prefix="(" category="inline-code"></block>）。它必須使用 *NTFS* 安全樣式，否則 SMB 共享將無法運作。前往 menu:儲存設備[Volumes]，選擇根 Volume，然後按一下 *編輯* 以審查其設定。</block>
+  <block id="760b4751ccfbdf15ae55a658dc5d3b74" category="inline-image-macro">編輯 SVM 根 Volume a50_sql_root</block>
+  <block id="0b6b762616e0749dfca25a354aba53dc" category="paragraph"><block ref="0b6b762616e0749dfca25a354aba53dc" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="de134183bea5df515a6756a539ce6f18" category="open-title">ONTAP CLI</block>
+  <block id="b3333c7881dd0990c6c2bc1c1f440cbb" category="paragraph">以下命令透過命令列介面建立相同的組態。請將尖括號中的佔位符值替換為實際值。</block>
+  <block id="ea8ed4ec68f498f8ad0c1481c5600f79" category="list-text">[[svm-smb-options,設定 SMB 伺服器選項]]設定 SMB 伺服器選項。驗證 SVM 上是否已啟用 SQL Server 所需的 SMB 選項：</block>
+  <block id="054b4f3ea543c990f6b125f41af6ebf7" category="cell">選項</block>
+  <block id="98416cbb3dc66140de169deef7ec1c00" category="cell"><block ref="d0310102abc6faade95d051b98f3aa65" prefix="" category="inline-code"></block></block>
+  <block id="d1e2d4146dab334ccd5ac26aa1ddd7e5" category="cell">持續可用的共享需要 SMB 3.x。</block>
+  <block id="f3b1f6bc05e3c2b2d9fa7ef241a31a05" category="cell"><block ref="327247320f3cbad8448f6ca2eba9a795" prefix="" category="inline-code"></block></block>
+  <block id="75641591c50c62f1c95eaf3f38994824" category="cell">SMB 多通道使用多個 TCP 連線和網路路徑，以實現更高的處理量和彈性。</block>
+  <block id="aeb84397335ef2f1fdc7588a28163d3a" category="cell"><block ref="9688911e12f5f59a201d24665755d4d4" prefix="" category="inline-code"></block></block>
+  <block id="85ddf3b3a028da797bb5de2e141b949b" category="cell">允許進行最大 1 MB 的 SMB 讀取和寫入操作。</block>
+  <block id="bbee5ba1457fc21c5322a5b0b1c57047" category="cell"><block ref="c8cbfd2f50fdbf173bee03e53cde192a" prefix="" category="inline-code"></block></block>
+  <block id="6378a9769b09cbab09618215154b5fc1" category="cell">ODX 複本卸載；複製作業在儲存系統內部執行。</block>
+  <block id="ee0140fadcea9addc67ff35509586f71" category="cell"><block ref="89765fb606bbbc2f6d95780f72d0d705" prefix="" category="inline-code"></block></block>
+  <block id="3c09f75d70ce7f8a11dafc70018d038e" category="cell">用於 SMB 共享的遠端 VSS。針對 SMB 共享使用 VSS 的備份應用程式需要此功能。</block>
+  <block id="8fe21c7b70ae107b4ebdd3aa0d58ef48" category="list-text">確認 CIFS 伺服器已在 DNS 中註冊，並且可以從 SQL Server 主機解析：</block>
+  <block id="662a2b906ebff637e132ebce3c457d65" category="section-title">步驟 3：建立 SQL Server Volume 和 SMB 共享</block>
+  <block id="833c594bf0a70d2f0fe2e24ec9727ad4" category="paragraph">為每種檔案類型建立一個 Volume 和一個 SMB 共享。System Manager 會同時建立共享和 Volume。</block>
+  <block id="95db233edfb9fce2d38c4c32abe98ba4" category="list-text">在 System Manager 中，擴充 *儲存設備*，然後按一下 *Volume*。</block>
+  <block id="b1bfbc37acc9c35f0e80b1d016a69f40" category="inline-image-macro">System Manager 中的儲存設備選單</block>
+  <block id="22b8104bbd037b14c93f60516bac0973" category="paragraph"><block ref="22b8104bbd037b14c93f60516bac0973" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="1e20e8d9ae1150c0be8fc409c81da6b0" category="list-text">Volume 清單開啟。按一下 *+ 新增*。</block>
+  <block id="e7daf78da370cd4be942c31be0b7b2f9" category="inline-image-macro">包含篩選器的 Volume 頁面</block>
+  <block id="da4e63ea38a60b30306ba0512a49653d" category="paragraph"><block ref="da4e63ea38a60b30306ba0512a49653d" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="79b53be8863ba049dc8d9fb4b362a9b8" category="list-text">建立<block ref="1db0e2a92e9428ed5a57e01255595054" prefix=" " category="inline-code"></block>用於使用者資料庫資料檔案的 Volume 及其 SMB 共享。</block>
+  <block id="0ccdb410379d450e42eeea8d0edbbdf5" category="list-text">在「新增 Volume」對話方塊中，輸入以下值：</block>
+  <block id="ed7fc4d75156b21cb2059f57b0b9356d" category="list-text">*名稱*：<block ref="1db0e2a92e9428ed5a57e01255595054" prefix=" " category="inline-code"></block></block>
+  <block id="1c2d1314be765336a9bb09f581203fd0" category="list-text">*Storage VM*：<block ref="33e5c7c8ea835e97413729f5fd65e1fe" prefix=" " category="inline-code"></block></block>
+  <block id="2e9c9da433717e3904b631c17a098e1d" category="list-text">*容量*：<block ref="a4d507be1fa6eb57912137f10a4d585f" prefix=" " category="inline-code"></block></block>
+  <block id="f32838a8c552a77ff5623e82dd018b3d" category="list-text">*效能服務層級*：*自訂*，*指派 QoS 原則群組*：*現有* &gt;<block ref="334c4a4c42fdb79d7ebc3e73b517e6f8" prefix=" " category="inline-code"></block></block>
+  <block id="ef796e380e6d5499f8eb2466ca8c2e14" category="list-text">*存取權限*：選擇 *透過 SMB/CIFS 共享*。共享名稱<block ref="1db0e2a92e9428ed5a57e01255595054" prefix=" " category="inline-code"></block>，授予使用者存取權限<block ref="f9ae5e5c44e59f94680af569879f704a" prefix=" " category="inline-code"></block>，權限 *完全控制*。</block>
+  <block id="569ed61f1e2cfb2cfd75db609e5c1b3d" category="list-text">*保護*：保持 *啟用快照（本機）* 選項未選取。應用程式一致性備份是由 NetApp SnapCenter 建立。</block>
+  <block id="4cc186df234138a57b2e8c5d8e5f7f8d" category="paragraph">點選 *儲存*。</block>
+  <block id="3de97c3b26b1ae011bf44baba4c8d59b" category="inline-image-macro">新增 Volume sql1_data,width=450</block>
+  <block id="2a9e3cd6688299a4bb67c67224a554d6" category="paragraph"><block ref="2a9e3cd6688299a4bb67c67224a554d6" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="04ae62dcfe1f309012a05553519745f7" category="list-text">Volume 已建立並顯示為 *線上*。展開 Volume 列以審查詳細資訊：NTFS 安全樣式、透過兩個 LIF <block ref="3f8d22655adbdcb90e86f5ec38a57d04" prefix="(" category="inline-code"></block> 和<block ref="402aba1a12bafa59ebc8956ff737144b" prefix=" " category="inline-code"></block>）的 SMB 存取路徑，以及 QoS 原則群組。</block>
+  <block id="8b8a10fe45ae303408c1dcf8fb8af224" category="inline-image-macro">已使用 SMB 共享建立 Volume sql1_data</block>
+  <block id="96ba6fdc67411a5918569c82d1974ee8" category="paragraph"><block ref="96ba6fdc67411a5918569c82d1974ee8" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="9c34d2a185a74279d135d6d1bda3ebd3" category="list-text">針對日誌、TempDB 和備份 Volume 重複上述步驟，並使用 <block ref="aaa1c396c737a3dbcedf45725a6e0bc3" category="inline-xref-macro-rx"></block> 中所列的大小和名稱。</block>
+  <block id="349fbb4ba5acb5249e10fce44a8894fd" category="inline-image-macro">所有四個 SQL Server Volume 線上，width=800</block>
+  <block id="cc6cb6e33dd81500f953f08a723f7467" category="paragraph"><block ref="cc6cb6e33dd81500f953f08a723f7467" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="3220af5b2f097beca983a8a6b0a1173d" category="admonition">為簡化起見，實驗室在共享層級授予 *Everyone / Full control*。在生產環境中，將共享 ACL 限制為 SQL Server 服務帳戶、SQL Server Agent 帳戶和 DBA 管理群組，例如：</block>
+  <block id="1c89513fce46acc4f71824bbdbb0f436" category="list-text">針對<block ref="3149f7cfc8b673bf880af3bdebe8f7f5" prefix=" " category="inline-code"></block>、<block ref="ecd1cf5febfdccaf7a3f8d1731f7f412" prefix=" " category="inline-code"></block> 和<block ref="dff642c9077793457a5a71aa6310a28e" prefix=" " category="inline-code"></block> 重複這些命令。服務帳戶也需要對共享根目錄的 NTFS 權限擁有 *Full Control*。SQL Server 安裝程式會檢查這一點，如<block ref="fc33475c0e42af2287e091f8b3a95a8e" category="inline-xref-macro-rx"></block> 所示。</block>
+  <block id="e3670c3bedd5b98398a2e78d03faa13b" category="section-title">步驟 4：調整 Volume 設定</block>
+  <block id="4564d864fb5c2928996ae9d1bb342bb6" category="paragraph">審查並調整每個 SQL Server Volume 的空間和快照設定。</block>
+  <block id="f743feb23e482b741c2d27d69e1c7dad" category="list-text">在 Volume 清單中，將滑鼠懸停在 Volume 上，然後按一下鉛筆圖示（*編輯*）。</block>
+  <block id="69086bf2d51e62008b9f442c26975025" category="inline-image-macro">Volume 列表中的編輯圖示</block>
+  <block id="92ec2b013f9f9fdec49b42cdd9e43b51" category="paragraph"><block ref="92ec2b013f9f9fdec49b42cdd9e43b51" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="e06ff37c0524d49d3582a97eed91693b" category="list-text">如下設定 Volume（針對<block ref="1db0e2a92e9428ed5a57e01255595054" prefix=" " category="inline-code"></block>顯示）：</block>
+  <block id="f41920dd9f554d60bbd0f3b28ec44eac" category="list-text">*啟用資源隨需配置*：已選擇</block>
+  <block id="e31c9a9a35a56b03e669ca17fc56a8c3" category="list-text">*自動調整大小*：已選取，*自動增長模式*：*增長*，*最大大小*：例如<block ref="a48298ae429813776038785b3bc57e24" prefix=" " category="inline-code"></block>（約佔 Volume 大小的 125–130%）</block>
+  <block id="1fcd93cf125cc9a73c8daecf349ece95" category="list-text">*啟用部分保留（100%）*：已清除</block>
+  <block id="0dd0b5f20877c8e5fcf3b32a226f6e46" category="list-text">*安全性類型*：<block ref="bead6bebc11dade4ccad97fa037b72a6" prefix=" " category="inline-code"></block></block>
+  <block id="c387a4387bc3c1be71901787cffc8336" category="list-text">*Snapshot 保留 %*：<block ref="e4da3b7fbbce2345d7772b0674a318d5" prefix=" " category="inline-code"></block> <block ref="cfcd208495d565ef66e7dff9f98764da" prefix="(" category="inline-code"></block> 用於<block ref="ecd1cf5febfdccaf7a3f8d1731f7f412" prefix=" " category="inline-code"></block>）</block>
+  <block id="2fb2bd83802e486a5b59ba5ff6a12a39" category="list-text">*排程快照*：已清除。非應用程式一致性快照對 SQL Server 毫無用處；請改用 NetApp SnapCenter。</block>
+  <block id="a8e7ba92ead6bd5a56abb5430fe0ba56" category="list-text">*向用戶端顯示快照目錄*：選用（實驗室保留選取狀態；取消選取會將<block ref="26bef40a7b3e14ad93e80f8f4be79090" prefix=" " category="inline-code"></block>從共享中隱藏）</block>
+  <block id="f8013fcad1f7db2cbf2422e638bf6345" category="paragraph">按一下 *儲存* ，然後針對<block ref="3149f7cfc8b673bf880af3bdebe8f7f5" prefix=" " category="inline-code"></block>、<block ref="ecd1cf5febfdccaf7a3f8d1731f7f412" prefix=" " category="inline-code"></block> 和<block ref="dff642c9077793457a5a71aa6310a28e" prefix=" " category="inline-code"></block>重複此操作。</block>
+  <block id="d96144930d10a358a3f6d8d1ebec983a" category="inline-image-macro">編輯 Volume sql1_data 設定,width=450</block>
+  <block id="07fe37b06b2179694fce52c27435b077" category="paragraph"><block ref="07fe37b06b2179694fce52c27435b077" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="d60d886b3e43905f38fd57e381c1024b" category="admonition">在 AFF 上保持啟用儲存效率（重複資料刪除、壓縮、資料精簡）。它是即時的，對 SQL Server 效能沒有可衡量的影響。</block>
+  <block id="165cc8849c0c21cfdb8ab6a7493a2165" category="section-title">步驟 5：在 SMB 共享上啟用持續可用度</block>
+  <block id="bcc415c28b6fc789de21f8b8bac37406" category="paragraph">對於 SMB 上的 SQL Server 而言，持續可用度是最重要的設定。如果沒有持續可用度，SQL Server 在 ONTAP 接管或 LIF 移轉期間會遺失其開啟的檔案控制代碼，資料庫也會變成可疑狀態。</block>
+  <block id="d3a3f939276a99ffd9dc6d5ce892c3d7" category="list-text">使用 System Manager 或 CLI 啟用 SMB 共享的持續可用度：</block>
+  <block id="eee17ca86880c95e322945df37755514" category="list-text">前往選單：儲存設備［SMB 共享］。清單顯示四個新共享和預設的管理共享<block ref="4528b86031e1415225ea3bb6ce07f003" prefix=" " category="inline-code"></block> 和<block ref="928dca04b007296cb60df76fa4eb8b9b" prefix=" " category="inline-code"></block>。</block>
+  <block id="9fb5277ecc7b46ef578bd4e2a30a489a" category="image-alt">SMB 共享清單</block>
+  <block id="36bdd2f7d17ee6c0eb9fbb6aa02da1ba" category="list-text">按一下共享<block ref="1db0e2a92e9428ed5a57e01255595054" prefix=" " category="inline-code"></block>旁邊的更多圖示（*⋮*），然後選取*編輯*。</block>
+  <block id="bff630895e5d8d34ba378f9893f9b0b6" category="image-alt">包含「編輯」的共享快顯功能表</block>
+  <block id="5705c0539334e4f4105884a497b3ef20" category="list-text">在 *共享屬性* 下，設定以下內容：</block>
+  <block id="7ee10037ea214e89c361ec41a7b9f389" category="list-text">*啟用持續可用度*：*已選擇*</block>
+  <block id="ec65102afa94217deaca5a9827b47120" category="list-text">*允許用戶端存取快照目錄*：已清除</block>
+  <block id="080b92be4698864cf03886d82020dc64" category="list-text">*存取此共享時加密資料*：已清除（選用，取決於您的安全性要求）</block>
+  <block id="b6cd5271135b514e608b2a794dbb647d" category="list-text">*啟用 oplocks*：已選取</block>
+  <block id="b1a7684d83c1bd6b14e6306d5029ec17" category="list-text">*啟用變更通知*：已選擇</block>
+  <block id="47e7da190b7deeb4b2541b71afe44bbd" category="list-text">*啟用基於存取的列舉（ABE）*：已清除</block>
+  <block id="78044c8c0ed70821d8affd44d10d49cd" category="image-alt">編輯已啟用持續可用度的共享</block>
+  <block id="03af6f28baab88f62a1a7a0744338fbc" category="list-text">對<block ref="3149f7cfc8b673bf880af3bdebe8f7f5" prefix=" " category="inline-code"></block>、<block ref="ecd1cf5febfdccaf7a3f8d1731f7f412" prefix=" " category="inline-code"></block>和<block ref="dff642c9077793457a5a71aa6310a28e" prefix=" " category="inline-code"></block>重複這些步驟。</block>
+  <block id="74b449afbfaf83129a806b0e1c54aef5" category="section-title">步驟 6：準備 Windows Server 2025</block>
+  <block id="39d7ca3e8b832275ed4e2138afb06164" category="paragraph">以網域系統管理員身分在 SQL Server 主機<block ref="a510313d4617c90ad449cc16a56aeb37" prefix=" " category="inline-code"></block>上執行下列步驟。</block>
+  <block id="9cca099a8274501622e35ecadf2bcbbd" category="list-text">驗證伺服器是否已加入網域，以及是否可以解析 CIFS 伺服器（請參閱 <block ref="54ffcd46dfdc8b9388da9607f93de1c5" category="inline-xref-macro-rx"></block>）。</block>
+  <block id="0f954c812e2fc65d443422daffe3a836" category="list-text">請確保 SQL Server 服務帳戶存在於 Active Directory 中，例如<block ref="8fdd80def5dfdac5b2f7a36dfaed7589" prefix=" " category="inline-code"></block>。資料庫引擎和 SQL Server Agent 可以使用同一個帳戶，也可以分別使用分隔的帳戶。無論選擇哪種方式，都需要授予每個帳戶對所有四個共享的存取。</block>
+  <block id="e8d1133f64856e36e50a50e327d6d258" category="list-text">測試在服務帳戶的安全性內容中對共享的存取：</block>
+  <block id="f1d0e1b1d1f79bae98429d1157e58fae" category="list-text">在 Windows 防火牆中開啟 SQL Server 連接埠：</block>
+  <block id="5810a27850468d287bd61aa86d9261f2" category="list-text">驗證與 SVM 的 SMB 連線。協議方言必須為 3.x，且<block ref="1ae409c893484f52b1a38a2bc32435eb" prefix=" " category="inline-code"></block>必須為<block ref="f827cf462f62848df37c5e1e94a4da74" prefix=" " category="inline-code"></block>：</block>
+  <block id="bafea0b552ad7163fbd3e7ec6ff0f028" category="admonition">預設情況下，Windows Server 2025 要求所有傳出 SMB 連線都進行 SMB 簽章。ONTAP 支援 SMB 簽章並自動協商。簽章會增加雙方的 CPU 例行成本，因此請將其納入您的效能測試中。未經安全性審查，請勿停用簽章。</block>
+  <block id="c8f00cca5093dd948ab29536a021218e" category="section-title">步驟 7：安裝 SQL Server 2025</block>
+  <block id="e4c1692804059eb2f53147fef57dbfc7" category="paragraph">使用設定精靈在 Windows Server 主機上安裝 SQL Server 2025。將二進位檔案和系統資料庫安裝到本機磁碟，並將使用者資料庫、交易日誌、TempDB 和備份位置指向您建立的 SMB 共享。</block>
+  <block id="ed8701cf3c16df3bdcffb619bb7d7a96" category="list-text">從 SQL Server 安裝中心啟動獨立式安裝。</block>
+  <block id="1e1889dfa5357174e52435c2578b6a7a" category="list-text">掛載 SQL Server 2025 ISO "映像"。在檔案總管中，開啟 DVD 磁碟機 <block ref="d844853b604c0c55996b9c26d035662b" prefix="(" category="inline-code"></block> 在實驗室中），然後按兩下 *設定*。</block>
+  <block id="2cc70602bb6ae73d818ae4c85c8cc8ef" category="inline-image-macro">SQL Server 2025 設定開始</block>
+  <block id="03481ccfce337454cb974e890c4631df" category="paragraph"><block ref="03481ccfce337454cb974e890c4631df" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="a629bc12c7fb2cc588bae5d2d4b12d32" category="list-text">*SQL Server 安裝中心* 隨即開啟。在左側窗格中選擇 *安裝*，然後按一下 *新增 SQL Server 獨立式安裝或為現有安裝新增功能*。</block>
+  <block id="214939bd1a806f1f868014c4610096ee" category="inline-image-macro">SQL Server 安裝中心,width=600</block>
+  <block id="474dbb3f18dc499ec2a89ef5fe9d8826" category="paragraph"><block ref="474dbb3f18dc499ec2a89ef5fe9d8826" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="bc7b91bde7c413de7245780148d1e7b1" category="inline-image-macro">獨立式安裝開始，width=600</block>
+  <block id="85c92c9cea1f407d9c59b43a19c88162" category="paragraph"><block ref="85c92c9cea1f407d9c59b43a19c88162" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="ea5e9a4444ec02d95bf24803e2ee2c9a" category="list-text">選擇 SQL Server 版本，接受授權條款，然後讓設定檢查產品更新。</block>
+  <block id="e3ac17dec0780538c7c8ce3a62a7af67" category="list-text">在 *版本* 頁面上，選擇 *輸入產品金鑰* 並輸入您的產品金鑰，或選擇免費版本（評估版、企業開發人員版、標準開發人員版或 Express）。選擇適用於您的授權類型（在實驗室中為 *我只有 SQL Server 授權*），然後按一下 *下一步*。</block>
+  <block id="167deecf12040ee6c01d331ab12c87a5" category="inline-image-macro">版本頁,width=600</block>
+  <block id="1bc7d59d6d32d8394fca952a95498817" category="paragraph"><block ref="1bc7d59d6d32d8394fca952a95498817" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="28a5b0e06f81ca1680cba2c0a2535c23" category="list-text">在 *許可條款* 頁面上，讀取條款，選擇 *我接受許可條款和隱私權聲明*，然後按一下 *下一步*。</block>
+  <block id="06b9bd95a8a011cdb86681ed812337a5" category="inline-image-macro">授權條款頁面,width=600</block>
+  <block id="dd28ba288de0804271856174b5d6303a" category="paragraph"><block ref="dd28ba288de0804271856174b5d6303a" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="4f617b57af63848a8161374593a405f5" category="list-text">在 *Microsoft Update* 頁面上，選取 *使用 Microsoft Update 檢查更新（建議）* 並按一下 *下一步*。設定隨後將執行 *全域規則*、*產品更新*、*安裝設定檔案* 和 *安裝規則* 檢查。</block>
+  <block id="c12aac395d1947c322f2aa873da66ae3" category="inline-image-macro">Microsoft Update 頁面,width=600</block>
+  <block id="9e4fe9b5931a60e587532c84e55d1dd7" category="paragraph"><block ref="9e4fe9b5931a60e587532c84e55d1dd7" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="d9e379632d082a3f70cbc11847d30cb2" category="list-text">選擇要安裝的 SQL Server 功能和執行個體。二進位檔案保留在本機磁碟上；只有資料庫檔案會放置在 SMB 共享上。</block>
+  <block id="40fd3e5cc022bb29b2577bd0435cb3fb" category="list-text">在「功能選擇」頁面上，選擇「資料庫引擎服務」以及您需要的任何其他功能（實驗室也選擇了「SQL Server 複寫」）。將「執行個體根目錄」和「共享功能目錄」保留在本機磁碟上<block ref="d7aa32b0c582222819b91c8e0ccca765" prefix=" " category="inline-code"></block>。二進位檔案安裝在本機；只有資料庫檔案會移至 SMB 共享。</block>
+  <block id="a473f23f0ec47e728c1b8a7d43637b33" category="inline-image-macro">功能選擇頁面,width=600</block>
+  <block id="ae47a837ff85ff42cf23907058a835a4" category="paragraph"><block ref="ae47a837ff85ff42cf23907058a835a4" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="392fdfbfb2eadf1bc8915dbd12181edc" category="list-text">在 *執行個體組態* 頁面上，選取 *預設執行個體* <block ref="1170cb78c9cb5739ad3aa617ce7bb623" prefix="(" category="inline-code"></block>），或輸入命名的執行個體，然後按一下 *下一步*。</block>
+  <block id="0dee2d904bcd13e2149a6682f56b00f5" category="inline-image-macro">執行個體組態頁面,width=600</block>
+  <block id="93566dbda23ad69ac8c963392f06dd16" category="paragraph"><block ref="93566dbda23ad69ac8c963392f06dd16" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="814dbeb24b0de6eb90418363e1ce837c" category="list-text">設定 SQL Server 資料庫引擎和 SQL Server Agent 服務，使其在可存取 SMB 共享的網域帳戶下執行。</block>
+  <block id="8c44cea119c12004a893f07fd5d7001f" category="list-text">在 *伺服器組態* 頁面的 *服務帳戶* 標籤上，輸入 *SQL Server Agent* 和 *SQL Server Database Engine* 的網域帳戶和密碼，並將 *啟動類型* 設定為 *自動*。</block>
+  <block id="bd66c337b726f52f3f65309a96721b46" category="admonition">使用對 SMB 共享具有完全控制權限的網域帳戶。快照顯示兩種不同的拼字方式 <block ref="105651877cc71e5698501e9e6011a546" prefix="(" category="inline-code"></block> 和 <block ref="8fdd80def5dfdac5b2f7a36dfaed7589" prefix=" " category="inline-code"></block>）。請確保您輸入的每個帳戶都存在於 Active Directory 中，並且有權存取所有四個共享。</block>
+  <block id="12c5ac51f1fbbae2fb0832e3f7f6dd74" category="admonition">選擇 *授予 SQL Server 資料庫引擎服務執行 Volume 維護任務權限*。這將啟用即時檔案初始化，從而顯著加快資料庫建立、檔案成長和還原速度。</block>
+  <block id="f8e4f77c2c2494799e34cb12e41396b1" category="inline-image-macro">伺服器組態 - 服務帳戶,width=600</block>
+  <block id="7453169fd52da8f17aa8f175c808aa31" category="paragraph"><block ref="7453169fd52da8f17aa8f175c808aa31" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="bbcdeab8f93adae0bf0275256787a0cd" category="list-text">設定驗證模式和 SQL Server 管理員，並輸入使用者資料庫、交易日誌、備份和 TempDB 檔案的 SMB 共享的 UNC 路徑。</block>
+  <block id="756b589e1d50b5dd1f72688b48d9d810" category="list-text">在「資料庫引擎組態」頁面的「伺服器組態」標籤上，選擇驗證模式。本實驗室使用「混合模式」，並為 <block ref="c12e01f2a13ff5587e1e9e4aedb8242d" prefix=" " category="inline-code"></block> 帳戶設定了強密碼。按一下「新增目前使用者」和「新增……」以新增 SQL Server 管理員（使用者，或最好是 AD 群組）。</block>
+  <block id="93833992b9d158a328fbab9fd341340b" category="admonition">除非應用程式需要 SQL Server 登入，否則請使用 *Windows 驗證模式*。</block>
+  <block id="1d75678f7061b55f0c114b670ff5bac0" category="inline-image-macro">資料庫引擎組態 - 驗證,width=600</block>
+  <block id="d449ad80aaf89fdfb843c90527d9eacd" category="paragraph"><block ref="d449ad80aaf89fdfb843c90527d9eacd" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="92ee1c2f5f07c3ebff64276b2007412b" category="list-text">在 *資料目錄* 標籤上，輸入 SMB 共享的 UNC 路徑：</block>
+  <block id="689202409e48743b914713f96d93947c" category="cell">價值</block>
+  <block id="7b6aad253ce0f18cea130bfa3926e135" category="cell">資料根目錄</block>
+  <block id="fefd60a5c00c185f702a113bf86568fc" category="cell"><block ref="de4dfe2a9345a1c4e6e7dce2317df7fc" prefix="" category="inline-code"></block>（本機；系統資料庫保留在<block ref="d7aa32b0c582222819b91c8e0ccca765" prefix=" " category="inline-code"></block>）</block>
+  <block id="e9323b8efe31299dc87d987f766b68dd" category="cell">使用者資料庫目錄</block>
+  <block id="8a8a4ef9a4168378d78882e0d56a4403" category="cell">使用者資料庫日誌目錄</block>
+  <block id="a5911ec1963f4a94f8cff60f2fa0c932" category="cell">備份目錄</block>
+  <block id="00a942700279fb047607e28b930ab753" category="admonition">若要將系統資料庫 <block ref="eb0a191797624dd3a48fa681d3061212" prefix="(" category="inline-code"></block>，<block ref="20f35e630daf44dbfa4c3f68f5399d8c" prefix=" " category="inline-code"></block>，<block ref="fe2552ce114315ff0ef9ad5b1de6e028" prefix=" " category="inline-code"></block>）也放在 SMB 共享上，請將 *資料根目錄* 設定為 UNC 路徑。如果需要，可以為系統資料庫建立新的 Volume 和共享。</block>
+  <block id="61731ddf06e3e9da4c702d735317344a" category="admonition">您需要為目錄使用 UNC 路徑，因為不支援對應磁碟機。</block>
+  <block id="09c993880bdb53008d55a01821067a2e" category="inline-image-macro">具有 UNC 路徑的資料目錄,width=600</block>
+  <block id="f26bea966c595c90873e52e254bfcd69" category="paragraph"><block ref="f26bea966c595c90873e52e254bfcd69" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="1a8489a3eedf99f2f8d244328f584c2f" category="list-text">在 *TempDB* 標籤上，選取預設的本機資料目錄，然後按一下 *移除*。</block>
+  <block id="b6b0d91ae329af6b2cc24601097e73b8" category="inline-image-macro">TempDB 標籤 - 移除預設目錄,width=600</block>
+  <block id="0af4c7c4f0be58ca76dea7e6a5a2cb47" category="paragraph"><block ref="0af4c7c4f0be58ca76dea7e6a5a2cb47" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="5e2b7766bfdd41e8fbd54b28ba480dcd" category="list-text">按一下 *新增……*。在 *瀏覽資料夾* 對話方塊中，在 *資料夾* 欄位中輸入 UNC 路徑<block ref="e5ad669accfc5fad5d5351cb17071d51" prefix=" " category="inline-code"></block>，然後按一下 *確定*。</block>
+  <block id="e80bf151818a95a3af440a0ccacab835" category="inline-image-macro">TempDB 標籤 - 使用 UNC 路徑瀏覽資料夾，width=600</block>
+  <block id="5eee14abffcdc83c70f25522952b83ec" category="paragraph"><block ref="5eee14abffcdc83c70f25522952b83ec" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="e09035113f6e9610f052bce03a6da9fc" category="list-text">將 *日誌目錄* 設定為相同的共享（點選 *……*）。實驗室使用<block ref="e5ad669accfc5fad5d5351cb17071d51" prefix=" " category="inline-code"></block>來同時存放 TempDB 資料檔案和 TempDB 日誌檔。出現黃色警告（指出已將檔案伺服器指定為資料目錄）是預期中的情況。</block>
+  <block id="6bf3c916f7672acd02a151ba3bb82e8e" category="admonition">每個邏輯 CPU 核心使用一個 TempDB 資料檔案，最多 8 個檔案。將初始大小設定為預期的 TempDB 工作集大小，這樣 TempDB 在運作期間就不需要成長。所有資料檔案必須大小相同，並啟用自動增長。</block>
+  <block id="aef3dfb715196d18e9f49b37ceb10254" category="admonition">您需要使用一個資料夾來存放 TempDB 資料和日誌檔，否則安裝將會失敗。</block>
+  <block id="a18f9256da81d36bd1e4eb1c95f17ad4" category="inline-image-macro">TempDB 設定在 SMB 共享，存在警告，width=600</block>
+  <block id="16b53729297ec82917a1ed7afed11a28" category="paragraph"><block ref="16b53729297ec82917a1ed7afed11a28" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="cc7c78412db2f7f29a762deca21521d3" category="list-text">根據您的規模設定 *MaxDOP* 和 *Memory* 標籤（建議的預設值是一個不錯的起點），然後按一下 *下一步*。</block>
+  <block id="203c5daf345182c13b5017d6e8c54229" category="list-text">[[sql-dbengine,Step 7]]對於每個 UNC 路徑，設定會顯示一個對話方塊，要求您驗證 SQL Server 服務帳戶是否對檔案伺服器具有完全控制共享權限。驗證權限後（請參閱 <block ref="d6183de85c3f115f0767ca60cce492f6" category="inline-xref-macro-rx"></block> 和 <block ref="3138e9523a710fd0af3072d59ae7151b" category="inline-xref-macro-rx"></block>），按一下 *Yes*。</block>
+  <block id="5b425ccfb112747bf37dae5c4fee2ac9" category="inline-image-macro">檔案伺服器權限確認對話方塊,width=600</block>
+  <block id="0a0858f3c075c7d0a4281eb045fb1403" category="paragraph"><block ref="0a0858f3c075c7d0a4281eb045fb1403" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="7dd21c7f81e4b8b03cd5a82db1b0fc8d" category="list-text">審查安裝總結，執行安裝，並確認所有功能均已成功安裝。</block>
+  <block id="5c7003107ee5ebb4bf3de11ef071c925" category="list-text">在「準備安裝」頁面上，審查總結並按一下「安裝」。</block>
+  <block id="029389de93741986dedd4b908bf5997f" category="admonition">複製顯示在 *組態檔案路徑* 下的<block ref="55be1f644703e9352fe2208f4c3d0d2c" prefix=" " category="inline-code"></block>。您可以將其用於其他 SQL Server 主機的無人看管安裝 <block ref="6b04d268102a0f1ca0abfc09d6f2d4a3" prefix="(" category="inline-code"></block>）。</block>
+  <block id="1c053d519767cb59a39522c02aa49026" category="inline-image-macro">準備安裝總結，width=600</block>
+  <block id="0ac10d967ff919321cbe5c6499cafff7" category="paragraph"><block ref="0ac10d967ff919321cbe5c6499cafff7" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="fda4178ea03d62057353474ad75a1337" category="list-text">請稍候，安裝正在進行中。</block>
+  <block id="758f254e22ea60cefbd01dbc5ee239c8" category="inline-image-macro">安裝進度,width=600</block>
+  <block id="ad5bdadacd8356ecfb82abb4b75f0e18" category="paragraph"><block ref="ad5bdadacd8356ecfb82abb4b75f0e18" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="97aa59666f96514fe0bd768ece4c9f3b" category="list-text">安裝完成後，確認所有功能均顯示 *成功*，然後按一下 *關閉*。</block>
+  <block id="0c70f7f46bbb51bf80eaf24fefd85368" category="inline-image-macro">安裝完成,width=600</block>
+  <block id="c3d09e7de2c2a42269eba255b3251614" category="paragraph"><block ref="c3d09e7de2c2a42269eba255b3251614" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="5b9a289e84727b3c59a29d00fd303ff6" category="section-title">步驟 8：驗證安裝並建立資料庫</block>
+  <block id="2030c5f1be77a726bb3f12a9c3711836" category="paragraph">使用 SQL Server Management Studio （SSMS） 建立測試資料庫，並驗證其資料和日誌檔是否位於 SMB 共享上。（可選）在 ONTAP 上確認開啟的檔案使用持續可用度。</block>
+  <block id="7a5a76ffb2247d51508633116d452a43" category="list-text">從安裝中心的 *安裝 SQL Server 管理工具* 連結或 Microsoft 網站安裝 SQL Server Management Studio（SSMS）。</block>
+  <block id="9575b7bda07ea499cf17e803437361df" category="list-text">啟動 SSMS 並使用 Windows 驗證連線到執行個體 <block ref="2a97f64c219d863561a48b943aef22a3" prefix="(" category="inline-code"></block>）。</block>
+  <block id="c0676c1715741c2e2187efb871dcb713" category="list-text">以滑鼠右鍵按一下 *Databases* 並選擇 *New Database……*。輸入資料庫名稱 <block ref="3c522a81589b9f1795ee642b7caa17a2" prefix="(" category="inline-code"></block> 在實驗室中），設定初始檔案大小，然後按一下 *OK*。資料和日誌檔路徑預設為<block ref="149d64d77682ce5c0d9d11032ef638a1" prefix=" " category="inline-code"></block> 和<block ref="f87bd90246cc2d4816d4ea7f54705a8b" prefix=" " category="inline-code"></block>。</block>
+  <block id="816b198388749d2d3300f54bb39b6267" category="inline-image-macro">具有 UNC 路徑的新資料庫對話方塊，寬度=800</block>
+  <block id="078c858c6afee52b9791e2bc8829c7cc" category="paragraph"><block ref="078c858c6afee52b9791e2bc8829c7cc" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="7a9ccbdae641dc8e345cf19498bd6a30" category="list-text">新資料庫出現在 *Object Explorer* 中。</block>
+  <block id="048eae24455284ca7d95096460d91b51" category="inline-image-macro">包含資料庫 SQ1 的 SSMS 物件總管,width=800</block>
+  <block id="0cb5541874d9a8d3912e492083a4df08" category="paragraph"><block ref="0cb5541874d9a8d3912e492083a4df08" category="inline-image-macro-rx" type="image"></block></block>
+  <block id="b67d0a88c153b402879e42bc3ecf7623" category="list-text">使用 T-SQL 驗證檔案位置：</block>
+  <block id="d81480a2e6560d327ee0f735121e28fe" category="list-text">選用：驗證 ONTAP 上開啟檔案的持續可用度：</block>
+  <block id="7cd854ed184b09bc65bfec657f318833" category="paragraph">所有 SQL Server 檔案必須顯示<block ref="402c43a875dbab5b40b9062b9fdb87bd" prefix=" " category="inline-code"></block>。</block>
+  <block id="454be895ab3d3f3b95047e17a6218080" category="section-title">使用 ONTAP CLI 指令碼一次設定儲存設備</block>
+  <block id="64d7488705f6c5d8175f733ddedc6200" category="paragraph">以下指令碼包含此程序的完整儲存組態。執行前請替換尖括號中的值。</block>
+  <block id="dfb28a0e171504d32021ef2943445d0c" category="admonition">將 Volume 分佈在兩個節點的聚合體上，例如，資料和備份在節點 1 上，日誌和 TempDB 在節點 2 上。這樣就利用了兩個控制器的資源。</block>
+  <block id="09cb668c48bd1e91e1b9d84e64c019dc" category="paragraph">如需本程序中各主題的更多資訊，請參閱下列資源：</block>
+  <block id="f1c685b09b56fc2a4aaaeb8e94b509f4" category="inline-link">Microsoft SQL Server 和 SMB 與 ONTAP</block>
+  <block id="f61b4ba8f5720d14329a36689528ce90" category="list-text">NetApp：<block ref="61b7d44ce1e0a6984b675e7dea7fac4c" category="inline-link-rx"></block></block>
+  <block id="ad991f8f32908bc151551b55169bcebb" category="inline-link">為透過 SMB 的 Microsoft Hyper-V 和 SQL Server 解決方案設定 ONTAP</block>
+  <block id="3c3168dd24f14b4504cde059a3c9df3b" category="list-text">NetApp：<block ref="a870649bb767ac1d16bad23728cb7b0f" category="inline-link-rx"></block></block>
+  <block id="472357733068c1fe3fca4e9fcfae6f4c" category="inline-link">透過 SMB 協定執行 SQL Server 的 SMB 伺服器和 Volume 要求</block>
+  <block id="42e2a3a40d50d469cb4eac53eb694689" category="list-text">NetApp：<block ref="ee84e79902bb1e84cb92f559e6d0aa81" category="inline-link-rx"></block></block>
+  <block id="b7e8c0212eded644c9467dcc9591a499" category="inline-link">安裝搭配 SMB 檔案共用儲存設備的 SQL Server</block>
+  <block id="553327fde4a25af56eb2728b98eaa7f5" category="list-text">Microsoft：<block ref="c9d1a7adc92602afe842d503656090ae" category="inline-link-rx"></block></block>
+  <block id="684a61c61cc522de778dd73d69a56db5" category="inline-link">SnapCenter Microsoft SQL Server 外掛程式總覽</block>
+  <block id="3f52115708b281e25b6da374ca2442d3" category="list-text">NetApp：<block ref="dc92474ceb32ba8120a2ad59530f0057" category="inline-link-rx"></block></block>
+  <block id="c9dd6bad4c7d561872f2e2d498a990bf" category="inline-link">互通性對照表工具（IMT）</block>
+  <block id="2e744d7458420edb1d67decd482527b8" category="list-text">NetApp：<block ref="e044cdc411e34564fc609d8f08e0201d" category="inline-link-rx"></block></block>
+  <block id="dff5ea1c0f4431208a1e86445b6115cf" category="section-title">2026年11月9日</block>
+  <block id="2b3c56a48b86120d7fe5c64dfa29d907" category="inline-link-macro">在 Windows Server 2025 上使用 NetApp AFF 上的 SMB 3 持續可用共用部署 Microsoft SQL Server 2025</block>
+  <block id="88a76713cf7b76c7692d58c125f4b421" category="paragraph">已新增 SQL Server SMB 文件：<block ref="87713d86ecb117cf408e007449958e4a" category="inline-link-macro-rx"></block></block>
+  <block id="87841e293a5b7dec649c737a77757ef3" category="sidebar">NetApp AFF 上的 SQL Server</block>
+  <block id="4885a19799c2ffd6767615a13415ab02" category="sidebar">關於 NetApp AFF 上的 SQL Server 2025</block>
+  <block id="daed062f8c9f45acfab189258d1f4694" category="sidebar">在 NetApp AFF 上部署 SQL Server 2025</block>
 </blocks>

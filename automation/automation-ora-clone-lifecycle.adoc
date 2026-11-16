@@ -228,3 +228,10 @@ NOTE: 將使用者名稱變更為SnapCenter配置的 sudo 使用者。
 == 在哪裡可以找到更多信息
 
 要了解有關NetApp解決方案自動化的更多信息，請訪問以下網站link:https://docs.netapp.com/us-en/netapp-solutions-dataops/automation/automation-introduction.html["NetApp解決方案自動化^"^]
+
+
+
+[[github-repository-link]]
+== GitHub 儲存庫連結：
+
+如需了解詳細資訊並存取儲存庫，請造訪： https://github.com/NetApp/na_oracle_clone_lifecycle["自動化 Oracle 複製生命週期儲存庫"]

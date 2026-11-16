@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" width="1200" height="640" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2E8540"/>
+    </marker>
+    <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#E07B00"/>
+    </marker>
+  </defs>
+  <style>
+    .title { font-size: 24px; font-weight: 700; fill: #003366; }
+    .sub { font-size: 14px; fill: #4A5A6A; }
+    .ph { font-size: 17px; font-weight: 700; fill: #003366; }
+    .tb { font-size: 13.5px; font-weight: 700; fill: #1F2D3D; }
+    .t { font-size: 12.5px; fill: #4A5A6A; }
+    .tw { font-size: 13px; font-weight: 700; fill: #FFFFFF; }
+    .tws { font-size: 11.5px; fill: #FFFFFF; }
+    .lg { font-size: 12px; font-weight: 700; fill: #2E8540; }
+    .lo { font-size: 12px; font-weight: 700; fill: #E07B00; }
+    .cap { font-size: 14px; fill: #1F2D3D; }
+  </style>
+  <rect width="1200" height="640" fill="#FFFFFF"/>
+  <text x="40" y="40" class="title">How SMB 3 continuous availability protects SQL Server</text>
+  <text x="40" y="64" class="sub">Persistent handles and transparent LIF failover keep the database files open during an ONTAP takeover</text>
+
+  <!-- ================= Panel A ================= -->
+  <rect x="20" y="84" width="570" height="470" rx="10" fill="#F7F9FB" stroke="#C9D3DE" stroke-width="1.5"/>
+  <circle cx="48" cy="112" r="14" fill="#2E8540"/><text x="48" y="117" class="tw" text-anchor="middle">1</text>
+  <text x="70" y="118" class="ph">Normal operation</text>
+
+  <rect x="155" y="136" width="300" height="76" rx="7" fill="#0067C5"/>
+  <text x="305" y="162" class="tw" text-anchor="middle">sql-1 · SQL Server 2025</text>
+  <text x="305" y="182" class="tws" text-anchor="middle">open files: .mdf · .ldf · tempdb</text>
+  <text x="305" y="200" class="tws" text-anchor="middle">durable / persistent SMB handles</text>
+
+  <line x1="240" y1="212" x2="170" y2="342" stroke="#2E8540" stroke-width="4" marker-end="url(#ag)" marker-start="url(#ag)"/>
+  <line x1="370" y1="212" x2="440" y2="342" stroke="#2E8540" stroke-width="4" marker-end="url(#ag)" marker-start="url(#ag)"/>
+  <text x="188" y="272" class="lg" text-anchor="end">SMB 3 session</text>
+  <text x="422" y="272" class="lg">SMB 3 session</text>
+
+  <rect x="50" y="318" width="240" height="140" rx="8" fill="#E6EBF1" stroke="#8796A8"/>
+  <text x="66" y="338" class="tb">Node 1 · online</text>
+  <rect x="80" y="346" width="180" height="40" rx="5" fill="#2E8540"/>
+  <text x="170" y="363" class="tw" text-anchor="middle">LIF smb_n1</text>
+  <text x="170" y="379" class="tws" text-anchor="middle">192.168.175.138</text>
+  <text x="66" y="420" class="t">serves sql1_data,</text>
+  <text x="66" y="438" class="t">sql1_backups</text>
+
+  <rect x="320" y="318" width="240" height="140" rx="8" fill="#E6EBF1" stroke="#8796A8"/>
+  <text x="336" y="338" class="tb">Node 2 · online</text>
+  <rect x="350" y="346" width="180" height="40" rx="5" fill="#2E8540"/>
+  <text x="440" y="363" class="tw" text-anchor="middle">LIF smb_n2</text>
+  <text x="440" y="379" class="tws" text-anchor="middle">192.168.175.139</text>
+  <text x="336" y="420" class="t">serves sql1_log,</text>
+  <text x="336" y="438" class="t">sql1_tempdb</text>
+
+  <line x1="290" y1="400" x2="320" y2="400" stroke="#003366" stroke-width="3"/>
+  <text x="305" y="394" class="t" text-anchor="middle">HA</text>
+
+  <rect x="50" y="476" width="510" height="56" rx="7" fill="#003366"/>
+  <text x="305" y="500" class="tw" text-anchor="middle">Shared NVMe storage of the HA pair</text>
+  <text x="305" y="520" class="tws" text-anchor="middle">volumes sql1_data · sql1_log · sql1_tempdb · sql1_backups</text>
+
+  <!-- ================= Panel B ================= -->
+  <rect x="610" y="84" width="570" height="470" rx="10" fill="#FFF8EF" stroke="#F0C48A" stroke-width="1.5"/>
+  <circle cx="638" cy="112" r="14" fill="#E07B00"/><text x="638" y="117" class="tw" text-anchor="middle">2</text>
+  <text x="660" y="118" class="ph">Node 1 takeover (planned or unplanned)</text>
+
+  <rect x="745" y="136" width="300" height="76" rx="7" fill="#0067C5"/>
+  <text x="895" y="162" class="tw" text-anchor="middle">sql-1 · SQL Server 2025</text>
+  <text x="895" y="182" class="tws" text-anchor="middle">I/O pauses a few seconds,</text>
+  <text x="895" y="200" class="tws" text-anchor="middle">handles reclaimed · no error</text>
+
+  <!-- node 1 down -->
+  <rect x="640" y="318" width="240" height="140" rx="8" fill="#D5D9DE" stroke="#A3ACB7" stroke-dasharray="6 4"/>
+  <text x="656" y="338" class="tb" fill="#6B7B8C">Node 1 · taken over</text>
+  <rect x="670" y="346" width="180" height="40" rx="5" fill="none" stroke="#A3ACB7" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="760" y="371" class="t" text-anchor="middle">LIF smb_n1 (moved)</text>
+  <text x="656" y="420" class="t">rebooting, NDU or</text>
+  <text x="656" y="438" class="t">hardware failure</text>
+
+  <!-- node 2 -->
+  <rect x="910" y="318" width="240" height="140" rx="8" fill="#E6EBF1" stroke="#8796A8"/>
+  <text x="926" y="338" class="tb">Node 2 · serves all</text>
+  <rect x="940" y="346" width="180" height="40" rx="5" fill="#2E8540"/>
+  <text x="1030" y="363" class="tw" text-anchor="middle">LIF smb_n2</text>
+  <text x="1030" y="379" class="tws" text-anchor="middle">192.168.175.139</text>
+  <rect x="940" y="400" width="180" height="40" rx="5" fill="#E07B00"/>
+  <text x="1030" y="417" class="tw" text-anchor="middle">LIF smb_n1</text>
+  <text x="1030" y="433" class="tws" text-anchor="middle">192.168.175.138 (migrated)</text>
+
+  <line x1="850" y1="378" x2="936" y2="414" stroke="#E07B00" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#ao)"/>
+  <line x1="880" y1="400" x2="910" y2="400" stroke="#003366" stroke-width="3"/>
+
+  <line x1="960" y1="212" x2="1090" y2="342" stroke="#2E8540" stroke-width="4" marker-end="url(#ag)" marker-start="url(#ag)"/>
+  <path d="M 840 212 C 840 300, 880 300, 936 398" fill="none" stroke="#E07B00" stroke-width="4" stroke-dasharray="9 5" marker-end="url(#ao)"/>
+  <text x="1052" y="262" class="lg">unchanged</text>
+  <text x="752" y="272" class="lo">reconnect +</text>
+  <text x="752" y="288" class="lo">handle replay</text>
+
+  <rect x="640" y="476" width="510" height="56" rx="7" fill="#003366"/>
+  <text x="895" y="500" class="tw" text-anchor="middle">Node 2 takes ownership of node 1 aggregates</text>
+  <text x="895" y="520" class="tws" text-anchor="middle">all volumes stay online · giveback is equally nondisruptive</text>
+
+  <!-- caption -->
+  <rect x="20" y="570" width="1160" height="54" rx="8" fill="#EEF7F0" stroke="#2E8540"/>
+  <text x="600" y="593" class="cap" text-anchor="middle">Without CA, SQL Server loses its file handles during takeover and the databases become suspect.</text>
+  <text x="600" y="613" class="cap" text-anchor="middle" font-weight="700">With CA shares, SQL Server keeps running through takeover/giveback, ONTAP upgrades, LIF migrations and volume moves.</text>
+</svg>

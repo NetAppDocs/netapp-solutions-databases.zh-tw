@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" width="1200" height="640" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7B8C"/>
+    </marker>
+  </defs>
+  <style>
+    .title { font-size: 24px; font-weight: 700; fill: #003366; }
+    .sub { font-size: 14px; fill: #4A5A6A; }
+    .col { font-size: 14px; font-weight: 700; fill: #003366; }
+    .tb { font-size: 14px; font-weight: 700; fill: #1F2D3D; }
+    .t { font-size: 12.5px; fill: #4A5A6A; }
+    .tw { font-size: 14px; font-weight: 700; fill: #FFFFFF; }
+    .tws { font-size: 12.5px; fill: #FFFFFF; }
+    .leg { font-size: 12.5px; fill: #4A5A6A; }
+  </style>
+  <rect width="1200" height="640" fill="#FFFFFF"/>
+  <text x="40" y="40" class="title">Storage layout: SQL Server files to SMB shares, volumes and aggregates</text>
+  <text x="40" y="64" class="sub">One FlexVol volume and one continuously available (CA) SMB share per file type</text>
+
+  <!-- column headers -->
+  <text x="170" y="104" class="col" text-anchor="middle">SQL Server files</text>
+  <text x="490" y="104" class="col" text-anchor="middle">SMB 3 CA share (UNC path)</text>
+  <text x="800" y="104" class="col" text-anchor="middle">FlexVol volume (SVM a50-sql)</text>
+  <text x="1070" y="104" class="col" text-anchor="middle">Aggregate / node</text>
+  <line x1="40" y1="114" x2="1160" y2="114" stroke="#C9D3DE" stroke-width="1.5"/>
+
+  <!-- row 1: system DBs local -->
+  <rect x="40" y="128" width="260" height="62" rx="6" fill="#F2F4F7" stroke="#8796A8"/>
+  <text x="170" y="153" class="tb" text-anchor="middle">System DBs + binaries</text>
+  <text x="170" y="174" class="t" text-anchor="middle">master, model, msdb</text>
+  <line x1="300" y1="159" x2="356" y2="159" stroke="#6B7B8C" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="360" y="128" width="800" height="62" rx="6" fill="#F2F4F7" stroke="#8796A8" stroke-dasharray="6 4"/>
+  <text x="760" y="153" class="tb" text-anchor="middle">Local boot disk C:\ (not on ONTAP)</text>
+  <text x="760" y="174" class="t" text-anchor="middle">Optional: place system databases on \\a50-sql\sql1_data by setting the data root directory to a UNC path</text>
+
+  <!-- generic rows -->
+  <!-- row 2 data -->
+  <rect x="40" y="208" width="260" height="70" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="170" y="236" class="tb" text-anchor="middle">User data files</text>
+  <text x="170" y="258" class="t" text-anchor="middle">.mdf / .ndf</text>
+  <rect x="360" y="208" width="260" height="70" rx="6" fill="#FFFFFF" stroke="#2E8540" stroke-width="2"/>
+  <text x="490" y="236" class="tb" text-anchor="middle">\\a50-sql\sql1_data</text>
+  <text x="490" y="258" class="t" text-anchor="middle">CA · oplocks · change notify</text>
+  <rect x="680" y="208" width="240" height="70" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="800" y="236" class="tb" text-anchor="middle">sql1_data · 1 TiB</text>
+  <text x="800" y="258" class="t" text-anchor="middle">thin · autogrow · snap reserve 5 %</text>
+  <rect x="980" y="208" width="180" height="70" rx="6" fill="#0067C5"/>
+  <text x="1070" y="236" class="tw" text-anchor="middle">aggr_node1</text>
+  <text x="1070" y="258" class="tws" text-anchor="middle">Node 1</text>
+
+  <!-- row 3 log -->
+  <rect x="40" y="296" width="260" height="70" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="170" y="324" class="tb" text-anchor="middle">Transaction logs</text>
+  <text x="170" y="346" class="t" text-anchor="middle">.ldf</text>
+  <rect x="360" y="296" width="260" height="70" rx="6" fill="#FFFFFF" stroke="#2E8540" stroke-width="2"/>
+  <text x="490" y="324" class="tb" text-anchor="middle">\\a50-sql\sql1_log</text>
+  <text x="490" y="346" class="t" text-anchor="middle">CA · oplocks · change notify</text>
+  <rect x="680" y="296" width="240" height="70" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="800" y="324" class="tb" text-anchor="middle">sql1_log · 512 GiB</text>
+  <text x="800" y="346" class="t" text-anchor="middle">thin · autogrow · snap reserve 5 %</text>
+  <rect x="980" y="296" width="180" height="70" rx="6" fill="#00857C"/>
+  <text x="1070" y="324" class="tw" text-anchor="middle">aggr_node2</text>
+  <text x="1070" y="346" class="tws" text-anchor="middle">Node 2</text>
+
+  <!-- row 4 tempdb -->
+  <rect x="40" y="384" width="260" height="70" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="170" y="412" class="tb" text-anchor="middle">TempDB</text>
+  <text x="170" y="434" class="t" text-anchor="middle">8 data files + templog.ldf</text>
+  <rect x="360" y="384" width="260" height="70" rx="6" fill="#FFFFFF" stroke="#2E8540" stroke-width="2"/>
+  <text x="490" y="412" class="tb" text-anchor="middle">\\a50-sql\sql1_tempdb</text>
+  <text x="490" y="434" class="t" text-anchor="middle">CA · oplocks · change notify</text>
+  <rect x="680" y="384" width="240" height="70" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="800" y="412" class="tb" text-anchor="middle">sql1_tempdb · 500 GiB</text>
+  <text x="800" y="434" class="t" text-anchor="middle">thin · no snapshots</text>
+  <rect x="980" y="384" width="180" height="70" rx="6" fill="#00857C"/>
+  <text x="1070" y="412" class="tw" text-anchor="middle">aggr_node2</text>
+  <text x="1070" y="434" class="tws" text-anchor="middle">Node 2</text>
+
+  <!-- row 5 backups -->
+  <rect x="40" y="472" width="260" height="70" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="170" y="500" class="tb" text-anchor="middle">Native backups</text>
+  <text x="170" y="522" class="t" text-anchor="middle">.bak / .trn</text>
+  <rect x="360" y="472" width="260" height="70" rx="6" fill="#FFFFFF" stroke="#2E8540" stroke-width="2"/>
+  <text x="490" y="500" class="tb" text-anchor="middle">\\a50-sql\sql1_backups</text>
+  <text x="490" y="522" class="t" text-anchor="middle">CA · oplocks · change notify</text>
+  <rect x="680" y="472" width="240" height="70" rx="6" fill="#EAF3FC" stroke="#0067C5" stroke-width="1.5"/>
+  <text x="800" y="500" class="tb" text-anchor="middle">sql1_backups · 2000 GiB</text>
+  <text x="800" y="522" class="t" text-anchor="middle">thin · autogrow · snap reserve 5 %</text>
+  <rect x="980" y="472" width="180" height="70" rx="6" fill="#0067C5"/>
+  <text x="1070" y="500" class="tw" text-anchor="middle">aggr_node1</text>
+  <text x="1070" y="522" class="tws" text-anchor="middle">Node 1</text>
+
+  <!-- arrows rows 2-5 -->
+  <g stroke="#6B7B8C" stroke-width="2" marker-end="url(#arr)">
+    <line x1="300" y1="243" x2="356" y2="243"/><line x1="620" y1="243" x2="676" y2="243"/><line x1="920" y1="243" x2="976" y2="243"/>
+    <line x1="300" y1="331" x2="356" y2="331"/><line x1="620" y1="331" x2="676" y2="331"/><line x1="920" y1="331" x2="976" y2="331"/>
+    <line x1="300" y1="419" x2="356" y2="419"/><line x1="620" y1="419" x2="676" y2="419"/><line x1="920" y1="419" x2="976" y2="419"/>
+    <line x1="300" y1="507" x2="356" y2="507"/><line x1="620" y1="507" x2="676" y2="507"/><line x1="920" y1="507" x2="976" y2="507"/>
+  </g>
+
+  <!-- legend -->
+  <line x1="40" y1="566" x2="1160" y2="566" stroke="#C9D3DE" stroke-width="1.5"/>
+  <text x="40" y="592" class="leg">All volumes: NTFS security style · fractional reserve 0 · no scheduled ONTAP snapshots (application-consistent backups by NetApp SnapCenter)</text>
+  <text x="40" y="614" class="leg">Volumes are distributed across both nodes so that the resources of both controllers are used; each node has one SMB data LIF.</text>
+</svg>

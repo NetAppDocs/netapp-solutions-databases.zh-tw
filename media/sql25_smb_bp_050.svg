@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" width="1200" height="520" font-family="Segoe UI, Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0067C5"/>
+    </marker>
+  </defs>
+  <style>
+    .title { font-size: 24px; font-weight: 700; fill: #003366; }
+    .sub { font-size: 14px; fill: #4A5A6A; }
+    .n { font-size: 15px; font-weight: 700; fill: #FFFFFF; }
+    .h { font-size: 15px; font-weight: 700; fill: #003366; }
+    .t { font-size: 12.5px; fill: #1F2D3D; }
+    .opt { font-size: 11.5px; font-style: italic; fill: #6B7B8C; }
+    .cap { font-size: 13.5px; fill: #1F2D3D; }
+  </style>
+  <rect width="1200" height="520" fill="#FFFFFF"/>
+  <text x="40" y="40" class="title">SnapCenter backup workflow for SQL Server</text>
+  <text x="40" y="64" class="sub">From the scheduled job to a verified, replicated, point-in-time recoverable backup</text>
+
+  <!-- Row 1 -->
+  <g>
+    <rect x="40" y="90" width="230" height="150" rx="10" fill="#EAF3FC" stroke="#0067C5" stroke-width="2"/>
+    <circle cx="72" cy="122" r="17" fill="#0067C5"/><text x="72" y="127" class="n" text-anchor="middle">1</text>
+    <text x="98" y="128" class="h">Start backup job</text>
+    <text x="58" y="166" class="t">Scheduled or on demand;</text>
+    <text x="58" y="186" class="t">SnapCenter applies the policy</text>
+    <text x="58" y="206" class="t">to the resource group</text>
+    <text x="58" y="226" class="t">(databases or instance)</text>
+  </g>
+  <g>
+    <rect x="330" y="90" width="230" height="150" rx="10" fill="#EAF3FC" stroke="#0067C5" stroke-width="2"/>
+    <circle cx="362" cy="122" r="17" fill="#0067C5"/><text x="362" y="127" class="n" text-anchor="middle">2</text>
+    <text x="388" y="128" class="h">Quiesce SQL Server</text>
+    <text x="348" y="166" class="t">Plug-in uses the SQL Server</text>
+    <text x="348" y="186" class="t">VDI/VSS interface to freeze</text>
+    <text x="348" y="206" class="t">write I/O of the databases</text>
+    <text x="348" y="226" class="t">for a few seconds</text>
+  </g>
+  <g>
+    <rect x="620" y="90" width="230" height="150" rx="10" fill="#EEF7F0" stroke="#2E8540" stroke-width="2"/>
+    <circle cx="652" cy="122" r="17" fill="#2E8540"/><text x="652" y="127" class="n" text-anchor="middle">3</text>
+    <text x="678" y="128" class="h">ONTAP snapshot</text>
+    <text x="638" y="166" class="t">Snapshots of sql1_data and</text>
+    <text x="638" y="186" class="t">sql1_log through the ONTAP</text>
+    <text x="638" y="206" class="t">API; no data is copied, so it</text>
+    <text x="638" y="226" class="t">takes seconds at any size</text>
+  </g>
+  <g>
+    <rect x="910" y="90" width="250" height="150" rx="10" fill="#EAF3FC" stroke="#0067C5" stroke-width="2"/>
+    <circle cx="942" cy="122" r="17" fill="#0067C5"/><text x="942" y="127" class="n" text-anchor="middle">4</text>
+    <text x="968" y="128" class="h">Resume and catalog</text>
+    <text x="928" y="166" class="t">Databases are thawed; the</text>
+    <text x="928" y="186" class="t">backup is recorded in msdb</text>
+    <text x="928" y="206" class="t">history and in the SnapCenter</text>
+    <text x="928" y="226" class="t">catalog</text>
+  </g>
+
+  <!-- Row 2 (right to left) -->
+  <g>
+    <rect x="910" y="290" width="250" height="150" rx="10" fill="#F5EEF9" stroke="#7A3E9D" stroke-width="2"/>
+    <circle cx="942" cy="322" r="17" fill="#7A3E9D"/><text x="942" y="327" class="n" text-anchor="middle">5</text>
+    <text x="968" y="328" class="h">Verify</text>
+    <text x="1040" y="328" class="opt">optional</text>
+    <text x="928" y="366" class="t">DBCC CHECKDB runs on a</text>
+    <text x="928" y="386" class="t">FlexClone of the backup,</text>
+    <text x="928" y="406" class="t">mounted to a verification</text>
+    <text x="928" y="426" class="t">host, not on production</text>
+  </g>
+  <g>
+    <rect x="620" y="290" width="230" height="150" rx="10" fill="#E8F5F4" stroke="#00857C" stroke-width="2"/>
+    <circle cx="652" cy="322" r="17" fill="#00857C"/><text x="652" y="327" class="n" text-anchor="middle">6</text>
+    <text x="678" y="328" class="h">Replicate</text>
+    <text x="770" y="328" class="opt">optional</text>
+    <text x="638" y="366" class="t">SnapMirror / SnapVault</text>
+    <text x="638" y="386" class="t">update transfers only the</text>
+    <text x="638" y="406" class="t">changed blocks to a</text>
+    <text x="638" y="426" class="t">secondary site or the cloud</text>
+  </g>
+  <g>
+    <rect x="330" y="290" width="230" height="150" rx="10" fill="#EAF3FC" stroke="#0067C5" stroke-width="2"/>
+    <circle cx="362" cy="322" r="17" fill="#0067C5"/><text x="362" y="327" class="n" text-anchor="middle">7</text>
+    <text x="388" y="328" class="h">Log backups</text>
+    <text x="348" y="366" class="t">Transaction log backups</text>
+    <text x="348" y="386" class="t">(for example every 15 min)</text>
+    <text x="348" y="406" class="t">to \\a50-sql\sql1_backups</text>
+    <text x="348" y="426" class="t">enable point-in-time restore</text>
+  </g>
+  <g>
+    <rect x="40" y="290" width="230" height="150" rx="10" fill="#003366"/>
+    <text x="155" y="328" class="n" text-anchor="middle">Result</text>
+    <text x="155" y="362" class="n" text-anchor="middle" style="font-weight:400" font-size="13">Restore in minutes with</text>
+    <text x="155" y="382" class="n" text-anchor="middle" style="font-weight:400" font-size="13">SnapRestore + log replay</text>
+    <text x="155" y="402" class="n" text-anchor="middle" style="font-weight:400" font-size="13">to any point in time;</text>
+    <text x="155" y="422" class="n" text-anchor="middle" style="font-weight:400" font-size="13">clones for dev/test</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#0067C5" stroke-width="3" fill="none" marker-end="url(#a)">
+    <line x1="272" y1="165" x2="326" y2="165"/>
+    <line x1="562" y1="165" x2="616" y2="165"/>
+    <line x1="852" y1="165" x2="906" y2="165"/>
+    <line x1="1035" y1="242" x2="1035" y2="286"/>
+    <line x1="908" y1="365" x2="854" y2="365"/>
+    <line x1="618" y1="365" x2="564" y2="365"/>
+    <line x1="328" y1="365" x2="274" y2="365"/>
+  </g>
+
+  <rect x="40" y="462" width="1120" height="42" rx="8" fill="#EEF7F0" stroke="#2E8540"/>
+  <text x="600" y="488" class="cap" text-anchor="middle">Steps 1–4 typically complete in under a minute, regardless of database size; steps 5–7 run independently of the production workload.</text>
+</svg>

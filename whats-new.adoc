@@ -15,6 +15,13 @@ summary: NetApp資料庫解決方案附件的最新變更日誌。
 
 
 
+[[9-november-2026]]
+== 2026年11月9日
+
+已新增 SQL Server SMB 文件：link:https://docs.netapp.com/us-en/mssql/sql-smb3-aff.html["在 Windows Server 2025 上使用 NetApp AFF 上的 SMB 3 持續可用共用部署 Microsoft SQL Server 2025"^]
+
+
+
 [[18-august-2025]]
 == 2025年8月18日
 
